@@ -91,7 +91,7 @@ void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received raw target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
-        radar_interface::RadarTargetRaw target;
+        radar_ros_interface::RadarTargetRaw target;
         target.target_id = msg.data[0];
         target.snr = msg.data[1];
         target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
@@ -107,7 +107,7 @@ void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received tracked target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
-        radar_interface::RadarTargetTracked target;
+        radar_ros_interface::RadarTargetTracked target;
         target.target_id = msg.data[0];
         target.snr = msg.data[1];
         target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
@@ -123,7 +123,7 @@ void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received BSD from %s", name_.c_str() );
 
         // Extract alarm data from the message:
-        radar_interface::RadarAlarm alarms;
+        radar_ros_interface::RadarAlarm alarms;
         alarms.LCA_alarm = ( 1UL << 6 ) & msg.data[1];
         alarms.CVW_alarm = ( 1UL << 4 ) & msg.data[1];
         alarms.BSD_alarm = ( 1UL << 2 ) & msg.data[1];

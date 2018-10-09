@@ -40,7 +40,7 @@ public:
                                                              "sent_messages" )
     {
         name_ = ConfigT79BSD::radar_names.at( type_ );
-	startRadar();
+        startRadar();
     }
     ~RadarNodeT79BSD()
     {
