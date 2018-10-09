@@ -2,6 +2,6 @@
 # as general information about the sensor, if applicable.
 std_msgs/Header header
 
-RadarTargetRaw[] raw_targets
-RadarTargetTracked[] tracked_targets
+RadarTarget[] raw_targets
+RadarTarget[] tracked_targets
 RadarAlarm[] alarms

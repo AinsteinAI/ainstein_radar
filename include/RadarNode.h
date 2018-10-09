@@ -61,7 +61,7 @@ public:
                                                                             10 );
 
         // Sleep for a little to make sure messages are being advertised before we start sending:
-        ros::Duration( 3.0 ).sleep();
+        ros::Duration( 1.0 ).sleep();
 
     }
     virtual ~RadarNode( void )
