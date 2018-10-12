@@ -30,17 +30,22 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 
 int main( int argc, char** argv )
 {
-  // Initialize ROS node:
-  ros::init(argc, argv, "radar_ros_interface_test_node");
+    // Initialize ROS node:
+    ros::init( argc, argv, "radar_ros_interface_test_node" );
 
-  // Create the T-79 Nodes for receiving CAN messages and publishing visualization messages:
-  RadarNodeT79BSD radar_node_kanza( ConfigT79BSD::KANZA, "kanza_front" );
-  RadarNodeT79BSD radar_node_FL( ConfigT79BSD::TIPI_79_FL, "tipi_79_bsd_front_left" );
-  RadarNodeT79BSD radar_node_FR( ConfigT79BSD::TIPI_79_FR, "tipi_79_bsd_front_right" );
-  RadarNodeT79BSD radar_node_RL( ConfigT79BSD::TIPI_79_RL, "tipi_79_bsd_rear_left" );
-  RadarNodeT79BSD radar_node_RR( ConfigT79BSD::TIPI_79_RR, "tipi_79_bsd_rear_right" );
+    // Create the T-79 Nodes for receiving CAN messages and publishing visualization messages:
+    RadarNodeT79BSD radar_node_kanza( ConfigT79BSD::KANZA, "kanza_front",
+                                      "front_center_radar_link" );
+    RadarNodeT79BSD radar_node_FL( ConfigT79BSD::TIPI_79_FL, "tipi_79_bsd_front_left",
+                                   "front_left_radar_link" );
+    RadarNodeT79BSD radar_node_FR( ConfigT79BSD::TIPI_79_FR, "tipi_79_bsd_front_right",
+                                   "front_right_radar_link" );
+    RadarNodeT79BSD radar_node_RL( ConfigT79BSD::TIPI_79_RL, "tipi_79_bsd_rear_left",
+                                   "rear_left_radar_link" );
+    RadarNodeT79BSD radar_node_RR( ConfigT79BSD::TIPI_79_RR, "tipi_79_bsd_rear_right",
+                                   "rear_right_radar_link" );
 
-  ros::spin();
+    ros::spin();
 
-  return 0;
+    return 0;
 }

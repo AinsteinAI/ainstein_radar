@@ -73,9 +73,7 @@ void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received start frame from %s", name_.c_str() );
         // clear radar data message arrays here
         radar_data_msg_.header.stamp = ros::Time::now();
-        radar_data_msg_.header.frame_id = name_;
         radar_data_msg_.raw_targets.clear();
-        radar_data_msg_.tracked_targets.clear();
         radar_data_msg_.tracked_targets.clear();
         radar_data_msg_.alarms.clear();
     }
@@ -83,6 +81,7 @@ void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     else if( msg.id == ConfigT79BSD::stop_frame.at( type_ ) )
     {
         ROS_INFO( "received stop frame from %s", name_.c_str() );
+        radar_data_msg_.header.frame_id = frame_id_;
         pub_radar_data_.publish( radar_data_msg_ );
     }
     // Parse out raw target data messages:

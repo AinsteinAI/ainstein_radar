@@ -35,8 +35,11 @@
 class RadarNodeT79BSD: public RadarNode<can_msgs::Frame>
 {
 public:
-    RadarNodeT79BSD( ConfigT79BSD::RadarType radar_type, std::string radar_name ) :
-            type_( radar_type ), RadarNode<can_msgs::Frame>( radar_name, "received_messages",
+    RadarNodeT79BSD( ConfigT79BSD::RadarType radar_type, std::string radar_name,
+                     std::string frame_id ) :
+            type_( radar_type ),
+            frame_id_( frame_id ),
+            RadarNode<can_msgs::Frame>( radar_name, "received_messages",
                                                              "sent_messages" )
     {
         name_ = ConfigT79BSD::radar_names.at( type_ );
@@ -55,6 +58,7 @@ private:
 
     ConfigT79BSD::RadarType type_;
     std::string name_;
+    std::string frame_id_;
 };
 
 
