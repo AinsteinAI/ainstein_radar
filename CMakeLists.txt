@@ -20,6 +20,7 @@ add_message_files(
   RadarTargetRaw.msg
   RadarTargetTracked.msg
   RadarAlarm.msg
+  K79TestPacket.msg
   )
 
 generate_messages(
@@ -40,7 +41,11 @@ add_executable(radar_ros_interface_test_node src/radar_ros_interface_test_node.c
 add_dependencies(radar_ros_interface_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_ros_interface_test_node ${catkin_LIBRARIES})
 
-install(TARGETS radar_ros_interface_test_node
+add_executable(client_k79_test_node src/client_k79_test_node.cpp src/ClientK79.cpp)
+add_dependencies(client_k79_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(client_k79_test_node ${catkin_LIBRARIES})
+
+install(TARGETS radar_ros_interface_test_node client_k79_test_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
