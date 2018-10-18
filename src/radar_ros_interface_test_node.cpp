@@ -25,6 +25,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 */
 
 #include "RadarNodeT79BSD.h"
+#include "RadarDataViz.h"
 
 #include <can_msgs/Frame.h>
 
@@ -33,17 +34,24 @@ int main( int argc, char** argv )
     // Initialize ROS node:
     ros::init( argc, argv, "radar_ros_interface_test_node" );
 
-    // Create the T-79 Nodes for receiving CAN messages and publishing visualization messages:
+    // Create the T-79 Nodes for receiving CAN messages and publishing radar data messages:
     RadarNodeT79BSD radar_node_kanza( ConfigT79BSD::KANZA, "kanza_front",
-                                      "front_center_radar_link" );
+                                      "chassis" );
     RadarNodeT79BSD radar_node_FL( ConfigT79BSD::TIPI_79_FL, "tipi_79_bsd_front_left",
-                                   "front_left_radar_link" );
+                                   "chassis" );
     RadarNodeT79BSD radar_node_FR( ConfigT79BSD::TIPI_79_FR, "tipi_79_bsd_front_right",
-                                   "front_right_radar_link" );
+                                   "chassis" );
     RadarNodeT79BSD radar_node_RL( ConfigT79BSD::TIPI_79_RL, "tipi_79_bsd_rear_left",
-                                   "rear_left_radar_link" );
+                                   "chassis" );
     RadarNodeT79BSD radar_node_RR( ConfigT79BSD::TIPI_79_RR, "tipi_79_bsd_rear_right",
-                                   "rear_right_radar_link" );
+                                   "chassis" );
+
+    // Create visualization nodes to publish target markers:
+    RadarDataViz data_viz_node_kanza( "kanza_front_data", "KANZA_77_FL_TARGETS" );
+    RadarDataViz data_viz_node_FL( "tipi_79_bsd_front_left_data", "TIPI_79_FL_TARGETS" );
+    RadarDataViz data_viz_node_FR( "tipi_79_bsd_front_right_data", "TIPI_79_FR_TARGETS" );
+    RadarDataViz data_viz_node_RL( "tipi_79_bsd_rear_left_data", "TIPI_79_RL_TARGETS" );
+    RadarDataViz data_viz_node_RR( "tipi_79_bsd_rear_right_data", "TIPI_79_RR_TARGETS" );
 
     ros::spin();
 

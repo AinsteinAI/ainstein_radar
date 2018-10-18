@@ -8,5 +8,11 @@
 
   <!-- Run rqt_console for debugging -->
   <node name="debug_console" pkg="rqt_console" type="rqt_console" />
-  
+
+  <!-- Load the rviz configuration -->
+  <arg name="rvizconfig" default="$(find radar_ros_interface)/rviz/radar_ros_interface_test.rviz" />
+
+  <!-- Run rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
 </launch>
