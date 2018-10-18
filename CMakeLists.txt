@@ -41,11 +41,11 @@ add_executable(radar_ros_interface_test_node src/radar_ros_interface_test_node.c
 add_dependencies(radar_ros_interface_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_ros_interface_test_node ${catkin_LIBRARIES})
 
-add_executable(client_k79_test_node src/client_k79_test_node.cpp src/ClientK79.cpp)
-add_dependencies(client_k79_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(client_k79_test_node ${catkin_LIBRARIES})
+add_executable(k79_test_node src/k79_test_node.cpp src/RadarNodeK79.cpp)
+add_dependencies(k79_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(k79_test_node ${catkin_LIBRARIES})
 
-install(TARGETS radar_ros_interface_test_node client_k79_test_node
+install(TARGETS radar_ros_interface_test_node k79_test_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

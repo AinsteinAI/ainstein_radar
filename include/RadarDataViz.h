@@ -54,8 +54,6 @@ public:
         marker_tracked_.color.b = 0.0;
         marker_tracked_.color.a = 1.0;
 
-        marker_tracked_.lifetime = ros::Duration( 0.1 );
-
         // Initialize raw marker info:
         marker_raw_.ns = "raw";
         marker_raw_.type = visualization_msgs::Marker::POINTS;
@@ -69,8 +67,6 @@ public:
         marker_raw_.color.g = 1.0;
         marker_raw_.color.b = 0.0;
         marker_raw_.color.a = 1.0;
-
-        marker_raw_.lifetime = ros::Duration( 0.1 );
 
         pub_marker_ = node_handle_.advertise<visualization_msgs::Marker>( marker_topic_, 10 );
         sub_radar_data_ = node_handle_.subscribe( data_topic_, 10,
@@ -96,10 +92,14 @@ public:
 
     void radarDataCallback( const radar_ros_interface::RadarData &msg )
     {
-        // Populate the tracked markers:
+        // First delete, then populate the tracked markers:
+        marker_tracked_.action = visualization_msgs::Marker::DELETEALL;
         marker_tracked_.points.clear();
         marker_tracked_.header.frame_id = msg.header.frame_id;
         marker_tracked_.header.stamp = msg.header.stamp;
+        pub_marker_.publish( marker_tracked_ );
+	
+        marker_tracked_.action = visualization_msgs::Marker::ADD;
         for( auto it = msg.tracked_targets.begin(); it != msg.tracked_targets.end(); ++it )
         {
             if( it->snr > RadarDataViz::min_snr )
@@ -111,10 +111,14 @@ public:
         }
         pub_marker_.publish( marker_tracked_ );
 
-        // Populate the raw markers:
+        // First delete, then populate the raw markers:
+        marker_raw_.action = visualization_msgs::Marker::DELETEALL;
         marker_raw_.points.clear();
         marker_raw_.header.frame_id = msg.header.frame_id;
         marker_raw_.header.stamp = msg.header.stamp;
+        pub_marker_.publish( marker_raw_ );
+
+        marker_raw_.action = visualization_msgs::Marker::ADD;
         for( auto it = msg.raw_targets.begin(); it != msg.raw_targets.end(); ++it )
         {
             if( it->snr > RadarDataViz::min_snr )

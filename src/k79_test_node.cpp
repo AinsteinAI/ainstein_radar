@@ -24,25 +24,29 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "ClientK79.h"
+#include "RadarNodeK79.h"
 
-#include <radar_ros_interface/K79TestPacket.h>
-
-void print_callback( const radar_ros_interface::K79TestPacket &msg )
-{
-  std::cout << std::hex << msg << std::endl;
-}
+#include <RadarDataViz.h>
+#include <radar_ros_interface/RadarData.h>
 
 int main( int argc, char** argv )
 {  
 
-  ros::init( argc, argv, "client_k79_test_node" );
-  
-  ClientK79 client( "10.0.0.77", 8 );
-  client.connect();
+  ros::init( argc, argv, "radar_node_k79_test_node" );
 
-  ros::NodeHandle nh;
-  ros::Subscriber sub = nh.subscribe( "k79_data", 10, print_callback );
+  ros::NodeHandle node_handle_;
+  
+  // Create the K79 interface:
+  std::string ip_address = "10.0.0.77";
+  std::string radar_name = "k79";
+  std::string frame_id;
+  node_handle_.getParam( "frame_id", frame_id );
+  
+  RadarNodeK79 k79( ip_address, radar_name, frame_id );
+  k79.connect();
+  
+  // Create a visualization node to publish target markers:
+  RadarDataViz data_viz_node_k79( radar_name+"_data", radar_name+"_TARGETS" );
 
   ros::spin();
   
