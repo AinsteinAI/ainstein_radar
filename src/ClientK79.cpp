@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cstdint>
 
-#include <radar_to_rviz/TestPacket.h>
+#include <radar_ros_interface/K79TestPacket.h>
 
 #include "ClientK79.h"
 
@@ -62,7 +62,7 @@ bool ClientK79::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_ = node_handle_.advertise<radar_to_rviz::TestPacket>( "k79_data", 10 );
+  pub_ = node_handle_.advertise<radar_ros_interface::K79TestPacket>( "k79_data", 10 );
   
   return true;
 }
@@ -84,7 +84,7 @@ void ClientK79::mainLoop(void)
       msg_len = recvfrom( sockfd_, (char* )buffer, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
       // Parse the test packet into 7 uint32 fields and publish to ROS topic:
-      radar_to_rviz::TestPacket msg;
+      radar_ros_interface::K79TestPacket msg;
       msg.line1 = ClientK79::read_uint32( &( buffer[0] ) );
       msg.line2 = ClientK79::read_uint32( &( buffer[4] ) );
       msg.line3 = ClientK79::read_uint32( &( buffer[8] ) );
