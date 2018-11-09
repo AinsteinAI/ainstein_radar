@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_plugins
   gazebo_ros
   roscpp
-  radar_ros_interface
+  radar_sensor_msgs
   )
 
 find_package (gazebo REQUIRED)

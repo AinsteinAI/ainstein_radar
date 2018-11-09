@@ -10,7 +10,7 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo/transport/TransportTypes.hh>
@@ -75,7 +75,7 @@ private:
 
     /// \brief ros message
 private:
-    radar_ros_interface::RadarData radar_msg_;
+    radar_sensor_msgs::RadarData radar_msg_;
 
     /// \brief topic name
 private:

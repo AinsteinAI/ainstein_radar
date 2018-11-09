@@ -132,7 +132,7 @@ void GazeboRosRadar::LoadThread()
     if( this->topic_name_ != "" )
     {
         ros::AdvertiseOptions ao =
-                ros::AdvertiseOptions::create<radar_ros_interface::RadarData>(
+                ros::AdvertiseOptions::create<radar_sensor_msgs::RadarData>(
                 this->topic_name_, 1, boost::bind( &GazeboRosRadar::RadarConnect, this ),
                 boost::bind( &GazeboRosRadar::RadarDisconnect, this ), ros::VoidPtr(),
                 &this->radar_queue_ );
@@ -220,7 +220,7 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
 
         // Add targets dynamically to raw target array:
         this->radar_msg_.raw_targets.clear();
-        radar_ros_interface::RadarTarget target;
+        radar_sensor_msgs::RadarTarget target;
         int target_id = 0;
         for( int i = 0; i < num_rays; ++i )
         {

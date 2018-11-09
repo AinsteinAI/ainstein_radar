@@ -53,7 +53,7 @@
   <depend>gazebo_ros</depend>
   <depend>roscpp</depend>
 
-  <depend>radar_ros_interface</depend>
+  <depend>radar_sensor_msgs</depend>
   
   <!-- The export tag contains other, unspecified, tags -->
   <export>
