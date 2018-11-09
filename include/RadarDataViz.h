@@ -31,7 +31,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 class RadarDataViz
 {
@@ -78,7 +78,7 @@ public:
     {
     }
 
-    geometry_msgs::Point radarDataToPoint( const radar_ros_interface::RadarTarget &target )
+    geometry_msgs::Point radarDataToPoint( const radar_sensor_msgs::RadarTarget &target )
     {
         geometry_msgs::Point p;
         p.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
@@ -90,7 +90,7 @@ public:
         return p;
     }
 
-    void radarDataCallback( const radar_ros_interface::RadarData &msg )
+    void radarDataCallback( const radar_sensor_msgs::RadarData &msg )
     {
         // First delete, then populate the tracked markers:
         marker_tracked_.action = visualization_msgs::Marker::DELETEALL;

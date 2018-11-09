@@ -27,7 +27,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 #include "RadarNodeK79.h"
 
 #include <RadarDataViz.h>
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 int main( int argc, char** argv )
 {  

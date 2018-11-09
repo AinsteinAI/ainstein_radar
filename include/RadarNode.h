@@ -31,7 +31,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 #include <can_msgs/Frame.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 // Generic class from which all RADAR sensor ROS interface nodes should derive.
 // Example:
@@ -57,7 +57,7 @@ public:
                                                                 10 );
 
         // Set up the publisher for sending out processed radar data:
-        pub_radar_data_ = node_handle_.advertise<radar_ros_interface::RadarData>( radar_name + "_data",
+        pub_radar_data_ = node_handle_.advertise<radar_sensor_msgs::RadarData>( radar_name + "_data",
                                                                             10 );
 
         // Sleep for a little to make sure messages are being advertised before we start sending:
@@ -84,7 +84,7 @@ protected:
 
     ros::Subscriber sub_data_msg_;
 
-    radar_ros_interface::RadarData radar_data_msg_;
+    radar_sensor_msgs::RadarData radar_data_msg_;
 
 };
 

@@ -34,7 +34,7 @@
 #include <thread>
 
 #include <ros/ros.h>
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 #define MSG_LEN         100 // maximum length in bytes
 #define TARGET_MSG_LEN    4 // bytes per target
@@ -65,7 +65,7 @@ private:
   ros::NodeHandle node_handle_;
   ros::Publisher pub_radar_data_;
 
-  radar_ros_interface::RadarData radar_data_msg_;
+  radar_sensor_msgs::RadarData radar_data_msg_;
     
 };
 

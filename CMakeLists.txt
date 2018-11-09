@@ -8,29 +8,12 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   can_msgs
   visualization_msgs
-  message_generation
   tf2
   tf2_ros
+  radar_sensor_msgs
 )
 
-add_message_files(
-  FILES
-  RadarData.msg
-  RadarTarget.msg
-  RadarTargetRaw.msg
-  RadarTargetTracked.msg
-  RadarAlarm.msg
-  K79TestPacket.msg
-  )
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
-
-catkin_package(
-  CATKIN_DEPENDS message_runtime
-  )
+catkin_package()
 
 include_directories(
  include

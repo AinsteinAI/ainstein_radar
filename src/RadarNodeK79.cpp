@@ -78,7 +78,7 @@ bool RadarNodeK79::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_radar_data_ = node_handle_.advertise<radar_ros_interface::RadarData>( radar_name_+"_data", 10 );
+  pub_radar_data_ = node_handle_.advertise<radar_sensor_msgs::RadarData>( radar_name_+"_data", 10 );
   
   return true;
 }
@@ -112,7 +112,7 @@ void RadarNodeK79::mainLoop(void)
       }
       else
       {
-          radar_ros_interface::RadarTarget target;
+          radar_sensor_msgs::RadarTarget target;
 	  int offset;
           for( int i = 0; i < ( msg_len / TARGET_MSG_LEN ); ++i )
           {
