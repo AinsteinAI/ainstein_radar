@@ -5,7 +5,7 @@
 #include <boost/circular_buffer.hpp>
 
 #include <rviz/message_filter_display.h>
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 #endif
 
 namespace Ogre
@@ -44,7 +44,7 @@ class RadarVisual;
 // themselves are represented by a separate class, RadarVisual.  The
 // idiom for the visuals is that when the objects exist, they appear
 // in the scene, and when they are deleted, they disappear.
-class RadarDisplay: public rviz::MessageFilterDisplay<radar_ros_interface::RadarData>
+class RadarDisplay: public rviz::MessageFilterDisplay<radar_sensor_msgs::RadarData>
 {
 Q_OBJECT
 public:
@@ -71,7 +71,7 @@ private Q_SLOTS:
 
   // Function to handle an incoming ROS message.
 private:
-  void processMessage( const radar_ros_interface::RadarData::ConstPtr& msg );
+  void processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg );
 
   // Storage for the list of visuals.  It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)

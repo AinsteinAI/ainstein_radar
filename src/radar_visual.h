@@ -1,7 +1,7 @@
 #ifndef RADAR_VISUAL_H
 #define RADAR_VISUAL_H
 
-#include <radar_ros_interface/RadarData.h>
+#include <radar_sensor_msgs/RadarData.h>
 
 namespace Ogre
 {
@@ -35,7 +35,7 @@ public:
   virtual ~RadarVisual();
 
   // Configure the visual to show the data in the message.
-  void setMessage( const radar_ros_interface::RadarData::ConstPtr& msg );
+  void setMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg );
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require

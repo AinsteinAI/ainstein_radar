@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 set(CMAKE_CXX_STANDARD 11)
 project(rviz_radar_plugin)
-find_package(catkin REQUIRED COMPONENTS rviz radar_ros_interface)
+find_package(catkin REQUIRED COMPONENTS rviz radar_sensor_msgs)
 catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})

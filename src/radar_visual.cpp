@@ -31,7 +31,7 @@ RadarVisual::~RadarVisual()
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
-void RadarVisual::setMessage( const radar_ros_interface::RadarData::ConstPtr& msg )
+void RadarVisual::setMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
   geometry_msgs::Vector3 a;
   a.x = 0.0;

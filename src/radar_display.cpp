@@ -82,7 +82,7 @@ void RadarDisplay::updateHistoryLength()
 }
 
 // This is our callback to handle an incoming message.
-void RadarDisplay::processMessage( const radar_ros_interface::RadarData::ConstPtr& msg )
+void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
   // Here we call the rviz::FrameManager to get the transform from the
   // fixed frame to the frame in the header of this Radar message.  If
