@@ -1,8 +1,0 @@
-<launch>
-  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="verbose" value="true"/>
-    <arg name="world_name" value="$(find gazebo_radar_sensor_plugin)/worlds/radar.world"/>
-    <!-- more default parameters can be changed here -->
-  </include>
-</launch>
