@@ -33,9 +33,9 @@
       </collision>
       <visual name='visual'>
 	<geometry>
-	  <box>
-	    <size>0.01 0.05 0.05</size>
-	  </box>
+	  <mesh>
+	    <uri>model://radar_sensor/meshes/kanza79.stl</uri>
+	  </mesh>
 	</geometry>
       </visual>
       <sensor type="ray" name="range">
