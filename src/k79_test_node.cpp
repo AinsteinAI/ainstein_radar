@@ -26,7 +26,6 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 
 #include "RadarNodeK79.h"
 
-#include <RadarDataViz.h>
 #include <radar_sensor_msgs/RadarData.h>
 
 int main( int argc, char** argv )
@@ -44,9 +43,6 @@ int main( int argc, char** argv )
   
   RadarNodeK79 k79( ip_address, radar_name, frame_id );
   k79.connect();
-  
-  // Create a visualization node to publish target markers:
-  RadarDataViz data_viz_node_k79( radar_name+"_data", radar_name+"_TARGETS" );
 
   ros::spin();
   

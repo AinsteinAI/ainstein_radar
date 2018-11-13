@@ -36,8 +36,8 @@
 #include <ros/ros.h>
 #include <radar_sensor_msgs/RadarData.h>
 
-#define MSG_LEN         100 // maximum length in bytes
-#define TARGET_MSG_LEN    4 // bytes per target
+#define MSG_LEN        1000 // maximum length in bytes
+#define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
 
 class RadarNodeK79 {
 

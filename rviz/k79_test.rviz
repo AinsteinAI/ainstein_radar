@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Marker1
+        - /Radar1
+        - /Radar1/Status1
       Splitter Ratio: 0.838888884
     Tree Height: 775
   - Class: rviz/Selection
@@ -49,14 +50,22 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Class: rviz/Marker
+    - Alpha: 1
+      Class: rviz_radar_plugin/Radar
+      Color: 255; 0; 0
       Enabled: true
-      Marker Topic: /k79_TARGETS
-      Name: Marker
-      Namespaces:
-        raw: true
-        tracked: true
-      Queue Size: 100
+      History Length: 1
+      Name: Radar
+      Raw Targets:
+        Alpha: 1
+        Color: 255; 0; 0
+      Show Raw Targets: true
+      Show Tracked Targets: true
+      Topic: /k79_data
+      Tracked Targets:
+        Alpha: 1
+        Color: 255; 0; 0
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -83,7 +92,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 68.660408
+      Distance: 24.6926537
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1

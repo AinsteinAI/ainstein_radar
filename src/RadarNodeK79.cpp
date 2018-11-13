@@ -108,7 +108,7 @@ void RadarNodeK79::mainLoop(void)
       // Extract the target ID and data from the message:
       if( ( msg_len % TARGET_MSG_LEN ) != 0 )
       {
-          std::cout << "Incorrect number of bytes, message is non-conforming, skipping" << std::endl;
+	std::cout << "Incorrect number of bytes: " << msg_len << " Message is non-conforming, skipping" << std::endl;
       }
       else
       {
