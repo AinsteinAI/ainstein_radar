@@ -3,8 +3,8 @@
          type="rviz_radar_plugin::RadarDisplay"
          base_class_type="rviz::Display">
     <description>
-      Displays radar_ros_interface/RadarData messages.
+      Displays radar_sensor_msgs/RadarData messages.
     </description>
-    <message_type>radar_ros_interface/RadarData</message_type>
+    <message_type>radar_sensor_msgs/RadarData</message_type>
   </class>
 </library>
