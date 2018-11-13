@@ -1,6 +1,6 @@
 <library path="lib/librviz_radar_plugin">
-  <class name="rviz_plugin_tutorials/Radar"
-         type="rviz_plugin_tutorials::RadarDisplay"
+  <class name="rviz_radar_plugin/Radar"
+         type="rviz_radar_plugin::RadarDisplay"
          base_class_type="rviz::Display">
     <description>
       Displays radar_ros_interface/RadarData messages.

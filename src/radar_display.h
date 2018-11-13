@@ -18,16 +18,16 @@ namespace rviz
 class ColorProperty;
 class FloatProperty;
 class IntProperty;
+class BoolProperty;
 }
 
 // All the source in this plugin is in its own namespace.  This is not
 // required but is good practice.
-namespace rviz_plugin_tutorials
+namespace rviz_radar_plugin
 {
 
 class RadarVisual;
 
-// BEGIN_TUTORIAL
 // Here we declare our new subclass of rviz::Display.  Every display
 // which can be listed in the "Displays" panel is a subclass of
 // rviz::Display.
@@ -68,7 +68,9 @@ protected:
 private Q_SLOTS:
   void updateColorAndAlpha();
   void updateHistoryLength();
-
+  void updateShowRaw();
+  void updateShowTracked();
+  
   // Function to handle an incoming ROS message.
 private:
   void processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg );
@@ -77,14 +79,21 @@ private:
   // data gets popped from the front (oldest) and pushed to the back (newest)
   boost::circular_buffer<boost::shared_ptr<RadarVisual> > visuals_;
 
+  // Booleans to store whether to show targets:
+  bool show_raw_, show_tracked_;
+  
   // User-editable property variables.
-  rviz::ColorProperty* color_property_;
-  rviz::FloatProperty* alpha_property_;
-  rviz::IntProperty* history_length_property_;
-};
-// END_TUTORIAL
+  rviz::BoolProperty* show_raw_property_;
+  rviz::Property* list_raw_;
 
-} // end namespace rviz_plugin_tutorials
+  rviz::BoolProperty* show_tracked_property_;
+  rviz::Property* list_tracked_;
+
+  rviz::IntProperty* history_length_property_;
+  
+};
+
+} // end namespace rviz_radar_plugin
 
 #endif // RADAR_DISPLAY_H
-// %EndTag(FULL_SOURCE)%
+

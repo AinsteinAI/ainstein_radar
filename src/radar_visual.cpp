@@ -7,10 +7,9 @@
 #include <geometry_msgs/Vector3.h>
 #include "radar_visual.h"
 
-namespace rviz_plugin_tutorials
+namespace rviz_radar_plugin
 {
 
-// BEGIN_TUTORIAL
 RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
 {
   scene_manager_ = scene_manager;
@@ -31,29 +30,26 @@ RadarVisual::~RadarVisual()
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
-void RadarVisual::setMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg )
+void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
-  geometry_msgs::Vector3 a;
-  a.x = 0.0;
-  a.y = 0.0;
-  a.z = 9.81;
+  double r;
+  double th;
+  Ogre::Vector3 pos;
+  Ogre::Vector3 scale;
 
+  // Display the raw targets:
   // Create the shape to represent the radar target:
   int n_raw_targets = msg->raw_targets.size();
   if( n_raw_targets > 0 )
     {
       // Create the radar target shapes:
-      radar_target_shapes_.resize( n_raw_targets );
-      for( auto it = radar_target_shapes_.begin(); it != radar_target_shapes_.end(); ++it )
+      radar_target_shapes_raw_.resize( n_raw_targets );
+      for( auto it = radar_target_shapes_raw_.begin(); it != radar_target_shapes_raw_.end(); ++it )
 	{
 	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
 	}
 
       // Fill the target shapes from RadarData message:
-      double r;
-      double th;
-      Ogre::Vector3 pos;
-      Ogre::Vector3 scale;
       for( int i = 0; i < n_raw_targets; ++i )
 	{
 	  r = msg->raw_targets.at( i ).range;
@@ -61,27 +57,58 @@ void RadarVisual::setMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg 
 	  pos = Ogre::Vector3(r * cos( th ),
 			      r * sin( th ),
 			      0.0 );
-	  radar_target_shapes_.at( i )->setPosition( pos );
+	  radar_target_shapes_raw_.at( i )->setPosition( pos );
 	  
 	  scale = Ogre::Vector3( 0.1, 0.1, 0.1 );
-	  radar_target_shapes_.at( i )->setScale( scale );
+	  radar_target_shapes_raw_.at( i )->setScale( scale );
 	}
     }
-  // // Convert the geometry_msgs::Vector3 to an Ogre::Vector3.
-  // Ogre::Vector3 acc( a.x, a.y, a.z );
-
-  // // Find the magnitude of the acceleration vector.
-  // float length = acc.length();
-
-  // // Scale the arrow's thickness in each dimension along with its length.
-  // Ogre::Vector3 scale( length, length, length );
-  // acceleration_arrow_->setScale( scale );
-
-  // // Set the orientation of the arrow to match the direction of the
-  // // acceleration vector.
-  // acceleration_arrow_->setDirection( acc );
 }
 
+void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPtr& msg )
+{
+  double r;
+  double th;
+  Ogre::Vector3 pos;
+  Ogre::Vector3 scale;
+
+  // Create the shape to represent the radar target:
+  int n_tracked_targets = msg->tracked_targets.size();
+  if( n_tracked_targets > 0 )
+    {
+      // Create the radar target shapes:
+      radar_target_shapes_tracked_.resize( n_tracked_targets );
+      for( auto it = radar_target_shapes_tracked_.begin(); it != radar_target_shapes_tracked_.end(); ++it )
+	{
+	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
+	}
+
+      // Fill the target shapes from RadarData message:
+      for( int i = 0; i < n_tracked_targets; ++i )
+	{
+	  r = msg->tracked_targets.at( i ).range;
+	  th = msg->tracked_targets.at( i ).azimuth;
+	  pos = Ogre::Vector3(r * cos( th ),
+			      r * sin( th ),
+			      0.0 );
+	  radar_target_shapes_tracked_.at( i )->setPosition( pos );
+	  
+	  scale = Ogre::Vector3( 0.1, 0.1, 0.1 );
+	  radar_target_shapes_tracked_.at( i )->setScale( scale );
+	}
+    }
+}
+
+void RadarVisual::clearMessageRaw( void )
+{
+  radar_target_shapes_raw_.clear();
+}
+
+void RadarVisual::clearMessageTracked( void )
+{
+  radar_target_shapes_tracked_.clear();
+}
+  
 // Position and orientation are passed through to the SceneNode.
 void RadarVisual::setFramePosition( const Ogre::Vector3& position )
 {
@@ -92,17 +119,27 @@ void RadarVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
 {
   frame_node_->setOrientation( orientation );
 }
-
-// Color is passed through to the Arrow object.
-void RadarVisual::setColor( float r, float g, float b, float a )
+  
+// Color is passed through to the Shape object.
+void RadarVisual::setColorRaw( float r, float g, float b, float a )
 {
-  Ogre::ColourValue c( r, b, g, a);
-  for( auto it = radar_target_shapes_.begin(); it != radar_target_shapes_.end(); ++it )
+  Ogre::ColourValue c( r, g, b, a);
+    for( auto it = radar_target_shapes_raw_.begin(); it != radar_target_shapes_raw_.end(); ++it )
     {
       (*it)->setColor( c );
     }
 }
-// END_TUTORIAL
 
-} // end namespace rviz_plugin_tutorials
+// Color is passed through to the Shape object.
+void RadarVisual::setColorTracked( float r, float g, float b, float a )
+{
+  Ogre::ColourValue c( r, g, b, a);
+  for( auto it = radar_target_shapes_tracked_.begin(); it != radar_target_shapes_tracked_.end(); ++it )
+    {
+      (*it)->setColor( c );
+    }
+  
+}
+  
+} // end namespace rviz_radar_plugin
 

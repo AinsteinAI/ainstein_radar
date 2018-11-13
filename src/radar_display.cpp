@@ -7,28 +7,51 @@
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
+#include <rviz/properties/bool_property.h>
 #include <rviz/frame_manager.h>
 
 #include "radar_visual.h"
 
 #include "radar_display.h"
 
-namespace rviz_plugin_tutorials
+namespace rviz_radar_plugin
 {
 
-// BEGIN_TUTORIAL
 // The constructor must have no arguments, so we can't give the
 // constructor the parameters it needs to fully initialize.
 RadarDisplay::RadarDisplay()
 {
-  color_property_ = new rviz::ColorProperty( "Color", QColor( 204, 51, 204 ),
-                                             "Color to draw the acceleration arrows.",
-                                             this, SLOT( updateColorAndAlpha() ));
 
-  alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
-                                             "0 is fully transparent, 1.0 is fully opaque.",
-                                             this, SLOT( updateColorAndAlpha() ));
+  // Create the dropdown list of raw target options:
+  show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
+					       "Toggles display of raw target markers.",
+					       this, SLOT( updateShowRaw() ) );
+  list_raw_ = new rviz::Property( "Raw Targets", QVariant(),
+				  "Raw target display options.",
+				  this, 0 );
+  list_raw_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+						"Color to draw the target markers.",
+						this, SLOT( updateColorAndAlpha() ) ) );
 
+  list_raw_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
+						"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+						this, SLOT( updateColorAndAlpha() ) ) );
+
+  // Create the dropdown list of tracked target options:
+  show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
+						   "Toggles display of tracked target markers.",
+						   this, SLOT( updateShowTracked() ) );
+  list_tracked_ = new rviz::Property( "Tracked Targets", QVariant(),
+				      "Tracked target display options.",
+				      this, 0 );
+  list_tracked_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+						    "Color to draw the target markers.",
+						    this, SLOT( updateColorAndAlpha() ) ) );
+  list_tracked_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
+						    "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+						    this, SLOT( updateColorAndAlpha() ) ) );
+
+  // Create the history length option:
   history_length_property_ = new rviz::IntProperty( "History Length", 1,
                                                     "Number of prior measurements to display.",
                                                     this, SLOT( updateHistoryLength() ));
@@ -66,13 +89,27 @@ void RadarDisplay::reset()
 // Set the current color and alpha values for each visual.
 void RadarDisplay::updateColorAndAlpha()
 {
-  float alpha = alpha_property_->getFloat();
-  Ogre::ColourValue color = color_property_->getOgreColor();
+  float alpha;
+  Ogre::ColourValue color;
+  if( show_raw_property_->getBool() )
+    {
+      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color" ) )->getOgreColor();
+      for( size_t i = 0; i < visuals_.size(); i++ )
+	{
+	  visuals_[ i ]->setColorRaw( color.r, color.g, color.b, alpha );
+	}
+    }
 
-  for( size_t i = 0; i < visuals_.size(); i++ )
-  {
-    visuals_[ i ]->setColor( color.r, color.g, color.b, alpha );
-  }
+    if( show_tracked_property_->getBool() )
+    {
+      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color" ) )->getOgreColor();
+      for( size_t i = 0; i < visuals_.size(); i++ )
+	{
+	  visuals_[ i ]->setColorTracked( color.r, color.g, color.b, alpha );
+	}
+    }
 }
 
 // Set the number of past visuals to show.
@@ -81,6 +118,34 @@ void RadarDisplay::updateHistoryLength()
   visuals_.rset_capacity(history_length_property_->getInt());
 }
 
+// Set whether to display raw markers.
+void RadarDisplay::updateShowRaw()
+{
+  show_raw_ = show_raw_property_->getBool();
+  if( show_raw_ )
+    {
+      list_raw_->show();
+    }
+  else
+    {
+      list_raw_->hide();
+    }
+}
+
+// Set whether to display tracked markers.
+void RadarDisplay::updateShowTracked()
+{
+  show_tracked_ = show_tracked_property_->getBool();
+  if( show_tracked_ )
+    {
+      list_tracked_->show();
+    }
+  else
+    {
+      list_tracked_->hide();
+    }
+}
+  
 // This is our callback to handle an incoming message.
 void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
@@ -111,22 +176,42 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   }
 
   // Now set or update the contents of the chosen visual.
-  visual->setMessage( msg );
+  float alpha;
+  Ogre::ColourValue color;
+  if( show_raw_property_->getBool() )
+    {
+      visual->setMessageRaw( msg );
+      
+      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color" ) )->getOgreColor();
+      visual->setColorRaw( color.r, color.g, color.b, alpha );
+    }
+  else
+    {
+      visual->clearMessageRaw();
+    }
+  if( show_tracked_property_->getBool() )
+    {
+      visual->setMessageTracked( msg );
+      
+      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color" ) )->getOgreColor();
+      visual->setColorTracked( color.r, color.g, color.b, alpha );
+    }
+  else
+    {
+      visual->clearMessageTracked();
+    }
   visual->setFramePosition( position );
   visual->setFrameOrientation( orientation );
-
-  float alpha = alpha_property_->getFloat();
-  Ogre::ColourValue color = color_property_->getOgreColor();
-  visual->setColor( color.r, color.g, color.b, alpha );
 
   // And send it to the end of the circular buffer
   visuals_.push_back(visual);
 }
 
-} // end namespace rviz_plugin_tutorials
+} // end namespace rviz_radar_plugin
 
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_plugin_tutorials::RadarDisplay,rviz::Display )
-// END_TUTORIAL
+PLUGINLIB_EXPORT_CLASS(rviz_radar_plugin::RadarDisplay,rviz::Display )
