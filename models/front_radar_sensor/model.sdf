@@ -33,9 +33,9 @@
       </collision>
       <visual name='visual'>
 	<geometry>
-	  <box>
-	    <size>0.01 0.05 0.05</size>
-	  </box>
+	  <mesh>
+	    <uri>model://front_radar_sensor/meshes/kanza79.stl</uri>
+	  </mesh>
 	</geometry>
       </visual>
       <sensor type="ray" name="range">
@@ -51,8 +51,8 @@
 	    </horizontal>
 	  </scan>
 	  <range>
-	    <min>0.1</min> <!-- do not change (smaller values cause issues) -->
-	    <max>35</max>   <!-- do not change (bigger values cause issues) -->
+	    <min>0.5</min> <!-- do not change (smaller values cause issues) -->
+	    <max>5</max>   <!-- do not change (bigger values cause issues) -->
 	    <resolution>0.01</resolution>
 	  </range>
 	</ray>
