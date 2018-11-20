@@ -11,32 +11,26 @@
 
 #include "RadarNodeK79.h"
 
-RadarNodeK79::RadarNodeK79(std::string ip_addr, std::string radar_name, std::string frame_id)
+RadarNodeK79::RadarNodeK79(std::string ip_addr, int port, std::string radar_name, std::string frame_id)
 {
   // Store the client IP and port:
   ip_addr_ = ip_addr;
-  port_ = 8;
+  port_ = port;
 
   // Store the radar name and data frame ID:
   radar_name_ = radar_name;
   radar_data_msg_.header.frame_id = frame_id;
-
-  /*// Connect and launch the data thread:
-  if( !connect() )
-  {
-      std::cout << "Failed to connect to the K79 device " << radar_name << std::endl;
-  }*/
 }
 
 RadarNodeK79::~RadarNodeK79(void)
 {
-  close( sockfd_ );
-  
   mutex_.lock();
   is_running_ = false;
   mutex_.unlock();
 
   thread_->join();
+
+  close( sockfd_ );
 }
 
 bool RadarNodeK79::connect(void)
@@ -61,6 +55,16 @@ bool RadarNodeK79::connect(void)
   if( res < 0 )
     {
       std::cout << "Failed to set socket options, res: " << res << std::endl;
+      return false;
+    }
+
+  struct timeval tv;
+  tv.tv_sec = 10; // 10 second timeout
+  tv.tv_usec = 0;
+  res  = setsockopt( sockfd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) );
+  if( res < 0 )
+    {
+      std::cout << "Failed to set socket timeout, res: " << res << std::endl;
       return false;
     }
     
@@ -94,11 +98,16 @@ void RadarNodeK79::mainLoop(void)
 
   // Enter the main data receiving loop:
   bool running = true;
-  while( running )
+  while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
       msg_len = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
+      // Extract the sender's IP address:
+      struct sockaddr_in* sin = (struct sockaddr_in* )&src_addr;
+      unsigned char* src_ip = (unsigned char*)(&sin->sin_addr.s_addr);
+      // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
+      
       // Prepare the radar targets message:
       radar_data_msg_.header.stamp = ros::Time::now();
       radar_data_msg_.raw_targets.clear();
@@ -108,7 +117,7 @@ void RadarNodeK79::mainLoop(void)
       // Extract the target ID and data from the message:
       if( ( msg_len % TARGET_MSG_LEN ) != 0 )
       {
-	std::cout << "Incorrect number of bytes: " << msg_len << " Message is non-conforming, skipping" << std::endl;
+	std::cout << "Incorrect number of bytes: " << msg_len << " Did recvfrom() time out?" << std::endl;
       }
       else
       {
@@ -135,7 +144,5 @@ void RadarNodeK79::mainLoop(void)
       mutex_.lock();
       running = is_running_;
       mutex_.unlock();  
-  
-    }
-
+     }
 }

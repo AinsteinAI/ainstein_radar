@@ -42,7 +42,7 @@
 class RadarNodeK79 {
 
 public:
-  RadarNodeK79( std::string ip_addr, std::string radar_name, std::string frame_id );
+  RadarNodeK79( std::string ip_addr, int port, std::string radar_name, std::string frame_id );
   ~RadarNodeK79();
 
   bool connect( void );

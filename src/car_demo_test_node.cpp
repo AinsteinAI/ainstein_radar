@@ -32,7 +32,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 int main( int argc, char** argv )
 {
     // Initialize ROS node:
-    ros::init( argc, argv, "radar_ros_interface_test_node" );
+    ros::init( argc, argv, "car_demo_test_node" );
 
     // Create the T-79 Nodes for receiving CAN messages and publishing radar data messages:
     RadarNodeT79BSD radar_node_kanza( ConfigT79BSD::KANZA, "kanza_front",

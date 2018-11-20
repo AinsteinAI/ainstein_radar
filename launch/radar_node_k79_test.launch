@@ -1,0 +1,3 @@
+<launch>
+  <node name="radar_node_k79" pkg="radar_ros_interface" type="radar_node_k79" args="--ip 10.0.0.77 --port 1024" output="screen" required="true" />
+</launch>

@@ -20,15 +20,15 @@ include_directories(
  ${catkin_INCLUDE_DIRS}
  )
  
-add_executable(radar_ros_interface_test_node src/radar_ros_interface_test_node.cpp src/RadarNodeT79BSD.cpp)
-add_dependencies(radar_ros_interface_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_ros_interface_test_node ${catkin_LIBRARIES})
+add_executable(car_demo_test_node src/car_demo_test_node.cpp src/RadarNodeT79BSD.cpp)
+add_dependencies(car_demo_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(car_demo_test_node ${catkin_LIBRARIES})
 
-add_executable(k79_test_node src/k79_test_node.cpp src/RadarNodeK79.cpp)
-add_dependencies(k79_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(k79_test_node ${catkin_LIBRARIES})
+add_executable(radar_node_k79 src/radar_node_k79.cpp src/RadarNodeK79.cpp)
+add_dependencies(radar_node_k79 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radar_node_k79 ${catkin_LIBRARIES})
 
-install(TARGETS radar_ros_interface_test_node k79_test_node
+install(TARGETS car_demo_test_node k79_test_node radar_node_k79
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
