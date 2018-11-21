@@ -4,4 +4,4 @@ This repository contains a collection of Rviz plugins for radar data
 types based on custom radar data messages.  Currently, support exists
 for the following message types:
 
-1. RadarData
+1. RadarData (working but has issues with saving eg marker colors)
