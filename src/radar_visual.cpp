@@ -138,7 +138,27 @@ void RadarVisual::setColorTracked( float r, float g, float b, float a )
     {
       (*it)->setColor( c );
     }
+}
+
   
+// Scale is passed through to the Shape object.
+void RadarVisual::setScaleRaw( float scale )
+{
+  Ogre::Vector3 s( scale, scale, scale );
+  for( auto it = radar_target_shapes_raw_.begin(); it != radar_target_shapes_raw_.end(); ++it )
+    {
+      (*it)->setScale( s );
+    }
+}
+
+// Scale is passed through to the Shape object.
+void RadarVisual::setScaleTracked( float scale )
+{
+  Ogre::Vector3 s( scale, scale, scale );
+  for( auto it = radar_target_shapes_tracked_.begin(); it != radar_target_shapes_tracked_.end(); ++it )
+    {
+      (*it)->setScale( s );
+    }
 }
   
 } // end namespace rviz_radar_plugin

@@ -67,6 +67,7 @@ protected:
   // These Qt slots get connected to signals indicating changes in the user-editable properties.
 private Q_SLOTS:
   void updateColorAndAlpha();
+  void updateScale();
   void updateHistoryLength();
   void updateShowRaw();
   void updateShowTracked();

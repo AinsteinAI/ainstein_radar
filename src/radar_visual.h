@@ -52,6 +52,11 @@ public:
   void setColorRaw( float r, float g, float b, float a );
   void setColorTracked( float r, float g, float b, float a );
 
+  // Set the scale of the visual, which are user-editable
+  // parameters and therefore don't come from the Radar message.
+  void setScaleRaw( float scale );
+  void setScaleTracked( float scale );
+  
 private:
   // The object implementing the raw radar target shapes
   std::vector< boost::shared_ptr<rviz::Shape> > radar_target_shapes_raw_;

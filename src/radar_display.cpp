@@ -26,9 +26,11 @@ RadarDisplay::RadarDisplay()
   show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
 					       "Toggles display of raw target markers.",
 					       this, SLOT( updateShowRaw() ) );
+
   list_raw_ = new rviz::Property( "Raw Targets", QVariant(),
 				  "Raw target display options.",
 				  this, 0 );
+
   list_raw_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
 						"Color to draw the target markers.",
 						this, SLOT( updateColorAndAlpha() ) ) );
@@ -37,19 +39,30 @@ RadarDisplay::RadarDisplay()
 						"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
 						this, SLOT( updateColorAndAlpha() ) ) );
 
+  list_raw_->addChild( new rviz::FloatProperty( "Scale", 0.1,
+						"Marker scale, in meters.",
+						this, SLOT( updateScale() ) ) );
+
   // Create the dropdown list of tracked target options:
   show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
 						   "Toggles display of tracked target markers.",
 						   this, SLOT( updateShowTracked() ) );
+
   list_tracked_ = new rviz::Property( "Tracked Targets", QVariant(),
 				      "Tracked target display options.",
 				      this, 0 );
+
   list_tracked_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
 						    "Color to draw the target markers.",
 						    this, SLOT( updateColorAndAlpha() ) ) );
+
   list_tracked_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
 						    "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
 						    this, SLOT( updateColorAndAlpha() ) ) );
+
+  list_tracked_->addChild( new rviz::FloatProperty( "Scale", 0.1,
+						    "Marker scale, in meters.",
+						    this, SLOT( updateScale() ) ) );
 
   // Create the history length option:
   history_length_property_ = new rviz::IntProperty( "History Length", 1,
@@ -108,6 +121,29 @@ void RadarDisplay::updateColorAndAlpha()
       for( size_t i = 0; i < visuals_.size(); i++ )
 	{
 	  visuals_[ i ]->setColorTracked( color.r, color.g, color.b, alpha );
+	}
+    }
+}
+  
+// Set the current scale values for each visual.
+void RadarDisplay::updateScale()
+{
+  float scale;
+  if( show_raw_property_->getBool() )
+    {
+      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale" ) )->getFloat();
+      for( size_t i = 0; i < visuals_.size(); i++ )
+	{
+	  visuals_[ i ]->setScaleRaw( scale );
+	}
+    }
+
+  if( show_tracked_property_->getBool() )
+    {
+      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale" ) )->getFloat();
+      for( size_t i = 0; i < visuals_.size(); i++ )
+	{
+	  visuals_[ i ]->setScaleTracked( scale );
 	}
     }
 }
@@ -177,14 +213,16 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
 
   // Now set or update the contents of the chosen visual.
   float alpha;
+  float scale;
   Ogre::ColourValue color;
   if( show_raw_property_->getBool() )
     {
       visual->setMessageRaw( msg );
-      
       alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha" ) )->getFloat();
       color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color" ) )->getOgreColor();
       visual->setColorRaw( color.r, color.g, color.b, alpha );
+      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale" ) )->getFloat();
+      visual->setScaleRaw( scale );
     }
   else
     {
@@ -192,11 +230,12 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
     }
   if( show_tracked_property_->getBool() )
     {
-      visual->setMessageTracked( msg );
-      
+      visual->setMessageTracked( msg );      
       alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha" ) )->getFloat();
       color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color" ) )->getOgreColor();
       visual->setColorTracked( color.r, color.g, color.b, alpha );
+      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale" ) )->getFloat();
+      visual->setScaleTracked( scale );
     }
   else
     {
