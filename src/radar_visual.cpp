@@ -58,9 +58,6 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
 			      r * sin( th ),
 			      0.0 );
 	  radar_target_shapes_raw_.at( i )->setPosition( pos );
-	  
-	  scale = Ogre::Vector3( 0.1, 0.1, 0.1 );
-	  radar_target_shapes_raw_.at( i )->setScale( scale );
 	}
     }
 }
@@ -92,9 +89,6 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
 			      r * sin( th ),
 			      0.0 );
 	  radar_target_shapes_tracked_.at( i )->setPosition( pos );
-	  
-	  scale = Ogre::Vector3( 0.1, 0.1, 0.1 );
-	  radar_target_shapes_tracked_.at( i )->setScale( scale );
 	}
     }
 }
