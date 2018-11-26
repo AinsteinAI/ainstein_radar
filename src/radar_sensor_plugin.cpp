@@ -26,7 +26,6 @@ GZ_REGISTER_SENSOR_PLUGIN( GazeboRosRadar )
 // Constructor
 GazeboRosRadar::GazeboRosRadar()
 {
-    this->seed = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +89,26 @@ void GazeboRosRadar::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
     }
     else
         this->update_rate_ = this->sdf->Get<double>( "updateRate" );
+
+    if( !this->sdf->HasElement( "noiseStdevRange" ) )
+    {
+        ROS_INFO_NAMED( "radar", "Radar plugin missing <noiseStdevRange>, defaults to 0.0" );
+        this->stdev_range_ = 0.0;
+    }
+    else
+      this->stdev_range_ = this->sdf->Get<double>( "noiseStdevRange" );
+
+    dist_range_ = std::normal_distribution<double>( 0.0, stdev_range_ );
+
+    if( !this->sdf->HasElement( "noiseStdevAzimuth" ) )
+    {
+        ROS_INFO_NAMED( "radar", "Radar plugin missing <noiseStdevAzimuth>, defaults to 0.0" );
+        this->stdev_azimuth_ = 0.0;
+    }
+    else
+      this->stdev_azimuth_ = this->sdf->Get<double>( "noiseStdevAzimuth" );
+
+    dist_azimuth_ = std::normal_distribution<double>( 0.0, stdev_azimuth_ );
 
     // prepare to throttle this plugin at the same rate
     // ideally, we should invoke a plugin update when the sensor updates,
@@ -225,11 +244,11 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
         for( int i = 0; i < num_rays; ++i )
         {
             // Get the range of the ray:
-            target.range = parent_ray_sensor_->Range( i );
+            target.range = parent_ray_sensor_->Range( i ) + dist_range_( dist_gen_ );
 
             // Rays are indexed from right to left, but targets to left of center are positive:
             target.azimuth = i * parent_ray_sensor_->AngleResolution()
-                    + parent_ray_sensor_->AngleMin().Radian();
+                    + parent_ray_sensor_->AngleMin().Radian() + dist_azimuth_( dist_gen_ );
 
             // Set the SNR based on reflected intensity (doesn't work?):
             target.snr = parent_ray_sensor_->Retro( i );
@@ -243,40 +262,12 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
             }
         }
 
-//        // add Gaussian noise and limit to min/max radar
-//        if( radar_msg_.radar < radar_msg_.max_radar )
-//            radar_msg_.radar = std::min(
-//                    radar_msg_.radar + this->GaussianKernel( 0, gaussian_noise_ ),
-//                    parent_ray_sensor_->RadarMax() );
-
         this->parent_ray_sensor_->SetActive( true );
 
         // send data out via ros message
         if( this->radar_connect_count_ > 0 && this->topic_name_ != "" )
             this->pub_.publish( this->radar_msg_ );
     }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Utility for adding noise
-double GazeboRosRadar::GaussianKernel( double mu, double sigma )
-{
-    // using Box-Muller transform to generate two independent standard
-    // normally disbributed normal variables see wikipedia
-
-    // normalized uniform random variable
-    double U = static_cast<double>( rand_r( &this->seed ) ) / static_cast<double>( RAND_MAX );
-
-    // normalized uniform random variable
-    double V = static_cast<double>( rand_r( &this->seed ) ) / static_cast<double>( RAND_MAX );
-
-    double X = sqrt( -2.0 * ::log( U ) ) * cos( 2.0 * M_PI * V );
-    // double Y = sqrt(-2.0 * ::log(U)) * sin(2.0*M_PI * V);
-
-    // there are 2 indep. vars, we'll just use X
-    // scale to our mu and sigma
-    X = sigma * X + mu;
-    return X;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

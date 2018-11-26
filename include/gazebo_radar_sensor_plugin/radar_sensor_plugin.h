@@ -34,12 +34,10 @@ public:
     GazeboRosRadar();
 
     /// \brief Destructor
-public:
     ~GazeboRosRadar();
 
     /// \brief Load the plugin
     /// \param take in SDF root element
-public:
     void Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf );
 
     /// \brief Update the controller
@@ -51,90 +49,63 @@ private:
     void PutRadarData( common::Time &_updateTime );
 
     /// \brief Keep track of number of connctions
-private:
     int radar_connect_count_;
-private:
     void RadarConnect();
-private:
     void RadarDisconnect();
 
     // Pointer to the model
-private:
     physics::WorldPtr world_;
+
     /// \brief The parent sensor
-private:
     sensors::SensorPtr parent_sensor_;
-private:
     sensors::RaySensorPtr parent_ray_sensor_;
 
     /// \brief pointer to ros node
-private:
     ros::NodeHandle* rosnode_;
-private:
     ros::Publisher pub_;
 
     /// \brief ros message
-private:
     radar_sensor_msgs::RadarData radar_msg_;
 
     /// \brief topic name
-private:
     std::string topic_name_;
 
     /// \brief frame transform name, should match link name
-private:
     std::string frame_name_;
 
     /// \brief radiation type : ultrasound or infrared
-private:
     std::string radiation_;
 
     /// \brief sensor field of view
-private:
     double fov_;
-    /// \brief Gaussian noise
-private:
-    double gaussian_noise_;
-
-    /// \brief Gaussian noise generator
-private:
-    double GaussianKernel( double mu, double sigma );
+    /// \brief noise distribution generator
+    std::default_random_engine dist_gen_;
+    /// \brief Gaussian distribution, range
+    double stdev_range_;
+    std::normal_distribution<double> dist_range_;
+    /// \brief Gaussian distribution, azimuth
+    double stdev_azimuth_;
+    std::normal_distribution<double> dist_azimuth_;
 
     /// \brief mutex to lock access to fields that are used in message callbacks
-private:
     boost::mutex lock_;
 
-    /// \brief hack to mimic hokuyo intensity cutoff of 100
-private:
-    double hokuyo_min_intensity_;
-
     /// update rate of this sensor
-private:
     double update_rate_;
-private:
     double update_period_;
-private:
     common::Time last_update_time_;
 
     /// \brief for setting ROS name space
-private:
     std::string robot_namespace_;
 
-private:
     ros::CallbackQueue radar_queue_;
-private:
     void RadarQueueThread();
-private:
     boost::thread callback_queue_thread_;
 
     // deferred load in case ros is blocking
-private:
     sdf::ElementPtr sdf;
-private:
     void LoadThread();
-private:
     boost::thread deferred_load_thread_;
-private:
     unsigned int seed;
 };
 }
