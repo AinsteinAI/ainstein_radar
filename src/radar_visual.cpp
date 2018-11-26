@@ -40,10 +40,10 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
   // Display the raw targets:
   // Create the shape to represent the radar target:
   int n_raw_targets = msg->raw_targets.size();
+  radar_target_shapes_raw_.resize( n_raw_targets );
   if( n_raw_targets > 0 )
     {
       // Create the radar target shapes:
-      radar_target_shapes_raw_.resize( n_raw_targets );
       for( auto it = radar_target_shapes_raw_.begin(); it != radar_target_shapes_raw_.end(); ++it )
 	{
 	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
@@ -74,10 +74,10 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
 
   // Create the shape to represent the radar target:
   int n_tracked_targets = msg->tracked_targets.size();
+  radar_target_shapes_tracked_.resize( n_tracked_targets );
   if( n_tracked_targets > 0 )
     {
       // Create the radar target shapes:
-      radar_target_shapes_tracked_.resize( n_tracked_targets );
       for( auto it = radar_target_shapes_tracked_.begin(); it != radar_target_shapes_tracked_.end(); ++it )
 	{
 	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
