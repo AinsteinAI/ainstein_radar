@@ -237,8 +237,9 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
 //                * parent_ray_sensor_->LaserShape()->GetVerticalSampleCount();
         int num_rays = parent_ray_sensor_->RayCount();
 
-        // Add targets dynamically to raw target array:
+        // Add targets dynamically to raw and tracked target arrays (for now, raw=tracked):
         this->radar_msg_.raw_targets.clear();
+        this->radar_msg_.tracked_targets.clear();
         radar_sensor_msgs::RadarTarget target;
         int target_id = 0;
         for( int i = 0; i < num_rays; ++i )
@@ -250,7 +251,7 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
             target.azimuth = i * parent_ray_sensor_->AngleResolution()
                     + parent_ray_sensor_->AngleMin().Radian() + dist_azimuth_( dist_gen_ );
 
-            // Set the SNR based on reflected intensity (doesn't work?):
+            // Set the SNR based on reflected intensity (doesn't work as expected):
             target.snr = parent_ray_sensor_->Retro( i );
 
             // Ray sensor returns max range if nothing detected, need to filter:
@@ -258,6 +259,7 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
             {
                 target.target_id = target_id;
                 this->radar_msg_.raw_targets.push_back( target );
+		this->radar_msg_.tracked_targets.push_back( target );
                 ++target_id;
             }
         }
