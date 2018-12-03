@@ -135,6 +135,7 @@ void RadarNodeK79::mainLoop(void)
 
 	      radar_data_msg_.raw_targets.push_back( target );
 	  }
+	  printf("\n");
 
           // Publish the target data:
           pub_radar_data_.publish( radar_data_msg_ );
