@@ -39,7 +39,7 @@ RadarDisplay::RadarDisplay()
 						"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
 						this, SLOT( updateColorAndAlpha() ) ) );
 
-  list_raw_->addChild( new rviz::FloatProperty( "Scale", 0.5,
+  list_raw_->addChild( new rviz::FloatProperty( "Scale", 0.1,
 						"Marker scale, in meters.",
 						this, SLOT( updateScale() ) ) );
 
