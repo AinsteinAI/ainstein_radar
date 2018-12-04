@@ -85,8 +85,8 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
 	{
 	  r = msg->tracked_targets.at( i ).range;
 	  th = msg->tracked_targets.at( i ).azimuth;
-	  pos = Ogre::Vector3(r * cos( th ),
-			      r * sin( th ),
+	  pos = Ogre::Vector3(r * cos( ( M_PI / 180.0 ) * th ),
+			      r * sin( ( M_PI / 180.0 ) * th ),
 			      0.0 );
 	  radar_target_shapes_tracked_.at( i )->setPosition( pos );
 	}
