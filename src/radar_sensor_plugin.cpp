@@ -248,8 +248,8 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
             target.range = parent_ray_sensor_->Range( i ) + dist_range_( dist_gen_ );
 
             // Rays are indexed from right to left, but targets to left of center are positive:
-            target.azimuth = i * parent_ray_sensor_->AngleResolution()
-                    + parent_ray_sensor_->AngleMin().Radian() + dist_azimuth_( dist_gen_ );
+            target.azimuth = ( 180.0 / M_PI ) * ( i * parent_ray_sensor_->AngleResolution()
+						  + parent_ray_sensor_->AngleMin().Radian() + dist_azimuth_( dist_gen_ ) );
 
             // Set the SNR based on reflected intensity (doesn't work as expected):
             target.snr = parent_ray_sensor_->Retro( i );
