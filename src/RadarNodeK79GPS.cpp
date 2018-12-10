@@ -9,9 +9,9 @@
 #include <iostream>
 #include <cstdint>
 
-#include "RadarNodeK79.h"
+#include "RadarNodeK79GPS.h"
 
-RadarNodeK79::RadarNodeK79(std::string ip_addr, int port, std::string radar_name, std::string frame_id)
+RadarNodeK79GPS::RadarNodeK79GPS(std::string ip_addr, int port, std::string radar_name, std::string frame_id)
 {
   // Store the client IP and port:
   ip_addr_ = ip_addr;
@@ -20,9 +20,10 @@ RadarNodeK79::RadarNodeK79(std::string ip_addr, int port, std::string radar_name
   // Store the radar name and data frame ID:
   radar_name_ = radar_name;
   radar_data_msg_.header.frame_id = frame_id;
+  gps_data_msg_.header.frame_id = frame_id;
 }
 
-RadarNodeK79::~RadarNodeK79(void)
+RadarNodeK79GPS::~RadarNodeK79GPS(void)
 {
   mutex_.lock();
   is_running_ = false;
@@ -33,7 +34,7 @@ RadarNodeK79::~RadarNodeK79(void)
   close( sockfd_ );
 }
 
-bool RadarNodeK79::connect(void)
+bool RadarNodeK79GPS::connect(void)
 {
   // Create the client-side UDP socket to listen on:
   sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
@@ -76,18 +77,21 @@ bool RadarNodeK79::connect(void)
       return false;
     }
 
-  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarNodeK79::mainLoop, this ) );
+  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarNodeK79GPS::mainLoop, this ) );
   mutex_.lock();
   is_running_ = true;
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
   pub_radar_data_ = node_handle_.advertise<radar_sensor_msgs::RadarData>( radar_name_+"_data", 10 );
+
+  // Advertise the GPS data using the ROS node handle:
+  pub_gps_data_ = node_handle_.advertise<radar_sensor_msgs::GPSData>( "gps_data", 10 );
   
   return true;
 }
 
-void RadarNodeK79::mainLoop(void)
+void RadarNodeK79GPS::mainLoop(void)
 {
   // Buffer for the received messages:
   int msg_len;
@@ -114,6 +118,32 @@ void RadarNodeK79::mainLoop(void)
       radar_data_msg_.tracked_targets.clear();
       radar_data_msg_.alarms.clear();
 
+      // Parse and fill the GPS data:
+      uint32_t gps_time = static_cast<uint32_t>( buffer_[4] << 24 |
+						 buffer_[5] << 16 |
+						 buffer_[6] << 8 |
+						 buffer_[7] ); 
+      int32_t vel_n = static_cast<int32_t>( buffer_[0] << 24 |
+					    buffer_[1] << 16 |
+					    buffer_[2] << 8 |
+					    buffer_[3] ); 
+      int32_t vel_e = static_cast<int32_t>( buffer_[12] << 24 |
+					    buffer_[13] << 16 |
+					    buffer_[14] << 8 |
+					    buffer_[15] ); 
+      int32_t vel_d = static_cast<int32_t>( buffer_[8] << 24 |
+					    buffer_[9] << 16 |
+					    buffer_[10] << 8 |
+					    buffer_[11] ); 
+
+      gps_data_msg_.gps_time = 0.001 * static_cast<float>( gps_time );    // ms to s
+      gps_data_msg_.velocity_ned.x = 0.001 * static_cast<float>( vel_n ); // mm/s to m/s
+      gps_data_msg_.velocity_ned.y = 0.001 * static_cast<float>( vel_e ); // mm/s to m/s
+      gps_data_msg_.velocity_ned.z = 0.001 * static_cast<float>( vel_d ); // mm/s to m/s
+
+      // Publish the GPS data:
+      pub_gps_data_.publish( gps_data_msg_ );	  
+
       // Extract the target ID and data from the message:
       if( ( msg_len % TARGET_MSG_LEN ) != 0 )
       {
@@ -128,16 +158,19 @@ void RadarNodeK79::mainLoop(void)
     	      offset = i * TARGET_MSG_LEN;
               target.target_id = i;
               target.snr = 100.0; // K79 does not currently output SNR per target
-              target.azimuth = static_cast<int16_t>( ( buffer_[offset + 1] << 8 ) + buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
-              target.range = ( buffer_[offset + 2] ) * 0.1;   // 1 count = 0.1 m
-              target.speed = ( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
+              target.azimuth = static_cast<int16_t>( ( buffer_[offset + 25] << 8 ) + buffer_[offset + 24] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
+              target.range = ( buffer_[offset + 26] ) * 0.13;   // 1 count = 0.13 m
+              target.speed = ( buffer_[offset + 27] ) * 0.045; // 1 count = 0.045 m/s
               target.elevation = 0.0; // K79 does not output elevation angle
 
-	      radar_data_msg_.raw_targets.push_back( target );
+	      if( target.range > 2.0 && target.range < 10.0 )
+		{
+		  radar_data_msg_.raw_targets.push_back( target );
+		}
 	  }
 
           // Publish the target data:
-          pub_radar_data_.publish( radar_data_msg_ );
+          pub_radar_data_.publish( radar_data_msg_ );	  
       }
 
       // Check whether the data loop should still be running:
