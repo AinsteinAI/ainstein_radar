@@ -5,6 +5,7 @@ project(radar_sensor_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
+  geometry_msgs
   message_generation
 )
 
@@ -16,11 +17,13 @@ add_message_files(
   RadarTargetTracked.msg
   RadarAlarm.msg
   K79TestPacket.msg
+  GPSData.msg
   )
 
 generate_messages(
   DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 catkin_package(
