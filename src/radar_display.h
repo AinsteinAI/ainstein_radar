@@ -70,7 +70,6 @@ private Q_SLOTS:
   void updateScale();
   void updateHistoryLength();
   void updateShowRaw();
-  void updateShowTracked();
   
   // Function to handle an incoming ROS message.
 private:
@@ -81,15 +80,13 @@ private:
   boost::circular_buffer<boost::shared_ptr<RadarVisual> > visuals_;
 
   // Booleans to store whether to show targets:
-  bool show_raw_, show_tracked_;
+  bool show_raw_;
   
   // User-editable property variables.
   rviz::BoolProperty* show_raw_property_;
-  rviz::Property* list_raw_;
-
-  rviz::BoolProperty* show_tracked_property_;
-  rviz::Property* list_tracked_;
-
+  rviz::ColorProperty* color_raw_;
+  rviz::FloatProperty* alpha_raw_;
+  rviz::FloatProperty* scale_raw_;
   rviz::IntProperty* history_length_property_;
   
 };

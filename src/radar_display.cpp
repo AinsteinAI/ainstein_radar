@@ -27,49 +27,24 @@ RadarDisplay::RadarDisplay()
 					       "Toggles display of raw target markers.",
 					       this, SLOT( updateShowRaw() ) );
 
-  list_raw_ = new rviz::Property( "Raw Targets", QVariant(),
-				  "Raw target display options.",
-				  this, 0 );
+  color_raw_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+					"Color to draw the target markers.",
+					this, SLOT( updateColorAndAlpha() ) );
+  
+  alpha_raw_ = new rviz::FloatProperty( "Alpha", 1.0,
+					"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+					this, SLOT( updateColorAndAlpha() ) );
 
-  list_raw_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-						"Color to draw the target markers.",
-						this, SLOT( updateColorAndAlpha() ) ) );
-
-  list_raw_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
-						"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-						this, SLOT( updateColorAndAlpha() ) ) );
-
-  list_raw_->addChild( new rviz::FloatProperty( "Scale", 0.1,
-						"Marker scale, in meters.",
-						this, SLOT( updateScale() ) ) );
-
-  // Create the dropdown list of tracked target options:
-  show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
-						   "Toggles display of tracked target markers.",
-						   this, SLOT( updateShowTracked() ) );
-
-  list_tracked_ = new rviz::Property( "Tracked Targets", QVariant(),
-				      "Tracked target display options.",
-				      this, 0 );
-
-  list_tracked_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-						    "Color to draw the target markers.",
-						    this, SLOT( updateColorAndAlpha() ) ) );
-
-  list_tracked_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
-						    "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-						    this, SLOT( updateColorAndAlpha() ) ) );
-
-  list_tracked_->addChild( new rviz::FloatProperty( "Scale", 0.1,
-						    "Marker scale, in meters.",
-						    this, SLOT( updateScale() ) ) );
+  scale_raw_ = new rviz::FloatProperty( "Scale", 0.2,
+					"Marker scale, in meters.",
+					this, SLOT( updateScale() ) );
 
   // Create the history length option:
-  history_length_property_ = new rviz::IntProperty( "History Length", 1,
-                                                    "Number of prior measurements to display.",
+  history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
+                                                    "Number of radar scans to display.",
                                                     this, SLOT( updateHistoryLength() ));
   history_length_property_->setMin( 1 );
-  history_length_property_->setMax( 100000 );
+  history_length_property_->setMax( 1000000 );
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -106,22 +81,12 @@ void RadarDisplay::updateColorAndAlpha()
   Ogre::ColourValue color;
   if( show_raw_property_->getBool() )
     {
-      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color" ) )->getOgreColor();
+      alpha = alpha_raw_->getFloat();
+      color = color_raw_->getOgreColor();
       for( size_t i = 0; i < visuals_.size(); i++ )
-	{
-	  visuals_[ i ]->setColorRaw( color.r, color.g, color.b, alpha );
-	}
-    }
-
-    if( show_tracked_property_->getBool() )
-    {
-      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color" ) )->getOgreColor();
-      for( size_t i = 0; i < visuals_.size(); i++ )
-	{
-	  visuals_[ i ]->setColorTracked( color.r, color.g, color.b, alpha );
-	}
+  	{
+  	  visuals_[ i ]->setColorRaw( color.r, color.g, color.b, alpha );
+  	}
     }
 }
   
@@ -131,20 +96,11 @@ void RadarDisplay::updateScale()
   float scale;
   if( show_raw_property_->getBool() )
     {
-      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale" ) )->getFloat();
+      scale = scale_raw_->getFloat();
       for( size_t i = 0; i < visuals_.size(); i++ )
-	{
-	  visuals_[ i ]->setScaleRaw( scale );
-	}
-    }
-
-  if( show_tracked_property_->getBool() )
-    {
-      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale" ) )->getFloat();
-      for( size_t i = 0; i < visuals_.size(); i++ )
-	{
-	  visuals_[ i ]->setScaleTracked( scale );
-	}
+  	{
+  	  visuals_[ i ]->setScaleRaw( scale );
+  	}
     }
 }
 
@@ -160,25 +116,16 @@ void RadarDisplay::updateShowRaw()
   show_raw_ = show_raw_property_->getBool();
   if( show_raw_ )
     {
-      list_raw_->show();
+      color_raw_->show();
+      alpha_raw_->show();
+      scale_raw_->show();
     }
   else
     {
-      list_raw_->hide();
-    }
-}
-
-// Set whether to display tracked markers.
-void RadarDisplay::updateShowTracked()
-{
-  show_tracked_ = show_tracked_property_->getBool();
-  if( show_tracked_ )
-    {
-      list_tracked_->show();
-    }
-  else
-    {
-      list_tracked_->hide();
+      color_raw_->hide();
+      alpha_raw_->hide();
+      scale_raw_->hide();
+      visuals_.clear();
     }
 }
   
@@ -218,28 +165,15 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   if( show_raw_property_->getBool() )
     {
       visual->setMessageRaw( msg );
-      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color" ) )->getOgreColor();
+      alpha = alpha_raw_->getFloat();
+      color = color_raw_->getOgreColor();
       visual->setColorRaw( color.r, color.g, color.b, alpha );
-      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale" ) )->getFloat();
+      scale = scale_raw_->getFloat();
       visual->setScaleRaw( scale );
     }
-  else
+  else 
     {
       visual->clearMessageRaw();
-    }
-  if( show_tracked_property_->getBool() )
-    {
-      visual->setMessageTracked( msg );      
-      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color" ) )->getOgreColor();
-      visual->setColorTracked( color.r, color.g, color.b, alpha );
-      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale" ) )->getFloat();
-      visual->setScaleTracked( scale );
-    }
-  else
-    {
-      visual->clearMessageTracked();
     }
   visual->setFramePosition( position );
   visual->setFrameOrientation( orientation );
