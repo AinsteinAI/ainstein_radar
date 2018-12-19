@@ -19,7 +19,11 @@ include_directories(
  include
  ${catkin_INCLUDE_DIRS}
  )
- 
+
+add_executable(radar_data_viz_node src/radar_data_viz_node.cpp)
+add_dependencies(radar_data_viz_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radar_data_viz_node ${catkin_LIBRARIES})
+
 add_executable(car_demo_test_node src/car_demo_test_node.cpp src/RadarNodeT79BSD.cpp)
 add_dependencies(car_demo_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(car_demo_test_node ${catkin_LIBRARIES})
@@ -32,7 +36,7 @@ add_executable(radar_node_k79_gps src/radar_node_k79_gps.cpp src/RadarNodeK79GPS
 add_dependencies(radar_node_k79_gps ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_node_k79_gps ${catkin_LIBRARIES})
 
-install(TARGETS car_demo_test_node radar_node_k79 radar_node_k79_gps
+install(TARGETS radar_data_viz_node car_demo_test_node radar_node_k79 radar_node_k79_gps
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

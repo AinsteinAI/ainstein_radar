@@ -109,7 +109,7 @@ void RadarNodeK79::mainLoop(void)
       // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
       
       // Prepare the radar targets message:
-      radar_data_msg_.header.stamp = ros::Time::now();
+      radar_data_msg_.header.stamp = ros::Time(0); // ros::Time::now();
       radar_data_msg_.raw_targets.clear();
       radar_data_msg_.tracked_targets.clear();
       radar_data_msg_.alarms.clear();
