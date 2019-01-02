@@ -29,16 +29,16 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "radar_data_viz_node" );
+  ros::init( argc, argv, "radar_data_viz_point_cloud_node" );
 
   // Data viz constructor arguments:
   std::string data_topic;
-  std::string marker_topic;
+  std::string pcl_topic;
     
   // Parse the command line arguments for radar parameters:
   if( argc < 2 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_node --topic TOPIC" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
       return -1;
     }
 
@@ -54,15 +54,15 @@ int main( int argc, char** argv )
 
   if( data_topic.empty() )
     {
-      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_node --topic TOPIC" << std::endl;
+      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
       return -1;
     }
 
-  marker_topic = data_topic + "_marker_array";
+  pcl_topic = data_topic + "_pcl";
   
-  std::cout << "Running radar data viz node with data topic: " << data_topic << " marker topic: " << marker_topic << std::endl;
+  std::cout << "Running radar data viz point cloud node with data topic: " << data_topic << " point cloud topic: " << pcl_topic << std::endl;
     
-  // Create visualization node to publish target markers:
+  // Create visualization node to publish target point cloud:
   RadarDataVizPointCloud data_viz( data_topic, pcl_topic );
 
   ros::spin();

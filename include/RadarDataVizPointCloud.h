@@ -27,17 +27,22 @@
 #ifndef RADAR_DATA_VIZ_POINT_CLOUD_H_
 #define RADAR_DATA_VIZ_POINT_CLOUD_H_
 
+#include <eigen3/Eigen/Eigen>
+
 #include <ros/ros.h>
-#include <pcl/point_cloud.h>
+#include <pcl_ros/point_cloud.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 #include <radar_sensor_msgs/RadarData.h>
 
 class RadarDataVizPointCloud
 {
 public:
-    RadarDataVizPointCloud( std::string data_topic, std::string pcl_topic ) :
-            data_topic_( data_topic ),
-            pcl_topic_( pcl_topic )
+    RadarDataVizPointCloud( std::string data_topic, std::string pcl_topic )
+      : data_topic_( data_topic ),
+        pcl_topic_( pcl_topic ),
+        listen_tf_( buffer_tf_ )
     {
       pub_pcl_ = node_handle_.advertise<sensor_msgs::PointCloud2>( pcl_topic_, 10 );
       sub_radar_data_ = node_handle_.subscribe( data_topic_, 10,
@@ -61,20 +66,41 @@ public:
         return p;
     }
 
+    void setRadarVelWorld( Eigen::Vector3d vel_world )
+    {
+      vel_world_ = vel_world;
+    }
+    
     void radarDataCallback( const radar_sensor_msgs::RadarData &msg )
     {
+
+	// Get the data frame ID and look up the corresponding tf transform:
+	Eigen::Affine3d tf_sensor_to_world = tf2::transformToEigen(
+								   buffer_tf_.lookupTransform( "base_link", msg.header.frame_id, ros::Time( 0 ) ) );
+
         // First delete, then populate the raw pcls:
         pcl_.clear();
 	for( auto it = msg.raw_targets.begin(); it != msg.raw_targets.end(); ++it )
-        {
-	  pcl_.points.push_back( radarDataToPclPoint( *it ) );
-        }
+	  {
+	    // Compute the speed of the car in the radar sensor frame:
+	    double rel_speed = ( tf_sensor_to_world.linear().inverse() * vel_world_ )( 0 )
+	      + it->speed;
+	
+	    // Filter out targets based on relative speed:
+	    if( std::abs( rel_speed ) < 0.1 )
+	      {
+		pcl_.points.push_back( radarDataToPclPoint( *it ) );
+	      }
+	  }
 
 	pcl_.width = pcl_.points.size();
 	pcl_.height = 1;
 	
 	pcl::toROSMsg( pcl_, cloud_msg_ );
-        pub_pcl_.publish( cloud_msg_ );
+	cloud_msg_.header.frame_id = msg.header.frame_id;
+	cloud_msg_.header.stamp = msg.header.stamp;
+
+	pub_pcl_.publish( cloud_msg_ );
     }
 
 private:
@@ -88,7 +114,18 @@ private:
     ros::NodeHandle node_handle_;
     ros::Subscriber sub_radar_data_;
     ros::Publisher pub_pcl_;
+    
+  /**
+   * ROS transform "listener" (subscriber) which receives and stores TF information.
+   */
+  tf2_ros::TransformListener listen_tf_;
+  /**
+   * ROS transform buffer, used to store TF information for a short period.
+   */
+  tf2_ros::Buffer buffer_tf_;
 
+  Eigen::Vector3d vel_world_;
+  
 };
 
 #endif // RADAR_DATA_VIZ_H_

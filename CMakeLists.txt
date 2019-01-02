@@ -48,3 +48,9 @@ install(TARGETS radar_data_viz_node radar_data_viz_point_cloud_node car_demo_tes
  )
 
 install(DIRECTORY meshes DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+## Install project namespaced headers
+install(DIRECTORY include/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+    PATTERN ".svn" EXCLUDE)
