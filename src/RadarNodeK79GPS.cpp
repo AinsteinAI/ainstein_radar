@@ -159,7 +159,7 @@ void RadarNodeK79GPS::mainLoop(void)
               target.target_id = i;
               target.snr = 100.0; // K79 does not currently output SNR per target
               target.azimuth = static_cast<int16_t>( ( buffer_[offset + 25] << 8 ) + buffer_[offset + 24] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
-              target.range = ( buffer_[offset + 26] ) * 0.13;   // 1 count = 0.13 m
+              target.range = ( buffer_[offset + 26] ) * 0.16;   // 1 count = 0.13 m
               target.speed = ( buffer_[offset + 27] ) * 0.045; // 1 count = 0.045 m/s
               target.elevation = 0.0; // K79 does not output elevation angle
 
