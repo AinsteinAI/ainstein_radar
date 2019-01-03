@@ -25,7 +25,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMA
 */
 
 #include "RadarNodeT79BSD.h"
-#include "RadarDataViz.h"
+//#include "RadarDataViz.h"
 
 #include <can_msgs/Frame.h>
 
@@ -46,12 +46,12 @@ int main( int argc, char** argv )
     RadarNodeT79BSD radar_node_RR( ConfigT79BSD::TIPI_79_RR, "tipi_79_bsd_rear_right",
                                    "chassis" );
 
-    // Create visualization nodes to publish target markers:
-    RadarDataViz data_viz_node_kanza( "kanza_front_data", "KANZA_77_FL_TARGETS" );
-    RadarDataViz data_viz_node_FL( "tipi_79_bsd_front_left_data", "TIPI_79_FL_TARGETS" );
-    RadarDataViz data_viz_node_FR( "tipi_79_bsd_front_right_data", "TIPI_79_FR_TARGETS" );
-    RadarDataViz data_viz_node_RL( "tipi_79_bsd_rear_left_data", "TIPI_79_RL_TARGETS" );
-    RadarDataViz data_viz_node_RR( "tipi_79_bsd_rear_right_data", "TIPI_79_RR_TARGETS" );
+    // // Create visualization nodes to publish target markers:
+    // RadarDataViz data_viz_node_kanza( "kanza_front_data", "KANZA_77_FL_TARGETS" );
+    // RadarDataViz data_viz_node_FL( "tipi_79_bsd_front_left_data", "TIPI_79_FL_TARGETS" );
+    // RadarDataViz data_viz_node_FR( "tipi_79_bsd_front_right_data", "TIPI_79_FR_TARGETS" );
+    // RadarDataViz data_viz_node_RL( "tipi_79_bsd_rear_left_data", "TIPI_79_RL_TARGETS" );
+    // RadarDataViz data_viz_node_RR( "tipi_79_bsd_rear_right_data", "TIPI_79_RR_TARGETS" );
 
     ros::spin();
 
