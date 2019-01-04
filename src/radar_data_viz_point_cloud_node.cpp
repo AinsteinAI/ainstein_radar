@@ -94,7 +94,7 @@ public:
 	  {
 	    // Compute the elevation angle using speed information:
 	    radar_sensor_msgs::RadarTarget t = *it;
-	    Eigen::Vector3d vel_radar = tf_sensor_to_world.linear().inverse() * vel_world_;
+	    Eigen::Vector3d vel_radar = -tf_sensor_to_world.linear().inverse() * vel_world_;
 	    t.elevation = acos( t.speed / ( vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
 					    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth ) ) );
 
@@ -102,7 +102,7 @@ public:
 							sin( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
 							sin( ( M_PI / 180.0 ) * t.elevation ) );
 
-	    double rel_speed = meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ ) + it->speed;
+	    double rel_speed = it->speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	    // Filter out targets based on relative speed:
 	    if( std::abs( rel_speed ) < rel_speed_thresh_ )
 	      {
