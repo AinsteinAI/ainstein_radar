@@ -92,7 +92,10 @@ public:
 	// Compute the relative speed of target to radar in radar sensor frame:
 	if( is_vel_available_ )
 	  {
-	    double rel_speed = ( tf_sensor_to_world.linear().inverse() * vel_world_ )( 0 ) + it->speed;
+	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
+							sin( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
+							sin( ( M_PI / 180.0 ) * it->elevation ) );
+	    double rel_speed = it->speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	    // Filter out targets based on relative speed:
 	    if( std::abs( rel_speed ) < rel_speed_thresh_ )
 	      {
