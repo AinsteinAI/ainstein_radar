@@ -92,14 +92,21 @@ public:
 	// Compute the relative speed of target to radar in radar sensor frame:
 	if( is_vel_available_ )
 	  {
-	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
-							sin( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
-							sin( ( M_PI / 180.0 ) * it->elevation ) );
+	    // Compute the elevation angle using speed information:
+	    radar_sensor_msgs::RadarTarget t = *it;
+	    Eigen::Vector3d vel_radar = -tf_sensor_to_world.linear().inverse() * vel_world_;
+	    t.elevation = acos( t.speed / ( vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
+					    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth ) ) );
+
+	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
+							sin( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
+							sin( ( M_PI / 180.0 ) * t.elevation ) );
+
 	    double rel_speed = it->speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	    // Filter out targets based on relative speed:
 	    if( std::abs( rel_speed ) < rel_speed_thresh_ )
 	      {
-		pcl_.points.push_back( radarDataToPclPoint( *it ) );
+		pcl_.points.push_back( radarDataToPclPoint( t ) );
 	      }
 	  }
 	else // do not filter
