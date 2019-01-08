@@ -32,10 +32,10 @@
 
 #include <radar_sensor_msgs/RadarData.h>
 
-class RadarDataVizPointCloud
+class RadarDataVizPointCloud3d
 {
 public:
-  RadarDataVizPointCloud( std::string data_topic, std::string vel_topic, std::string pcl_topic )
+  RadarDataVizPointCloud3d( std::string data_topic, std::string vel_topic, std::string pcl_topic )
     : data_topic_( data_topic ),
       vel_topic_( vel_topic ),
       pcl_topic_( pcl_topic ),
@@ -43,10 +43,10 @@ public:
   {
     pub_pcl_ = node_handle_.advertise<sensor_msgs::PointCloud2>( pcl_topic_, 10 );
     sub_radar_data_ = node_handle_.subscribe( data_topic_, 10,
-					      &RadarDataVizPointCloud::radarDataCallback,
+					      &RadarDataVizPointCloud3d::radarDataCallback,
 					      this );
     sub_radar_vel_ = node_handle_.subscribe( vel_topic_, 10,
-					      &RadarDataVizPointCloud::radarVelCallback,
+					      &RadarDataVizPointCloud3d::radarVelCallback,
 					      this );
 
     // Get parameters:
@@ -56,7 +56,7 @@ public:
     is_vel_available_ = false;
   }
 
-  ~RadarDataVizPointCloud()
+  ~RadarDataVizPointCloud3d()
   {
   }
 
@@ -92,15 +92,21 @@ public:
 	// Compute the relative speed of target to radar in radar sensor frame:
 	if( is_vel_available_ )
 	  {
-	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
-							sin( ( M_PI / 180.0 ) * it->azimuth ) * cos( ( M_PI / 180.0 ) * it->elevation ),
-							sin( ( M_PI / 180.0 ) * it->elevation ) );
+	    // Compute the elevation angle using speed information:
+	    radar_sensor_msgs::RadarTarget t = *it;
+	    Eigen::Vector3d vel_radar = -tf_sensor_to_world.linear().inverse() * vel_world_;
+	    t.elevation = acos( t.speed / ( vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
+					    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth ) ) );
+
+	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
+							sin( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
+							sin( ( M_PI / 180.0 ) * t.elevation ) );
 
 	    double rel_speed = it->speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	    // Filter out targets based on relative speed:
 	    if( std::abs( rel_speed ) < rel_speed_thresh_ )
 	      {
-		pcl_.points.push_back( radarDataToPclPoint( *it ) );
+		pcl_.points.push_back( radarDataToPclPoint( t ) );
 	      }
 	  }
 	else // do not filter
@@ -145,7 +151,7 @@ private:
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "radar_data_viz_point_cloud_node" );
+  ros::init( argc, argv, "radar_data_viz_point_cloud_3d_node" );
 
   // Data viz constructor arguments:
   std::string data_topic;
@@ -155,7 +161,7 @@ int main( int argc, char** argv )
   // Parse the command line arguments for radar parameters:
   if( argc < 2 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_3d_node --topic TOPIC" << std::endl;
       return -1;
     }
 
@@ -171,17 +177,17 @@ int main( int argc, char** argv )
 
   if( data_topic.empty() )
     {
-      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
+      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_3d_node --topic TOPIC" << std::endl;
       return -1;
     }
 
   vel_topic = "car_vel";
   pcl_topic = data_topic + "_pcl";
   
-  std::cout << "Running radar data viz point cloud node with data topic: " << data_topic << " radar velocity topic: " << vel_topic << " point cloud topic: " << pcl_topic << std::endl;
+  std::cout << "Running radar data viz point cloud 3d node with data topic: " << data_topic << " radar velocity topic: " << vel_topic << " point cloud topic: " << pcl_topic << std::endl;
     
   // Create visualization node to publish target point cloud:
-  RadarDataVizPointCloud data_viz( data_topic, vel_topic, pcl_topic );
+  RadarDataVizPointCloud3d data_viz( data_topic, vel_topic, pcl_topic );
 
   ros::spin();
 
