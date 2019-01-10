@@ -163,13 +163,13 @@ void RadarNodeK79GPS::mainLoop(void)
 	      
 	      // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
 	      // Note that 65 is the highest speed moving towards, hence the manipulation below.
-	      if( buffer_[offset + 3] <= 64 ) // MOVING AWAY FROM RADAR
+	      if( buffer_[offset + 27] <= 64 ) // MOVING AWAY FROM RADAR
 		{
-		  target.speed = -( buffer_[offset + 3] ) * 0.065; // 1 count = 0.065 m/s
+		  target.speed = -( buffer_[offset + 27] ) * 0.065; // 1 count = 0.065 m/s
 		}
 	      else // MOVING TOWARDS RADAR
 		{
-		  target.speed = -( buffer_[offset + 3] - 127 ) * 0.065; // 1 count = 0.065 m/s
+		  target.speed = -( buffer_[offset + 27] - 127 ) * 0.065; // 1 count = 0.065 m/s
 		}
 
               target.elevation = 0.0; // K79 does not output elevation angle

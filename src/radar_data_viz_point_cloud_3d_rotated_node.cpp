@@ -53,6 +53,8 @@ public:
     node_handle_.param( "rel_speed_thresh", rel_speed_thresh_, 0.1 );
     node_handle_.param( "min_dist_thresh", min_dist_thresh_, 1.0 );
     node_handle_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
+    node_handle_.param( "min_pos_z", min_pos_z_, -2.0 );
+    node_handle_.param( "max_pos_z", max_pos_z_, 5.0 );
             
     // Assume radar velocity is not available until a message is received:
     is_vel_available_ = false;
@@ -70,7 +72,6 @@ public:
     p.y = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
       * target.range;
     p.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
-    std::cout << "x: " << p.x << "y: " << p.y << "z: " << p.z << std::endl;
     return p;
   }
 
@@ -93,15 +94,7 @@ public:
       {
 	// Compute the relative speed of target to radar in radar sensor frame:
 	if( is_vel_available_ )
-	  {
-	    // Print original target info:
-	    std::cout << "original:" << std::endl;
-	    std::cout << "range: " << it->range <<
-	      " speed: " << it->speed <<
-	      " azimuth: " << it->azimuth <<
-	      " elevation: " << it->elevation <<
-	      "gps vel: " << vel_world_.transpose() << std::endl << std::endl;
-	    
+	  {	    
 	    // +ve azimuth is normally to LEFT, +ve elevation is DOWN.
 	    // With the radar rotated 90* clockwise (front front), azimuth and elevation are swapped:
 	    radar_sensor_msgs::RadarTarget t = *it;
@@ -110,26 +103,25 @@ public:
 	    // Compute the azimuth angle using speed information:
 	    Eigen::Vector3d vel_radar = -tf_sensor_to_world.linear().inverse() * vel_world_;
 
-	    // // Solve x*cos(th) + y*sin(th) = z according to https://math.stackexchange.com/questions/33150/in-the-equation-x-cos-theta-y-sin-theta-z-how-do-i-solve-in-terms-of:
-	    // // th = 2*arctan((1/(x+z)) * (y+/-sqrt(y^2+x^2-z^2))) + 2*pi*n for any n:
-	    // double x = vel_radar( 0 );
-	    // double y = vel_radar( 1 );
-	    // double z = t.speed / cos( ( M_PI / 180.0 ) * t.elevation );
-	    // double th_p = 2.0 * atan2( x + z, y + sqrt( y * y + x * x - z * z ) );
-	    // double th_m = 2.0 * atan2( x + z, y - sqrt( y * y + x * x - z * z ) );
+	    // Solve x*cos(th) + y*sin(th) = z according to https://math.stackexchange.com/questions/33150/in-the-equation-x-cos-theta-y-sin-theta-z-how-do-i-solve-in-terms-of:
+	    // th = 2*arctan((1/(x+z)) * (y+/-sqrt(y^2+x^2-z^2))) + 2*pi*n for any n:
+	    double x = vel_radar( 0 );
+	    double y = vel_radar( 1 );
+	    double z = t.speed / cos( ( M_PI / 180.0 ) * t.elevation );
+	    double th_p = 2.0 * atan( ( y + sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
+	    double th_m = 2.0 * atan( ( y - sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
 
-	    // // std::cout << "x: " << x << " y: " << y << " z:" << z << std::endl;
-	    // // std::cout << "th_p: " << th_p << " th_m: " << th_m << std::endl;
-	    // if( ( y * y + x * x ) > ( z * z ) ) // sqrt returns -nan
-	    //   {
-	    // 	t.azimuth = 0.0;
-	    //   }
-	    // else
-	    //   {
-	    // 	t.azimuth = ( std::abs( th_p ) < std::abs( th_m ) ? th_p : th_m );
-	    //   }
+	    if( ( y * y + x * x ) < ( z * z ) ) // sqrt returns -nan
+	      {
+	    	t.azimuth = 0.0;
+	      }
+	    else
+	      {
+	    	t.azimuth = -( 180.0 / M_PI ) * ( std::abs( th_p ) < std::abs( th_m ) ? th_p : th_m ); // negative here from comparing to Yan's, not sure why needed yet...
+	      }
 
-	    t.azimuth = ( 180.0 / M_PI ) * acos( t.speed / ( vel_world_.norm() * cos( ( M_PI / 180.0 ) * t.elevation ) ) ) - 90.0;
+	    // // Yan's method, only valid for straight line motion:
+	    // t.azimuth = -( 180.0 / M_PI ) * asin( t.speed / ( vel_world_.norm() * cos( ( M_PI / 180.0 ) * t.elevation ) ) );
 	    
 	    Eigen::Vector3d meas_dir = Eigen::Vector3d( cos( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
 							sin( ( M_PI / 180.0 ) * t.azimuth ) * cos( ( M_PI / 180.0 ) * t.elevation ),
@@ -141,15 +133,11 @@ public:
 		it->range >= min_dist_thresh_ &&
 		it->range <= max_dist_thresh_) // hack to filter close and far targets
 	      {
-
-		// Print computed target info:
-	    std::cout << "computed:" << std::endl;
-	    std::cout << "range: " << t.range <<
-	      " speed: " << t.speed <<
-	      " azimuth: " << t.azimuth <<
-	      " elevation: " << t.elevation << std::endl << std::endl;
-	    
-		pcl_.points.push_back( radarDataToPclPoint( t ) );
+		pcl::PointXYZ p = radarDataToPclPoint( t );
+		if( p.z < max_pos_z_ && p.z > min_pos_z_ )
+		  {
+		    pcl_.points.push_back( radarDataToPclPoint( t ) );
+		  }
 	      }
 	  }
 	else // do not filter
@@ -187,6 +175,8 @@ private:
   double rel_speed_thresh_;
   double min_dist_thresh_;
   double max_dist_thresh_;
+  double min_pos_z_;
+  double max_pos_z_;
   
   tf2_ros::TransformListener listen_tf_;
   tf2_ros::Buffer buffer_tf_;
