@@ -51,7 +51,9 @@ public:
 
     // Get parameters:
     node_handle_.param( "rel_speed_thresh", rel_speed_thresh_, 0.1 );
-    
+    node_handle_.param( "min_dist_thresh", min_dist_thresh_, 1.0 );
+    node_handle_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
+        
     // Assume radar velocity is not available until a message is received:
     is_vel_available_ = false;
   }
@@ -104,7 +106,9 @@ public:
 
 	    double rel_speed = it->speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	    // Filter out targets based on relative speed:
-	    if( std::abs( rel_speed ) < rel_speed_thresh_ )
+	    if( std::abs( rel_speed ) < rel_speed_thresh_ &&	     
+		it->range >= min_dist_thresh_ &&
+		it->range <= max_dist_thresh_) // hack to filter close and far targets
 	      {
 		pcl_.points.push_back( radarDataToPclPoint( t ) );
 	      }
@@ -142,6 +146,8 @@ private:
   bool is_vel_available_;
   Eigen::Vector3d vel_world_;
   double rel_speed_thresh_;
+  double min_dist_thresh_;
+  double max_dist_thresh_;
 
   tf2_ros::TransformListener listen_tf_;
   tf2_ros::Buffer buffer_tf_;
