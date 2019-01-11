@@ -25,7 +25,7 @@ add_executable(radar_data_viz_node src/radar_data_viz_node.cpp)
 add_dependencies(radar_data_viz_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_data_viz_node ${catkin_LIBRARIES})
 
-add_executable(radar_data_viz_point_cloud_node src/radar_data_viz_point_cloud_node.cpp)
+add_executable(radar_data_viz_point_cloud_node src/radar_data_viz_point_cloud_node.cpp src/RadarDataVizPointCloud.cpp)
 add_dependencies(radar_data_viz_point_cloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_data_viz_point_cloud_node ${catkin_LIBRARIES})
 

@@ -1,5 +1,5 @@
 /*
-  Copyright <2018> <Ainstein, Inc.>
+  Copyright <2019> <Ainstein, Inc.>
 
   Redistribution and use in source and binary forms, with or without modification, are permitted
   provided that the following conditions are met:
@@ -24,52 +24,50 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <ros/ros.h>
+#ifndef RADAR_DATA_VIZ_POINT_CLOUD_H_
+#define RADAR_DATA_VIZ_POINT_CLOUD_H_
 
-#include "RadarDataVizPointCloud.h"
+#include <pcl_ros/point_cloud.h>
+#include <geometry_msgs/Twist.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.h>
 
-int main( int argc, char** argv )
+#include <radar_sensor_msgs/RadarData.h>
+
+class RadarDataVizPointCloud
 {
-  // Initialize ROS node:
-  ros::init( argc, argv, "radar_data_viz_point_cloud_node" );
+public:
+  RadarDataVizPointCloud( std::string data_topic, std::string vel_topic, std::string pcl_topic );
+  ~RadarDataVizPointCloud(){}
 
-  // Data viz constructor arguments:
-  std::string data_topic;
-  std::string vel_topic;
-  std::string pcl_topic;
+  pcl::PointXYZ radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target );
+  void radarVelCallback( const geometry_msgs::Twist &msg );
+     
+  void radarDataCallback( const radar_sensor_msgs::RadarData &msg );
+
+private:
+  std::string data_topic_;
+  std::string vel_topic_;
+  std::string pcl_topic_;
+  std::string frame_id_;
+
+  pcl::PointCloud<pcl::PointXYZ> pcl_;
+  sensor_msgs::PointCloud2 cloud_msg_;
     
-  // Parse the command line arguments for radar parameters:
-  if( argc < 2 )
-    {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
-      return -1;
-    }
+  ros::NodeHandle node_handle_;
+  ros::Subscriber sub_radar_data_;
+  ros::Publisher pub_pcl_;
 
-  // Parse the command line arguments:
-  for( int i = 0; i < argc; ++i )
-    {
-      // Check for the data topic name:
-      if( std::string( argv[i] ) == std::string( "--topic" ) )
-	{
-	  data_topic = std::string( argv[++i] );
-	}
-    }
+  ros::Subscriber sub_radar_vel_;
+  bool is_vel_available_;
+  Eigen::Vector3d vel_world_;
+  double rel_speed_thresh_;
+  double min_dist_thresh_;
+  double max_dist_thresh_;
 
-  if( data_topic.empty() )
-    {
-      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
-      return -1;
-    }
+  tf2_ros::TransformListener listen_tf_;
+  tf2_ros::Buffer buffer_tf_;
 
-  vel_topic = "car_vel";
-  pcl_topic = data_topic + "_pcl";
-  
-  std::cout << "Running radar data viz point cloud node with data topic: " << data_topic << " radar velocity topic: " << vel_topic << " point cloud topic: " << pcl_topic << std::endl;
-    
-  // Create visualization node to publish target point cloud:
-  RadarDataVizPointCloud data_viz( data_topic, vel_topic, pcl_topic );
+};
 
-  ros::spin();
-
-  return 0;
-}
+#endif
