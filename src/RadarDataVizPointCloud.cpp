@@ -116,7 +116,7 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
 	      
 		  x = vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
 		    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth );
-		  y = vel_radar( 2 ); // likely close to zero
+		  y = vel_radar( 2 ); // should be zero since we ignore vz for now
 		  z = t.speed; // should be -t.speed with correct speed sign, fix
 
 		  t.elevation = solveForAngle( x, y, z );
@@ -184,15 +184,15 @@ double RadarDataVizPointCloud::solveForAngle( double x, double y, double z )
   // th_m = 2*arctan((1/(x+z)) * (y-sqrt(y^2+x^2-z^2)))
   // th_p = 2*arctan((1/(x+z)) * (y+sqrt(y^2+x^2-z^2)))
   //
-  double th_p = 2.0 * atan( ( y + sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
-  double th_m = 2.0 * atan( ( y - sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
-  
   if( ( y * y + x * x ) < ( z * z ) ) // sqrt returns -nan
     {
       return 0.0;
     }
   else
-    {
+    {    
+      double th_p = 2.0 * atan( ( y + sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
+      double th_m = 2.0 * atan( ( y - sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
+  
       return -( 180.0 / M_PI ) * ( std::abs( th_p ) < std::abs( th_m ) ? th_p : th_m ); // negative here from comparing to Yan's, not sure why needed yet...
     }
 }
