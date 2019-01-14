@@ -90,7 +90,7 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
 		{
 		  // Assuming elevation is known, solve for azimuth:
 		  //
-		  // v_{T,x}^{R} * cos(e) * cos(a) +  + v_{T,y}^{R} * cos(e) * sin(a) = -s - v_{T,z}^{R} * sin(e)
+		  // v_{T,x}^{R} * cos(e) * cos(a) + v_{T,y}^{R} * cos(e) * sin(a) = -s - v_{T,z}^{R} * sin(e)
 		  //
 		  // Put in form x * cos(e) + y * sin(e) = z:
 		  // x = v_{T,x}^{R} * cos(e)
@@ -99,7 +99,7 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
 	      
 		  x = vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.elevation );
 		  y = vel_radar( 1 ) * cos( ( M_PI / 180.0 ) * t.elevation );
-		  z = -t.speed - vel_radar( 2 ) * sin( ( M_PI / 180.0 ) * t.elevation );
+		  z = t.speed - vel_radar( 2 ) * sin( ( M_PI / 180.0 ) * t.elevation ); // should be -t.speed with correct speed sign, fix
 
 		  t.azimuth = solveForAngle( x, y, z );
 		}
@@ -117,7 +117,7 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
 		  x = vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
 		    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth );
 		  y = vel_radar( 2 ); // likely close to zero
-		  z = -t.speed;
+		  z = t.speed; // should be -t.speed with correct speed sign, fix
 
 		  t.elevation = solveForAngle( x, y, z );
 		}
