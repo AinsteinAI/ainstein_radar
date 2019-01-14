@@ -19,7 +19,9 @@ RadarDataVizPointCloud::RadarDataVizPointCloud( std::string data_topic, std::str
   node_handle_.param( "max_speed_thresh", max_speed_thresh_, 1.0 );
   node_handle_.param( "min_dist_thresh", min_dist_thresh_, 1.0 );
   node_handle_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
-    
+  node_handle_.param( "compute_3d", compute_3d_, false );
+  node_handle_.param( "is_rotated", is_rotated_, false );
+  
   // Assume radar velocity is not available until a message is received:
   is_vel_available_ = false;
 }
@@ -48,20 +50,78 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
 	{
 	  // Copy the original radar target for further processing:
 	  radar_sensor_msgs::RadarTarget t = *it;
+
+	  // Copy azimuth to elevation if the radar has been rotated:
+	  // In radar frame, +ve azimuth is LEFT, +ve elevation is DOWN.
+	  // When rotated -90* about x (clockwise from front), swap azimuth and elevation:
+	  if( is_rotated_ )
+	    {
+	      t.elevation = t.azimuth; // +ve azimith maps to +ve elevation when rotated
+	      t.azimuth = 0.0;
+	    }
 	  
 	  // Compute the velocity of the radar rotated into instantaneous radar frame:
-	  Eigen::Vector3d vel_radar = tf_sensor_to_world.linear().inverse() * vel_world_;
-	  
-	  // Use the radar velocity information and target relative speed to compute elevation:
-	  // s = n^{T} * R_{W}^{R} * ( v_{T}^{W} - v_{R}^{W} )
-	  // s = -n^{T} * R_{W}^{R} * v_{R}^{W} assuming v_{T}^{W} = 0 (static target)
-	  // s = [-cos(a) * cos(e), -sin(a) * cos(e), -sin(e)] * v_{R}^{R}
-	  // s = -v_{T,x}^{R} * cos(a) * cos(e)
-	  //     - v_{T,y}^{R} * sin(a) * cos(e)
-	  //	 - v_{T,z}^{R} * sin(e)
-	  // 
-	  t.elevation = ( 180.0 / M_PI ) * acos( t.speed / ( -vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth )
-							     - vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth ) ) ) - 90.0;
+	  Eigen::Vector3d vel_radar = -tf_sensor_to_world.linear().inverse() * vel_world_;
+
+	  if( compute_3d_ )
+	    {
+	      // Use the radar velocity information and target relative speed to compute
+	      // either election or azimuth (if rotated):
+	      //
+	      // s = n^{T} * R_{W}^{R} * ( v_{T}^{W} - v_{R}^{W} )
+	      // s = -n^{T} * R_{W}^{R} * v_{R}^{W} assuming v_{T}^{W} = 0 (static target)
+	      // -s = [cos(a) * cos(e), sin(a) * cos(e), sin(e)] * v_{R}^{R}
+	      // -s = v_{T,x}^{R} * cos(a) * cos(e) +
+	      //      v_{T,y}^{R} * sin(a) * cos(e) + 
+	      //   	  v_{T,z}^{R} * sin(e)
+	      //
+	      // In either case, we solve an equation of the form x*cos(th)+y*sin(th)=z
+	      // which has infinite solutions of the form:
+	      //
+	      // th = 2*arctan((1/(x+z)) * (y+/-sqrt(y^2+x^2-z^2))) + 2*pi*n for all n
+	      //
+	      // We take n=0 and choose the minimum (abs) of the two solutions
+	      //
+	      // th_m = 2*arctan((1/(x+z)) * (y-sqrt(y^2+x^2-z^2)))
+	      // th_p = 2*arctan((1/(x+z)) * (y+sqrt(y^2+x^2-z^2)))
+
+	      double x, y, z;
+	      if( is_rotated_ )
+		{
+		  // Assuming elevation is known, solve for azimuth:
+		  //
+		  // v_{T,x}^{R} * cos(e) * cos(a) +  + v_{T,y}^{R} * cos(e) * sin(a) = -s - v_{T,z}^{R} * sin(e)
+		  //
+		  // Put in form x * cos(e) + y * sin(e) = z:
+		  // x = v_{T,x}^{R} * cos(e)
+		  // y = v_{T,y}^{R} * cos(e)
+		  // z = -s - v_{T,z}^{R} * sin(e)
+	      
+		  x = vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.elevation );
+		  y = vel_radar( 1 ) * cos( ( M_PI / 180.0 ) * t.elevation );
+		  z = -t.speed - vel_radar( 2 ) * sin( ( M_PI / 180.0 ) * t.elevation );
+
+		  t.azimuth = solveForAngle( x, y, z );
+		}
+	      else
+		{
+		  // Assuming azimuth is known, solve for elevation:
+		  //
+		  // ( v_{T,x}^{R} * cos(a) + v_{T,y}^{R} * sin(a) ) * cos(e) + v_{T,z}^{R} * sin(e) = -s
+		  //
+		  // Put in form x * cos(e) + y * sin(e) = z:
+		  // x = v_{T,x}^{R} * cos(a) + v_{T,y}^{R} * sin(a)
+		  // y = v_{T,z}^{R}
+		  // z = -s
+	      
+		  x = vel_radar( 0 ) * cos( ( M_PI / 180.0 ) * t.azimuth ) +
+		    vel_radar( 1 ) * sin( ( M_PI / 180.0 ) * t.azimuth );
+		  y = vel_radar( 2 ); // likely close to zero
+		  z = -t.speed;
+
+		  t.elevation = solveForAngle( x, y, z );
+		}
+	    }
 	  
 	  // Compute the unit vector along the axis between sensor and target:
 	  // n = [cos(azi)*cos(elev), sin(azi)*cos(elev), sin(elev)]
@@ -111,4 +171,28 @@ pcl::PointXYZ RadarDataVizPointCloud::radarDataToPclPoint( const radar_sensor_ms
   p.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
 
   return p;
+}
+
+double RadarDataVizPointCloud::solveForAngle( double x, double y, double z )
+{
+  // Solve x*cos(th)+y*sin(th)=z for th:
+  //
+  // th = 2*arctan((1/(x+z)) * (y+/-sqrt(y^2+x^2-z^2))) + 2*pi*n for all n
+  //
+  // We take n=0 and choose the minimum (abs) of the two solutions
+  //
+  // th_m = 2*arctan((1/(x+z)) * (y-sqrt(y^2+x^2-z^2)))
+  // th_p = 2*arctan((1/(x+z)) * (y+sqrt(y^2+x^2-z^2)))
+  //
+  double th_p = 2.0 * atan( ( y + sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
+  double th_m = 2.0 * atan( ( y - sqrt( y * y + x * x - z * z ) ) / ( x + z ) );
+  
+  if( ( y * y + x * x ) < ( z * z ) ) // sqrt returns -nan
+    {
+      return 0.0;
+    }
+  else
+    {
+      return -( 180.0 / M_PI ) * ( std::abs( th_p ) < std::abs( th_m ) ? th_p : th_m ); // negative here from comparing to Yan's, not sure why needed yet...
+    }
 }

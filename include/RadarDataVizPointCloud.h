@@ -41,10 +41,12 @@ public:
   ~RadarDataVizPointCloud(){}
 
   pcl::PointXYZ radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target );
-  void radarVelCallback( const geometry_msgs::Twist &msg );
-     
+
+  void radarVelCallback( const geometry_msgs::Twist &msg );     
   void radarDataCallback( const radar_sensor_msgs::RadarData &msg );
 
+  double solveForAngle( double x, double y, double z );
+  
 private:
   std::string data_topic_;
   std::string vel_topic_;
@@ -64,7 +66,9 @@ private:
   double max_speed_thresh_;
   double min_dist_thresh_;
   double max_dist_thresh_;
-
+  bool compute_3d_;
+  bool is_rotated_;
+  
   tf2_ros::TransformListener listen_tf_;
   tf2_ros::Buffer buffer_tf_;
 
