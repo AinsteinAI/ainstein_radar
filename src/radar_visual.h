@@ -1,22 +1,37 @@
 #ifndef RADAR_VISUAL_H
 #define RADAR_VISUAL_H
 
-#include <radar_sensor_msgs/RadarData.h>
+#include <rviz/ogre_helpers/shape.h>
+#include <rviz/ogre_helpers/arrow.h>
 
-namespace Ogre
-{
-class Vector3;
-class Quaternion;
-}
+#include <radar_sensor_msgs/RadarData.h>
 
 namespace rviz
 {
   class Shape;
+  class Arrow;
 }
 
 namespace rviz_radar_plugin
 {
 
+  // Create an aggregate class for different types of basic visual elements
+  // to be used in visualizing radar data.
+  //
+  // Each TargetVisual contains a Shape for the target itself and an Arrow
+  // to visualize the target speed (velocity).
+  class TargetVisual
+  {
+  public:
+  TargetVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node ) :
+    pos( rviz::Shape::Cube, scene_manager, parent_node ),
+      speed( scene_manager, parent_node ) {}      
+    ~TargetVisual() {};
+
+    rviz::Shape pos;
+    rviz::Arrow speed;
+  };
+  
 // Declare the visual class for this display.
 //
 // Each instance of RadarVisual represents the visualization of a single
@@ -60,10 +75,13 @@ public:
   // parameters and therefore don't come from the Radar message.
   void setMinRange( float min_range );
   void setMaxRange( float max_range );
+
+  // Set whether to render speed arrows:
+  void setShowSpeedArrows( bool show_speed_arrows );
   
 private:
   // The object implementing the raw radar target shapes
-  std::vector< boost::shared_ptr<rviz::Shape> > radar_target_shapes_raw_;
+  std::vector< boost::shared_ptr<TargetVisual> > radar_target_shapes_raw_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.
@@ -76,6 +94,9 @@ private:
   // Minimum and maximum range, user-configurable filtering parameters:
   float min_range_;
   float max_range_;
+
+  // Determines whether speed arrows are rendered with zero length:
+  bool show_speed_arrows_;
 };
 
 } // end namespace rviz_radar_plugin

@@ -21,8 +21,8 @@ namespace rviz_radar_plugin
 // constructor the parameters it needs to fully initialize.
 RadarDisplay::RadarDisplay()
 {
-
-  // Create the dropdown list of raw target options:
+  // For now, turning off "show raw" is equivalent to turning off the visualization
+  // entirely. May add tracked targets back in if desired, with "show tracked".
   show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
 					       "Toggles display of raw target markers.",
 					       this, SLOT( updateShowRaw() ) );
@@ -59,6 +59,11 @@ RadarDisplay::RadarDisplay()
 						 this, SLOT( updateMaxRange() ));
   max_range_property_->setMin( 0.0 );
   max_range_property_->setMax( 20.0 );
+
+  // Determines whether to show the speed arrows:
+  show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,
+						 "Toggles display of arrows indicating target speed.",
+						 this, SLOT( updateShowSpeedArrows() ) );
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -210,6 +215,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
     {
       visual->setMinRange( min_range_property_->getFloat() );
       visual->setMaxRange( max_range_property_->getFloat() );
+      visual->setShowSpeedArrows( show_speed_property_->getBool() );
       visual->setMessageRaw( msg );
       alpha = alpha_raw_->getFloat();
       color = color_raw_->getOgreColor();
@@ -228,6 +234,14 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   visuals_.push_back(visual);
 }
 
+  void RadarDisplay::updateShowSpeedArrows( void )
+  {
+    for( const auto& v : visuals_ )
+      {
+	v->setShowSpeedArrows( show_speed_property_->getBool() );
+      }   
+  }    
+  
 } // end namespace rviz_radar_plugin
 
 // Tell pluginlib about this class.  It is important to do this in

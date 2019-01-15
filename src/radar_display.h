@@ -72,6 +72,7 @@ private Q_SLOTS:
   void updateMinRange();
   void updateMaxRange();
   void updateShowRaw();
+  void updateShowSpeedArrows();
   
   // Function to handle an incoming ROS message.
 private:
@@ -92,6 +93,7 @@ private:
   rviz::IntProperty* history_length_property_;
   rviz::FloatProperty* min_range_property_;
   rviz::FloatProperty* max_range_property_;
+  rviz::BoolProperty* show_speed_property_;
   
 };
 
