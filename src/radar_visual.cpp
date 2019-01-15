@@ -2,9 +2,10 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 
+#include <ros/console.h>
 #include <rviz/ogre_helpers/shape.h>
-
 #include <geometry_msgs/Vector3.h>
+
 #include "radar_visual.h"
 
 namespace rviz_radar_plugin
@@ -40,24 +41,30 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
   // Display the raw targets:
   // Create the shape to represent the radar target:
   int n_raw_targets = msg->raw_targets.size();
-  radar_target_shapes_raw_.resize( n_raw_targets );
+  radar_target_shapes_raw_.clear();
+
   if( n_raw_targets > 0 )
     {
-      // Create the radar target shapes:
-      for( auto it = radar_target_shapes_raw_.begin(); it != radar_target_shapes_raw_.end(); ++it )
-	{
-	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
-	}
-
       // Fill the target shapes from RadarData message:
       for( int i = 0; i < n_raw_targets; ++i )
 	{
+	  boost::shared_ptr<rviz::Shape> s( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
+
 	  r = msg->raw_targets.at( i ).range;
 	  th = msg->raw_targets.at( i ).azimuth;
 	  pos = Ogre::Vector3(r * cos( ( M_PI / 180.0 ) * th ),
 			      r * sin( ( M_PI / 180.0 ) * th ),
 			      0.0 );
-	  radar_target_shapes_raw_.at( i )->setPosition( pos );
+	  s->setPosition( pos );
+
+	  if( r > min_range_ && r < max_range_ )
+	    {
+	      radar_target_shapes_raw_.push_back( s );
+	    }
+	  else
+	    {
+	      s.reset(); // explicitly delete new shape
+	    }
 	}
     }
 }
@@ -69,26 +76,33 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
   Ogre::Vector3 pos;
   Ogre::Vector3 scale;
 
+  // Display the tracked targets:
   // Create the shape to represent the radar target:
   int n_tracked_targets = msg->tracked_targets.size();
-  radar_target_shapes_tracked_.resize( n_tracked_targets );
+  radar_target_shapes_tracked_.clear();
+
   if( n_tracked_targets > 0 )
     {
-      // Create the radar target shapes:
-      for( auto it = radar_target_shapes_tracked_.begin(); it != radar_target_shapes_tracked_.end(); ++it )
-	{
-	  it->reset( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
-	}
-
       // Fill the target shapes from RadarData message:
       for( int i = 0; i < n_tracked_targets; ++i )
 	{
+	  boost::shared_ptr<rviz::Shape> s( new rviz::Shape( rviz::Shape::Cube, scene_manager_, frame_node_ ) );
+
 	  r = msg->tracked_targets.at( i ).range;
 	  th = msg->tracked_targets.at( i ).azimuth;
 	  pos = Ogre::Vector3(r * cos( ( M_PI / 180.0 ) * th ),
 			      r * sin( ( M_PI / 180.0 ) * th ),
 			      0.0 );
-	  radar_target_shapes_tracked_.at( i )->setPosition( pos );
+	  s->setPosition( pos );
+
+	  if( r > min_range_ )
+	    {
+	      radar_target_shapes_tracked_.push_back( s );
+	    }
+	  else
+	    {
+	      s.reset(); // explicitly delete new shape
+	    }
 	}
     }
 }
@@ -154,6 +168,29 @@ void RadarVisual::setScaleTracked( float scale )
       (*it)->setScale( s );
     }
 }
-  
+
+  void RadarVisual::updateTargets( void )
+  {
+    radar_target_shapes_raw_.erase( std::remove_if( radar_target_shapes_raw_.begin(),
+						    radar_target_shapes_raw_.end(),
+						    [this]( boost::shared_ptr<rviz::Shape> s )
+						    {
+						      Ogre::Vector3 pos = s->getPosition();
+						      return ( pos.length() > max_range_ ||
+							       pos.length() < min_range_ );
+						    }), radar_target_shapes_raw_.end() );
+
+  }
+ 
+  void RadarVisual::setMinRange( float min_range )
+  {
+    min_range_ = min_range;
+  }
+    
+  void RadarVisual::setMaxRange( float max_range )
+  {
+    max_range_ = max_range;
+  }
+ 
 } // end namespace rviz_radar_plugin
 

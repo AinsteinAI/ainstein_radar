@@ -56,6 +56,14 @@ public:
   // parameters and therefore don't come from the Radar message.
   void setScaleRaw( float scale );
   void setScaleTracked( float scale );
+
+  // Update the targets based on new user-set parameters.
+  void updateTargets();
+  
+  // Set the min and max range, which are user-editable
+  // parameters and therefore don't come from the Radar message.
+  void setMinRange( float min_range );
+  void setMaxRange( float max_range );
   
 private:
   // The object implementing the raw radar target shapes
@@ -71,6 +79,10 @@ private:
   // The SceneManager, kept here only so the destructor can ask it to
   // destroy the ``frame_node_``.
   Ogre::SceneManager* scene_manager_;
+
+  // Minimum and maximum range, user-configurable filtering parameters:
+  float min_range_;
+  float max_range_;
 };
 
 } // end namespace rviz_radar_plugin

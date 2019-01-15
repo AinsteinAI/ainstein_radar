@@ -45,6 +45,20 @@ RadarDisplay::RadarDisplay()
                                                     this, SLOT( updateHistoryLength() ));
   history_length_property_->setMin( 1 );
   history_length_property_->setMax( 1000000 );
+
+  // Create the minimum target range option:
+  min_range_property_ = new rviz::FloatProperty( "Min Range", 0.0,
+						 "Minimum distance of targets to be displayed.",
+						 this, SLOT( updateMinRange() ));
+  min_range_property_->setMin( 0.0 );
+  min_range_property_->setMax( 20.0 );
+
+  // Create the maximum target range option:
+  max_range_property_ = new rviz::FloatProperty( "Max Range", 20.0,
+						 "Maximum distance of targets to be displayed.",
+						 this, SLOT( updateMaxRange() ));
+  max_range_property_->setMin( 0.0 );
+  max_range_property_->setMax( 20.0 );
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -61,6 +75,8 @@ void RadarDisplay::onInitialize()
 {
   MFDClass::onInitialize();
   updateHistoryLength();
+  updateMinRange();
+  updateMaxRange();
 }
 
 RadarDisplay::~RadarDisplay()
@@ -108,6 +124,34 @@ void RadarDisplay::updateScale()
 void RadarDisplay::updateHistoryLength()
 {
   visuals_.rset_capacity(history_length_property_->getInt());
+}
+
+// Set the minimum range for displayed targets.
+void RadarDisplay::updateMinRange()
+{
+  // Set the max range min to the min range:  
+  max_range_property_->setMin( min_range_property_->getFloat() );
+
+  // Iterate through visuals to update range limits:
+  for( auto it : visuals_ )
+    {
+      it->setMinRange( min_range_property_->getFloat() );
+      it->updateTargets();
+    }   
+}
+
+// Set the maximum range for displayed targets.
+void RadarDisplay::updateMaxRange()
+{
+  // Set the min range max to the max range:  
+  min_range_property_->setMax( max_range_property_->getFloat() );
+
+  // Iterate through visuals to update range limits:
+  for( auto it : visuals_ )
+    {
+      it->setMaxRange( max_range_property_->getFloat() );
+      it->updateTargets();
+    }   
 }
 
 // Set whether to display raw markers.
@@ -164,6 +208,8 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   Ogre::ColourValue color;
   if( show_raw_property_->getBool() )
     {
+      visual->setMinRange( min_range_property_->getFloat() );
+      visual->setMaxRange( max_range_property_->getFloat() );
       visual->setMessageRaw( msg );
       alpha = alpha_raw_->getFloat();
       color = color_raw_->getOgreColor();

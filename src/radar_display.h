@@ -69,6 +69,8 @@ private Q_SLOTS:
   void updateColorAndAlpha();
   void updateScale();
   void updateHistoryLength();
+  void updateMinRange();
+  void updateMaxRange();
   void updateShowRaw();
   
   // Function to handle an incoming ROS message.
@@ -88,6 +90,8 @@ private:
   rviz::FloatProperty* alpha_raw_;
   rviz::FloatProperty* scale_raw_;
   rviz::IntProperty* history_length_property_;
+  rviz::FloatProperty* min_range_property_;
+  rviz::FloatProperty* max_range_property_;
   
 };
 
