@@ -99,9 +99,9 @@ void RadarDisplay::updateColorAndAlpha()
     {
       alpha = alpha_raw_->getFloat();
       color = color_raw_->getOgreColor();
-      for( size_t i = 0; i < visuals_.size(); i++ )
+      for( const auto& v : visuals_ )
   	{
-  	  visuals_[ i ]->setColorRaw( color.r, color.g, color.b, alpha );
+  	  v->setColorRaw( color.r, color.g, color.b, alpha );
   	}
     }
 }
@@ -113,9 +113,9 @@ void RadarDisplay::updateScale()
   if( show_raw_property_->getBool() )
     {
       scale = scale_raw_->getFloat();
-      for( size_t i = 0; i < visuals_.size(); i++ )
+      for( const auto& v : visuals_ )
   	{
-  	  visuals_[ i ]->setScaleRaw( scale );
+  	  v->setScaleRaw( scale );
   	}
     }
 }
@@ -133,10 +133,10 @@ void RadarDisplay::updateMinRange()
   max_range_property_->setMin( min_range_property_->getFloat() );
 
   // Iterate through visuals to update range limits:
-  for( auto it : visuals_ )
+  for( const auto& v : visuals_ )
     {
-      it->setMinRange( min_range_property_->getFloat() );
-      it->updateTargets();
+      v->setMinRange( min_range_property_->getFloat() );
+      v->updateTargets();
     }   
 }
 
@@ -147,10 +147,10 @@ void RadarDisplay::updateMaxRange()
   min_range_property_->setMax( max_range_property_->getFloat() );
 
   // Iterate through visuals to update range limits:
-  for( auto it : visuals_ )
+  for( const auto& v : visuals_ )
     {
-      it->setMaxRange( max_range_property_->getFloat() );
-      it->updateTargets();
+      v->setMaxRange( max_range_property_->getFloat() );
+      v->updateTargets();
     }   
 }
 
