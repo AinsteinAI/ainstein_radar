@@ -33,30 +33,42 @@ int main( int argc, char** argv )
   ros::init( argc, argv, "radar_node_k79" );
   
   // Radar node constructor arguments:
-  std::string ip_address;
-  int port = 8;
+  std::string host_ip_address;
+  int host_port = 8;
+  std::string radar_ip_address;
+  int radar_port = 8;
   std::string radar_name = "k79";
   std::string frame_id = "k79_link";
   
   // Parse the command line arguments for radar parameters:
   if( argc < 2 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_node_k79 --ip IP_ADDRESS [--port UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface radar_node_k79 --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
       return -1;
     }
 
   // Parse the command line arguments:
   for( int i = 0; i < argc; ++i )
     {
-      // Check for the radar IP address:
-      if( std::string( argv[i] ) == std::string( "--ip" ) )
+      // Check for the host IP address:
+      if( std::string( argv[i] ) == std::string( "--host-ip" ) )
 	{
-	  ip_address = std::string( argv[++i] );
+	  host_ip_address = std::string( argv[++i] );
+	}
+      // Check for the host UDP port:
+      else if( std::string( argv[i] ) == std::string( "--host-port" ) )
+	{
+	  host_port = atoi( argv[++i] );
+	}
+      // Check for the radar IP address:
+      if( std::string( argv[i] ) == std::string( "--radar-ip" ) )
+	{
+	  radar_ip_address = std::string( argv[++i] );
 	}
       // Check for the radar UDP port:
-      else if( std::string( argv[i] ) == std::string( "--port" ) )
+      else if( std::string( argv[i] ) == std::string( "--radar-port" ) )
 	{
-	  port = atoi( argv[++i] );
+	  radar_port = atoi( argv[++i] );
 	}
       // Check for the radar name:
       else if( std::string( argv[i] ) == std::string( "--name" ) )
@@ -70,16 +82,16 @@ int main( int argc, char** argv )
 	}
     }
 
-  if( ip_address.empty() )
+  if( host_ip_address.empty() || host_ip_address.empty() )
     {
-      std::cerr << "IP address must be set. Usage: rosrun radar_ros_interface radar_node_k79 --ip IP_ADDRESS [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
+      std::cerr << "IP addresses must be set. Usage: rosrun radar_ros_interface radar_node_k79 --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
       return -1;
     }
 
-  std::cout << "Running K79 node with ip: " << ip_address << " port: " << port << " name: " << radar_name << " frame: " << frame_id << std::endl;
+  std::cout << "Running K79 node with host IP: " << host_ip_address << " host port: " << host_port << " radar IP: " << radar_ip_address << " radar port: " << radar_port << " name: " << radar_name << " frame: " << frame_id << std::endl;
 
   // Create the K79 interface and launch the data thread:
-  RadarNodeK79 k79( ip_address, port, radar_name, frame_id );
+  RadarNodeK79 k79( host_ip_address, host_port, radar_ip_address, radar_port, radar_name, frame_id );
   k79.connect();
   
   ros::spin();

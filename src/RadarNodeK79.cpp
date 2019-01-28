@@ -11,11 +11,20 @@
 
 #include "RadarNodeK79.h"
 
-RadarNodeK79::RadarNodeK79(std::string ip_addr, int port, std::string radar_name, std::string frame_id)
+const std::string RadarNodeK79::connect_cmd_str = std::string( "connect" );
+const std::string RadarNodeK79::connect_res_str = std::string( "Connected" );
+
+const std::string RadarNodeK79::run_cmd_str = std::string( "run" );
+
+RadarNodeK79::RadarNodeK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id )
 {
-  // Store the client IP and port:
-  ip_addr_ = ip_addr;
-  port_ = port;
+  // Store the host IP and port:
+  host_ip_addr_ = host_ip_addr;
+  host_port_ = host_port;
+
+  // Store the radar IP and port:
+  radar_ip_addr_ = radar_ip_addr;
+  radar_port_ = radar_port;
 
   // Store the radar name and data frame ID:
   radar_name_ = radar_name;
@@ -35,7 +44,7 @@ RadarNodeK79::~RadarNodeK79(void)
 
 bool RadarNodeK79::connect(void)
 {
-  // Create the client-side UDP socket to listen on:
+  // Create the host UDP socket:
   sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
   if( sockfd_ < 0 )
     {
@@ -43,13 +52,18 @@ bool RadarNodeK79::connect(void)
       return false;
     }
 
-  // Configure the client-side UDP socket using the client IP and port:
+  // Configure the host sockaddr using the host IP and port:
   memset( &sockaddr_, 0, sizeof( sockaddr_ ) );
-
   sockaddr_.sin_family = AF_INET;
-  sockaddr_.sin_port = htons( port_ );
-  sockaddr_.sin_addr.s_addr = inet_addr( ip_addr_.c_str() );
+  sockaddr_.sin_port = htons( host_port_ );
+  sockaddr_.sin_addr.s_addr = inet_addr( host_ip_addr_.c_str() );
 
+  // Configure the radar sockaddr using the host IP and port:
+  memset( &destaddr_, 0, sizeof( destaddr_ ) );
+  destaddr_.sin_port = htons( radar_port_ );
+  destaddr_.sin_addr.s_addr = inet_addr( radar_ip_addr_.c_str() );
+
+  // Set socket options:
   int reuseaddr = 1;
   int res = setsockopt( sockfd_, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr) );
   if( res < 0 )
@@ -58,6 +72,7 @@ bool RadarNodeK79::connect(void)
       return false;
     }
 
+  // Set socket timeout:
   struct timeval tv;
   tv.tv_sec = 10; // 10 second timeout
   tv.tv_usec = 0;
@@ -68,7 +83,7 @@ bool RadarNodeK79::connect(void)
       return false;
     }
     
-  // Explicitly bind the client-side UDP socket:
+  // Explicitly bind the host UDP socket:
   res = bind( sockfd_, (struct sockaddr *)( &sockaddr_ ), sizeof( sockaddr_ ) );
   if( res < 0 )
     {
@@ -76,6 +91,35 @@ bool RadarNodeK79::connect(void)
       return false;
     }
 
+  // Send the connect command to the radar:
+  RadarNodeK79::connect_cmd_str.copy( buffer_, RadarNodeK79::connect_cmd_str.length() );
+  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+  if( res < 0 )
+    {
+      std::cout << "Failed to send connect command to radar, res: " << res << std::endl;
+      return false;
+    }
+
+  // Wait for a response to the connect command:
+  struct sockaddr_storage src_addr;
+  socklen_t src_addr_len = sizeof( src_addr );
+  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_str.length(), MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+  if( res < 0 )
+    {
+      std::cout << "Failed to receive connect response from radar, res: " << res << std::endl;
+      return false;
+    }
+
+  // Send the run command to the radar:
+  RadarNodeK79::run_cmd_str.copy( buffer_, RadarNodeK79::run_cmd_str.length() );
+  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+  if( res < 0 )
+    {
+      std::cout << "Failed to send run command to radar, res: " << res << std::endl;
+      return false;
+    }
+
+  // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarNodeK79::mainLoop, this ) );
   mutex_.lock();
   is_running_ = true;
@@ -89,7 +133,7 @@ bool RadarNodeK79::connect(void)
 
 void RadarNodeK79::mainLoop(void)
 {
-  // Buffer for the received messages:
+  // Received message length:
   int msg_len;
 
   // Structures to store where the UDP message came from:

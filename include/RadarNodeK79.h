@@ -39,25 +39,43 @@
 #define MSG_LEN        1000 // maximum length in bytes
 #define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
 
+#define CONNECT_CMD_STR "connect"
+#define CONNECT_CMD_LEN         7
+
+#define CONNECT_RES_STR "Connection has been established"
+#define CONNECT_RES_LEN                                20
+
+#define RUN_CMD_STR "run"
+#define RUN_CMD_LEN     3
+#define RUN_RESP_LEN 
 class RadarNodeK79 {
 
 public:
-  RadarNodeK79( std::string ip_addr, int port, std::string radar_name, std::string frame_id );
+  RadarNodeK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id );
   ~RadarNodeK79();
 
   bool connect( void );
   void mainLoop( void );
 
+  static const std::string connect_cmd_str;
+  static const std::string connect_res_str;
+
+  static const std::string run_cmd_str;
+  
 private:
+  std::string host_ip_addr_;
+  int host_port_;
 
   std::string radar_name_;
-  std::string ip_addr_;
-  int port_;
+  std::string radar_ip_addr_;
+  int radar_port_;
 
   int sockfd_; // socket file descriptor
   struct sockaddr_in sockaddr_;
   char buffer_[MSG_LEN];
 
+  struct sockaddr_in destaddr_;
+  
   bool is_running_;
   std::unique_ptr<std::thread> thread_;
   std::mutex mutex_;
