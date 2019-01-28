@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <cstdint>
+#include <cerrno>
 
 #include "RadarNodeK79.h"
 
@@ -68,18 +69,18 @@ bool RadarNodeK79::connect(void)
   int res = setsockopt( sockfd_, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to set socket options: " << strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to set socket options: " << std::strerror( res ) << std::endl;
       return false;
     }
 
   // Set socket timeout:
   struct timeval tv;
-  tv.tv_sec = 10; // 10 second timeout
+  tv.tv_sec = 3; // 10 second timeout
   tv.tv_usec = 0;
   res  = setsockopt( sockfd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to set socket timeout: " << strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to set socket timeout: " << std::strerror( res ) << std::endl;
       return false;
     }
     
@@ -87,45 +88,58 @@ bool RadarNodeK79::connect(void)
   res = bind( sockfd_, (struct sockaddr *)( &sockaddr_ ), sizeof( sockaddr_ ) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to bind socket: " << strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to bind socket: " << std::strerror( res ) << std::endl;
       return false;
     }
 
-  // Send the connect command to the radar:
-  RadarNodeK79::connect_cmd_str.copy( buffer_, RadarNodeK79::connect_cmd_str.length() );
-  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
-  if( res < 0 )
-    {
-      std::cout << "ERROR >> Failed to send connect command to radar: " << strerror( res ) << std::endl;
-      return false;
-    }
-
-  // Wait for a response to the connect command:
+  // Try to receive data until the timeout to see if the K79 is already running:
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len = sizeof( src_addr );
-  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_str.length(), MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+  res = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to receive connect response from radar: " << strerror( res ) << std::endl;
-      return false;
-    }
-  else
-    {
-      if( std::string( buffer_, res ).compare( RadarNodeK79::connect_res_str ) != 0 )
+      if( errno == ETIMEDOUT )
 	{
-	  std::cout << "WARNING >> Received incorrect response to connect from radar: " << std::string( buffer_, res ) << std::endl;
+	  // Send the connect command to the radar:
+	  RadarNodeK79::connect_cmd_str.copy( buffer_, RadarNodeK79::connect_cmd_str.length() );
+	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+	  if( res < 0 )
+	    {
+	      std::cout << "ERROR >> Failed to send connect command to radar: " << std::strerror( res ) << std::endl;
+	      return false;
+	    }
+
+	  // Wait for a response to the connect command:
+	  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_str.length(), MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+	  if( res < 0 )
+	    {
+	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( res ) << std::endl;
+	      return false;
+	    }
+	  else
+	    {
+	      if( std::string( buffer_, res ).compare( RadarNodeK79::connect_res_str ) != 0 )
+		{
+		  std::cout << "WARNING >> Received incorrect response to connect from radar: " << std::string( buffer_, res ) << std::endl;
+		}
+	    }
+
+	  // Send the run command to the radar:
+	  RadarNodeK79::run_cmd_str.copy( buffer_, RadarNodeK79::run_cmd_str.length() );
+	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+	  if( res < 0 )
+	    {
+	      std::cout << "ERROR >> Failed to send run command to radar: " << std::strerror( res ) << std::endl;
+	      return false;
+	    }
+	}
+      else // encountered some error other than timeout
+	{
+	  std::cout << "ERROR >> Failed when attempting to detect whether radar is running: " << std::strerror( res ) << std::endl;
+	  return false;
 	}
     }
-
-  // Send the run command to the radar:
-  RadarNodeK79::run_cmd_str.copy( buffer_, RadarNodeK79::run_cmd_str.length() );
-  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
-  if( res < 0 )
-    {
-      std::cout << "ERROR >> Failed to send run command to radar: " << strerror( res ) << std::endl;
-      return false;
-    }
-
+  
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarNodeK79::mainLoop, this ) );
   mutex_.lock();
