@@ -69,18 +69,18 @@ bool RadarNodeK79::connect(void)
   int res = setsockopt( sockfd_, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to set socket options: " << std::strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to set socket options: " << std::strerror( errno ) << std::endl;
       return false;
     }
 
   // Set socket timeout:
   struct timeval tv;
-  tv.tv_sec = 3; // 10 second timeout
+  tv.tv_sec = 3; // 3 second timeout
   tv.tv_usec = 0;
   res  = setsockopt( sockfd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to set socket timeout: " << std::strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to set socket timeout: " << std::strerror( errno ) << std::endl;
       return false;
     }
     
@@ -88,7 +88,7 @@ bool RadarNodeK79::connect(void)
   res = bind( sockfd_, (struct sockaddr *)( &sockaddr_ ), sizeof( sockaddr_ ) );
   if( res < 0 )
     {
-      std::cout << "ERROR >> Failed to bind socket: " << std::strerror( res ) << std::endl;
+      std::cout << "ERROR >> Failed to bind socket: " << std::strerror( errno ) << std::endl;
       return false;
     }
 
@@ -98,14 +98,15 @@ bool RadarNodeK79::connect(void)
   res = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
   if( res < 0 )
     {
-      if( errno == ETIMEDOUT )
+      // If blocking recvfrom times out, errno is set to EAGAIN:
+      if( errno == EAGAIN )
 	{
 	  // Send the connect command to the radar:
 	  RadarNodeK79::connect_cmd_str.copy( buffer_, RadarNodeK79::connect_cmd_str.length() );
 	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
 	  if( res < 0 )
 	    {
-	      std::cout << "ERROR >> Failed to send connect command to radar: " << std::strerror( res ) << std::endl;
+	      std::cout << "ERROR >> Failed to send connect command to radar: " << std::strerror( errno ) << std::endl;
 	      return false;
 	    }
 
@@ -113,7 +114,7 @@ bool RadarNodeK79::connect(void)
 	  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_str.length(), MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 	  if( res < 0 )
 	    {
-	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( res ) << std::endl;
+	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( errno ) << std::endl;
 	      return false;
 	    }
 	  else
@@ -129,13 +130,13 @@ bool RadarNodeK79::connect(void)
 	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
 	  if( res < 0 )
 	    {
-	      std::cout << "ERROR >> Failed to send run command to radar: " << std::strerror( res ) << std::endl;
+	      std::cout << "ERROR >> Failed to send run command to radar: " << std::strerror( errno ) << std::endl;
 	      return false;
 	    }
 	}
       else // encountered some error other than timeout
 	{
-	  std::cout << "ERROR >> Failed when attempting to detect whether radar is running: " << std::strerror( res ) << std::endl;
+	  std::cout << "ERROR >> Failed when attempting to detect whether radar is running: " << std::strerror( errno ) << std::endl;
 	  return false;
 	}
     }
@@ -168,53 +169,60 @@ void RadarNodeK79::mainLoop(void)
       // Call to block until data has been received:
       msg_len = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
-      // Extract the sender's IP address:
-      struct sockaddr_in* sin = (struct sockaddr_in* )&src_addr;
-      unsigned char* src_ip = (unsigned char*)(&sin->sin_addr.s_addr);
-      // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
-      
-      // Prepare the radar targets message:
-      radar_data_msg_.header.stamp = ros::Time(0); // ros::Time::now();
-      radar_data_msg_.raw_targets.clear();
-      radar_data_msg_.tracked_targets.clear();
-      radar_data_msg_.alarms.clear();
-
-      // Extract the target ID and data from the message:
-      if( ( msg_len % TARGET_MSG_LEN ) != 0 )
-      {
-	std::cout << "Incorrect number of bytes: " << msg_len << " Did recvfrom() time out?" << std::endl;
-      }
+      if( msg_len < 0 )
+	{
+	  std::cout << "WARNING >> Failed to read data: " << std::strerror( errno ) << std::endl;
+	}
       else
-      {
-          radar_sensor_msgs::RadarTarget target;
-	  int offset;
-          for( int i = 0; i < ( msg_len / TARGET_MSG_LEN ); ++i )
-          {
-    	      offset = i * TARGET_MSG_LEN;
-              target.target_id = i;
-              target.snr = 100.0; // K79 does not currently output SNR per target
-              target.azimuth = static_cast<int16_t>( ( buffer_[offset + 1] << 8 ) + buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
-              target.range = ( buffer_[offset + 2] ) * 0.1;   // 1 count = 0.1 m
+	{
+	  // Extract the sender's IP address:
+	  struct sockaddr_in* sin = (struct sockaddr_in* )&src_addr;
+	  unsigned char* src_ip = (unsigned char*)(&sin->sin_addr.s_addr);
+	  // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
+      
+	  // Prepare the radar targets message:
+	  radar_data_msg_.header.stamp = ros::Time(0); // ros::Time::now();
+	  radar_data_msg_.raw_targets.clear();
+	  radar_data_msg_.tracked_targets.clear();
+	  radar_data_msg_.alarms.clear();
 
-	      // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
-	      // Note that 65 is the highest speed moving towards, hence the manipulation below.
-	      if( buffer_[offset + 3] <= 64 ) // MOVING AWAY FROM RADAR
+	  // Extract the target ID and data from the message:
+	  if( ( msg_len % TARGET_MSG_LEN ) != 0 )
+	    {
+	      std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+	    }
+	  else
+	    {
+	      radar_sensor_msgs::RadarTarget target;
+	      int offset;
+	      for( int i = 0; i < ( msg_len / TARGET_MSG_LEN ); ++i )
 		{
-		  target.speed = -( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
-		}
-	      else // MOVING TOWARDS RADAR
-		{
-		  target.speed = -( buffer_[offset + 3] - 127 ) * 0.045; // 1 count = 0.045 m/s
-		}
+		  offset = i * TARGET_MSG_LEN;
+		  target.target_id = i;
+		  target.snr = 100.0; // K79 does not currently output SNR per target
+		  target.azimuth = static_cast<int16_t>( ( buffer_[offset + 1] << 8 ) + buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
+		  target.range = ( buffer_[offset + 2] ) * 0.1;   // 1 count = 0.1 m
+
+		  // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
+		  // Note that 65 is the highest speed moving towards, hence the manipulation below.
+		  if( buffer_[offset + 3] <= 64 ) // MOVING AWAY FROM RADAR
+		    {
+		      target.speed = -( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
+		    }
+		  else // MOVING TOWARDS RADAR
+		    {
+		      target.speed = -( buffer_[offset + 3] - 127 ) * 0.045; // 1 count = 0.045 m/s
+		    }
 	      
-              target.elevation = 0.0; // K79 does not output elevation angle
+		  target.elevation = 0.0; // K79 does not output elevation angle
 
-	      radar_data_msg_.raw_targets.push_back( target );
-	  }
+		  radar_data_msg_.raw_targets.push_back( target );
+		}
 
-          // Publish the target data:
-          pub_radar_data_.publish( radar_data_msg_ );
-      }
+	      // Publish the target data:
+	      pub_radar_data_.publish( radar_data_msg_ );
+	    }
+	}
 
       // Check whether the data loop should still be running:
       mutex_.lock();
