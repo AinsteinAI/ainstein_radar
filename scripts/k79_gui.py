@@ -23,6 +23,7 @@ CONFIG_COMPLETE_RES = "All done."
 RUN_CMD = "run"
 
 ENTRY_WIDTH = 15
+ENTRY_COLSPAN = 2
 
 class Window( tk.Frame ):
     def __init__( self, master=None ):
@@ -32,73 +33,61 @@ class Window( tk.Frame ):
         self.current_radar_ip = ""
         self.is_radar_connected = False
 
+        self.network_params = ( ( "radar_ip", "Radar IP", "" ),
+                                ( "radar_netmask", "Radar Netmask", "255.255.255.0" ),
+                                ( "radar_gateway", "Radar Gateway", "0.0.0.0" ),
+                                ( "host_ip", "Host PC IP", "" ),
+                                ( "host_port", "Host PC Port", "1024" ) )
+        self.param_labels = {}
+        self.param_entry = {}
+        
         self.init_window()
         
     def init_window( self ):
         self.master.title( "K79 Network App" )
         self.grid()
 
-        # Host IP:
-        self.host_ip_label = tk.Label( self, text="Host PC IP" )
-        self.host_ip_label.grid( row=0, column=0 )
-        
-        self.host_ip_entry = tk.Entry( self, width=ENTRY_WIDTH )
-        self.host_ip_entry.grid( row=0, column=1, columnspan=2 )
-        self.host_ip_entry.delete( 0, tk.END )
-        self.host_ip_entry.insert( 0, "10.0.0.75" )
-        
-        # Host Port:
-        self.host_port_label = tk.Label( self, text="Host PC Port" )
-        self.host_port_label.grid( row=1, column=0 )
-        
-        self.host_port_entry = tk.Entry( self, width=ENTRY_WIDTH )
-        self.host_port_entry.grid( row=1, column=1, columnspan=2 )
-        self.host_port_entry.delete( 0, tk.END )
-        self.host_port_entry.insert( 0, "1024" )
-        
-        # Radar IP:
-        self.radar_ip_label = tk.Label( self, text="Radar IP" )
-        self.radar_ip_label.grid( row=2, column=0 )
-        
-        self.radar_ip_entry = tk.Entry( self, width=ENTRY_WIDTH )
-        self.radar_ip_entry.grid( row=2, column=1, columnspan=2 )
-        self.radar_ip_entry.delete( 0, tk.END )
-        self.radar_ip_entry.insert( 0, "10.0.0.10" )
+        # Set up the Entry widgets for each network parameter:
+        for ind, param in enumerate( self.network_params ):
+            self.param_labels[param[0]] = tk.Label( self, text=param[1] )
+            self.param_labels[param[0]].grid( row=ind, column=0 )
+            
+            self.param_entry[param[0]] = tk.Entry( self, width=ENTRY_WIDTH, fg="grey" )
+            self.param_entry[param[0]].grid( row=ind, column=1, columnspan=ENTRY_COLSPAN )
+            self.param_entry[param[0]].delete( 0, tk.END )
+            self.param_entry[param[0]].insert( 0, param[2] )
+            self.param_entry[param[0]].config( state=tk.DISABLED )
 
-        # Radar Netmask:
-        self.netmask_label = tk.Label( self, text="Radar Netmask" )
-        self.netmask_label.grid( row=3, column=0 )
+        # Set the Radar IP entry widget to ENABLED and give it focus:
+        self.param_entry["radar_ip"].config( state=tk.NORMAL, fg="black" )
+        self.param_entry["radar_ip"].focus_set()
 
-        self.netmask_entry = tk.Entry( self, width=ENTRY_WIDTH )
-        self.netmask_entry.grid( row=3, column=1, columnspan=2 )
-        self.netmask_entry.delete( 0, tk.END )
-        self.netmask_entry.insert( 0, "255.255.255.0" )
-        
-        # Radar Gateway:
-        self.gateway_label = tk.Label( self, text="Radar Gateway" )
-        self.gateway_label.grid( row=4, column=0 )
-
-        self.gateway_entry = tk.Entry( self, width=ENTRY_WIDTH )
-        self.gateway_entry.grid( row=4, column=1, columnspan=2 )
-        self.gateway_entry.delete( 0, tk.END )
-        self.gateway_entry.insert( 0, "0.0.0.0" )
-        
+        # Set the Host IP entry widget to ENABLED and give it focus:
+        self.param_entry["host_ip"].config( state=tk.NORMAL, fg="black" )
+            
         # Connect Button:
         self.connect_button = tk.Button( self, text="Connect", command=self.connect_to_radar )
         self.connect_button.grid( row=5, column=0 )
         
         # Send Configuration Button:
-        self.send_config_button = tk.Button( self, text="Send", command=self.send_config_to_radar )
+        self.send_config_button = tk.Button( self, text="Configure", command=self.send_config_to_radar )
         self.send_config_button.grid( row=5, column=1 )
-
+        self.send_config_button.config( state=tk.DISABLED )
+        
         # Run Radar Button:
-        self.send_config_button = tk.Button( self, text="Run", command=self.run_radar )
-        self.send_config_button.grid( row=5, column=2 )
-
+        self.run_radar_button = tk.Button( self, text="Run", command=self.run_radar )
+        self.run_radar_button.grid( row=5, column=2 )
+        self.run_radar_button.config( state=tk.DISABLED )
+        
         # Display for output:
         self.text_display = tk.Text( self, width=65, height=10 )
         self.text_display.grid( row=0, column=3, rowspan=6 )
-        self.update_text_display( "Please enter your PC's IP address and connect." )
+        self.update_text_display( "Please enter the IP addresses of your radar and PC, then connect." )
+
+        # Scrollbar for display text:
+        self.scrollbar_display = tk.Scrollbar( self, command=self.text_display.yview )
+        self.scrollbar_display.grid( row=0, column=4, rowspan=6 )
+        self.text_display['yscrollcommand'] = self.scrollbar_display.set
         
     def connect_to_radar( self ):
         if not self.is_radar_connected:
@@ -110,18 +99,23 @@ class Window( tk.Frame ):
             # Set the socket timeout:
             self.sock.settimeout( 3 )
 
-            # Bind the socket to the specified host IP address:
+            # Bind the socket to the specified host IP address (port doesn't really matter for now):
             try:
-                self.sock.bind( ( self.host_ip_entry.get(), int( self.host_port_entry.get() ) ) )
+                self.sock.bind( ( self.param_entry["host_ip"].get(), int( self.param_entry["host_port"].get() ) ) )
             except socket.error as err:
                 if err.errno == errno.EADDRNOTAVAIL:
-                    self.update_text_display( "ERROR >> Address not available. Is " + self.host_ip_entry.get() + " the IP of your PC?" )
+                    self.update_text_display( "ERROR >> Address not available. Is " + self.param_entry["host_ip"].get() + " the IP of your PC?" )
                 else:
                     self.update_text_display( "ERROR >> " + str( err ) )
                 return
 
             # Send the connect command and receive a response:
-            self.current_radar_ip = self.radar_ip_entry.get()
+            self.current_radar_ip = self.param_entry["radar_ip"].get()
+
+            if not self.param_entry["host_ip"].get() or not self.param_entry["radar_ip"].get():
+                self.update_text_display( "Please enter the IP addresses of your radar and PC." )
+                return
+            
             self.sock.sendto( CONNECT_CMD, ( self.current_radar_ip,
                                              RADAR_PORT ) )
             try:
@@ -129,63 +123,84 @@ class Window( tk.Frame ):
                 if msg == CONNECT_RES:
                     self.update_text_display( addr[0] + " sent: " + msg )
                     self.is_radar_connected = True
+
+                    # Enable the entry widgets and buttons:
+                    [p.config( state=tk.NORMAL ) for p in self.param_entry]
+                    self.send_config_button.config( state=tk.NORMAL )
+                    self.run_radar_button.config( state=tk.NORMAL )
                 else:
                     self.update_text_display( "ERROR >> Failed to connect to radar." )
             except socket.timeout as err:
-                self.update_text_display( "ERROR >> " + str( err ) )
+                self.update_text_display( "ERROR >> Connect timed out. Is the radar connected and powered?" )
                 return
 
     def send_config_to_radar( self ):
+        if not self.is_radar_connected:
+            self.update_text_display( "ERROR >> Must connect to radar before sending network configuration." )
+            return
+        
         # Send start configuration command:
-        self.sock.sendto( CONFIG_CMD, ( self.current_radar_ip, RADAR_PORT ) )
+        try:
+            self.sock.sendto( CONFIG_CMD, ( self.current_radar_ip, RADAR_PORT ) )
+        except socket.error as err:
+            self.update_text_display( str(err) )
+            return
+        
         time.sleep( 1 )
         msg, addr = self.sock.recvfrom( 1024 )
         self.update_text_display( addr[0] + " sent: " + msg )
 
-        # Send new radar IP address:
-        self.update_text_display( "Setting radar IP to: " + self.radar_ip_entry.get() )
-        self.sock.sendto( self.radar_ip_entry.get(), ( self.current_radar_ip, RADAR_PORT ) )
-        msg, addr = self.sock.recvfrom( 1024 )
-        if msg == CONFIG_RES:
+        # Send new network parameters:
+        for ind, param in enumerate( self.network_params ):
+            self.update_text_display( "Setting " + param[1] + " to: " + self.param_entry[param[0]].get() )
+            self.sock.sendto( self.param_entry[param[0]].get(), ( self.current_radar_ip, RADAR_PORT ) )
+            msg, addr = self.sock.recvfrom( 1024 )
             self.update_text_display( addr[0] + " sent: " + msg )
-        else:
-            self.update_text_display( "ERROR >> Failed to configure radar IP." )
+                
+        # # Send new radar IP address:
+        # self.update_text_display( "Setting radar IP to: " + self.param_entry["radar_ip"].get() )
+        # self.sock.sendto( self.param_entry["radar_ip"].get(), ( self.current_radar_ip, RADAR_PORT ) )
+        # msg, addr = self.sock.recvfrom( 1024 )
+        # if msg == CONFIG_RES:
+        #     self.update_text_display( addr[0] + " sent: " + msg )
+        # else:
+        #     self.update_text_display( "ERROR >> Failed to configure radar IP." )
 
-        # Send new radar netmask:
-        self.update_text_display( "Setting radar netmask to: " + self.netmask_entry.get() )
-        self.sock.sendto( self.netmask_entry.get(), ( self.current_radar_ip, RADAR_PORT ) )
-        msg, addr = self.sock.recvfrom( 1024 )
-        if msg == CONFIG_RES:
-            self.update_text_display( addr[0] + " sent: " + msg )
-        else:
-            self.update_text_display( "ERROR >> Failed to configure radar netmask." )
+        # # Send new radar netmask:
+        # self.update_text_display( "Setting radar netmask to: " + self.param_entry["radar_netmask"].get() )
+        # self.sock.sendto( self.param_entry["radar_netmask"].get(), ( self.current_radar_ip, RADAR_PORT ) )
+        # msg, addr = self.sock.recvfrom( 1024 )
+        # if msg == CONFIG_RES:
+        #     self.update_text_display( addr[0] + " sent: " + msg )
+        # else:
+        #     self.update_text_display( "ERROR >> Failed to configure radar netmask." )
 
-        # Send new radar gateway:
-        self.update_text_display( "Setting radar gateway to: " + self.gateway_entry.get() )
-        self.sock.sendto( self.gateway_entry.get(), ( self.current_radar_ip, RADAR_PORT ) )
-        msg, addr = self.sock.recvfrom( 1024 )
-        if msg == CONFIG_RES:
-            self.update_text_display( addr[0] + " sent: " + msg )
-        else:
-            self.update_text_display( "ERROR >> Failed to configure radar gateway." )
+        # # Send new radar gateway:
+        # self.update_text_display( "Setting radar gateway to: " + self.param_entry["radar_gateway"].get() )
+        # self.sock.sendto( self.param_entry["radar_gateway"].get(), ( self.current_radar_ip, RADAR_PORT ) )
+        # msg, addr = self.sock.recvfrom( 1024 )
+        # if msg == CONFIG_RES:
+        #     self.update_text_display( addr[0] + " sent: " + msg )
+        # else:
+        #     self.update_text_display( "ERROR >> Failed to configure radar gateway." )
 
-        # Send new host IP address:
-        self.update_text_display( "Setting host IP to: " + self.host_ip_entry.get() )
-        self.sock.sendto( self.host_ip_entry.get(), ( self.current_radar_ip, RADAR_PORT ) )
-        msg, addr = self.sock.recvfrom( 1024 )
-        if msg == CONFIG_RES:
-            self.update_text_display( addr[0] + " sent: " + msg )
-        else:
-            self.update_text_display( "ERROR >> Failed to configure host IP." )
+        # # Send new host IP address:
+        # self.update_text_display( "Setting host IP to: " + self.param_entry["host_ip"].get() )
+        # self.sock.sendto( self.param_entry["host_ip"].get(), ( self.current_radar_ip, RADAR_PORT ) )
+        # msg, addr = self.sock.recvfrom( 1024 )
+        # if msg == CONFIG_RES:
+        #     self.update_text_display( addr[0] + " sent: " + msg )
+        # else:
+        #     self.update_text_display( "ERROR >> Failed to configure host IP." )
 
-        # Send new host IP port:
-        self.update_text_display( "Setting host port to: " + self.host_port_entry.get() )
-        self.sock.sendto( self.host_port_entry.get(), ( self.current_radar_ip, RADAR_PORT ) )
-        msg, addr = self.sock.recvfrom( 1024 )
-        if msg == CONFIG_COMPLETE_RES:
-            self.update_text_display( addr[0] + " sent: " + msg )
-        else:
-            self.update_text_display( "ERROR >> Failed to configure host port." )
+        # # Send new host IP port:
+        # self.update_text_display( "Setting host port to: " + self.param_entry["host_port"].get() )
+        # self.sock.sendto( self.param_entry["host_port"].get(), ( self.current_radar_ip, RADAR_PORT ) )
+        # msg, addr = self.sock.recvfrom( 1024 )
+        # if msg == CONFIG_COMPLETE_RES:
+        #     self.update_text_display( addr[0] + " sent: " + msg )
+        # else:
+        #     self.update_text_display( "ERROR >> Failed to configure host port." )
 
     def run_radar( self ):
         self.sock.sendto( RUN_CMD, ( self.current_radar_ip,
@@ -195,11 +210,11 @@ class Window( tk.Frame ):
         self.text_display.config( state=tk.NORMAL )
         self.text_display.insert( tk.END, newtext+"\n" )
         self.text_display.config( state=tk.DISABLED )
-        
+        self.text_display.see( "end" )
         
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry( "700x150" )
+    root.geometry( "715x150" )
     root.resizable( 0, 0 )
     app = Window( root )
     root.mainloop()
