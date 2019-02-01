@@ -2,6 +2,7 @@
 
 import sys
 import errno
+import struct
 
 if sys.version_info[0] == 3:
     import tkinter as tk # python 3
@@ -120,16 +121,35 @@ class Window( tk.Frame ):
                                              RADAR_PORT ) )
             try:
                 msg, addr = self.sock.recvfrom( 1024 )
-                if msg == CONNECT_RES:
-                    self.update_text_display( addr[0] + " sent: " + msg )
-                    self.is_radar_connected = True
+                self.update_text_display( "Loading network parameters stored on radar..." )
+                time.sleep(1)
+                                            
+                # Enable the entry widgets and buttons:
+                [val.config( state=tk.NORMAL, fg="black" ) for key, val in self.param_entry.items()]
+                self.send_config_button.config( state=tk.NORMAL )
+                self.run_radar_button.config( state=tk.NORMAL )
 
-                    # Enable the entry widgets and buttons:
-                    [p.config( state=tk.NORMAL ) for p in self.param_entry]
-                    self.send_config_button.config( state=tk.NORMAL )
-                    self.run_radar_button.config( state=tk.NORMAL )
-                else:
-                    self.update_text_display( "ERROR >> Failed to connect to radar." )
+                # Update the Entry widgets based on radar stored params:
+                self.param_entry["radar_ip"].delete( 0, tk.END )
+                self.param_entry["radar_ip"].insert( 0, '.'.join( map( str, struct.unpack_from( "BBBB", msg, offset=0 ) ) ) )
+
+                self.param_entry["radar_netmask"].delete( 0, tk.END )
+                self.param_entry["radar_netmask"].insert( 0, '.'.join( map( str, struct.unpack_from( "BBBB", msg, offset=4 ) ) ) )
+
+                self.param_entry["radar_gateway"].delete( 0, tk.END )
+                self.param_entry["radar_gateway"].insert( 0, '.'.join( map( str, struct.unpack_from( "BBBB", msg, offset=8 ) ) ) )
+
+                self.param_entry["host_ip"].delete( 0, tk.END )
+                self.param_entry["host_ip"].insert( 0, '.'.join( map( str, struct.unpack_from( "BBBB", msg, offset=12 ) ) ) )
+
+                self.param_entry["host_port"].delete( 0, tk.END )
+                self.param_entry["host_port"].insert( 0, ''.join( map( str, struct.unpack_from( ">H", msg, offset=16 ) ) ) )
+                
+                self.is_radar_connected = True
+
+            except socket.error as err:
+                self.update_text_display( "ERROR >> Failed to connect to radar." )
+                return
             except socket.timeout as err:
                 self.update_text_display( "ERROR >> Connect timed out. Is the radar connected and powered?" )
                 return
@@ -155,53 +175,8 @@ class Window( tk.Frame ):
             self.update_text_display( "Setting " + param[1] + " to: " + self.param_entry[param[0]].get() )
             self.sock.sendto( self.param_entry[param[0]].get(), ( self.current_radar_ip, RADAR_PORT ) )
             msg, addr = self.sock.recvfrom( 1024 )
-            self.update_text_display( addr[0] + " sent: " + msg )
+            self.update_text_display( addr[0] + " set " + param[1] + " to " + msg )
                 
-        # # Send new radar IP address:
-        # self.update_text_display( "Setting radar IP to: " + self.param_entry["radar_ip"].get() )
-        # self.sock.sendto( self.param_entry["radar_ip"].get(), ( self.current_radar_ip, RADAR_PORT ) )
-        # msg, addr = self.sock.recvfrom( 1024 )
-        # if msg == CONFIG_RES:
-        #     self.update_text_display( addr[0] + " sent: " + msg )
-        # else:
-        #     self.update_text_display( "ERROR >> Failed to configure radar IP." )
-
-        # # Send new radar netmask:
-        # self.update_text_display( "Setting radar netmask to: " + self.param_entry["radar_netmask"].get() )
-        # self.sock.sendto( self.param_entry["radar_netmask"].get(), ( self.current_radar_ip, RADAR_PORT ) )
-        # msg, addr = self.sock.recvfrom( 1024 )
-        # if msg == CONFIG_RES:
-        #     self.update_text_display( addr[0] + " sent: " + msg )
-        # else:
-        #     self.update_text_display( "ERROR >> Failed to configure radar netmask." )
-
-        # # Send new radar gateway:
-        # self.update_text_display( "Setting radar gateway to: " + self.param_entry["radar_gateway"].get() )
-        # self.sock.sendto( self.param_entry["radar_gateway"].get(), ( self.current_radar_ip, RADAR_PORT ) )
-        # msg, addr = self.sock.recvfrom( 1024 )
-        # if msg == CONFIG_RES:
-        #     self.update_text_display( addr[0] + " sent: " + msg )
-        # else:
-        #     self.update_text_display( "ERROR >> Failed to configure radar gateway." )
-
-        # # Send new host IP address:
-        # self.update_text_display( "Setting host IP to: " + self.param_entry["host_ip"].get() )
-        # self.sock.sendto( self.param_entry["host_ip"].get(), ( self.current_radar_ip, RADAR_PORT ) )
-        # msg, addr = self.sock.recvfrom( 1024 )
-        # if msg == CONFIG_RES:
-        #     self.update_text_display( addr[0] + " sent: " + msg )
-        # else:
-        #     self.update_text_display( "ERROR >> Failed to configure host IP." )
-
-        # # Send new host IP port:
-        # self.update_text_display( "Setting host port to: " + self.param_entry["host_port"].get() )
-        # self.sock.sendto( self.param_entry["host_port"].get(), ( self.current_radar_ip, RADAR_PORT ) )
-        # msg, addr = self.sock.recvfrom( 1024 )
-        # if msg == CONFIG_COMPLETE_RES:
-        #     self.update_text_display( addr[0] + " sent: " + msg )
-        # else:
-        #     self.update_text_display( "ERROR >> Failed to configure host port." )
-
     def run_radar( self ):
         self.sock.sendto( RUN_CMD, ( self.current_radar_ip,
                                      RADAR_PORT ) )
