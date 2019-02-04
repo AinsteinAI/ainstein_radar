@@ -121,7 +121,7 @@ class Window( tk.Frame ):
                                              RADAR_PORT ) )
             try:
                 msg, addr = self.sock.recvfrom( 1024 )
-                self.update_text_display( "Loading network parameters stored on radar..." )
+                self.update_text_display( "Loading network parameters stored on radar... Done." )
                 time.sleep(1)
                                             
                 # Enable the entry widgets and buttons:
@@ -146,6 +146,8 @@ class Window( tk.Frame ):
                 self.param_entry["host_port"].insert( 0, ''.join( map( str, struct.unpack_from( ">H", msg, offset=16 ) ) ) )
                 
                 self.is_radar_connected = True
+
+                self.update_text_display( "Change any network parameters, then press Configure to send." )
 
             except socket.error as err:
                 self.update_text_display( "ERROR >> Failed to connect to radar." )
@@ -176,7 +178,10 @@ class Window( tk.Frame ):
             self.sock.sendto( self.param_entry[param[0]].get(), ( self.current_radar_ip, RADAR_PORT ) )
             msg, addr = self.sock.recvfrom( 1024 )
             self.update_text_display( addr[0] + " set " + param[1] + " to " + msg )
-                
+
+        self.update_text_display( "Configuration complete!" )
+        self.update_text_display( "Reboot the radar and restart this GUI, then ensure you can connect with the updated network configuration." )
+                                  
     def run_radar( self ):
         self.sock.sendto( RUN_CMD, ( self.current_radar_ip,
                                      RADAR_PORT ) )
