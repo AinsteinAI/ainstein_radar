@@ -13,9 +13,12 @@
 #include "RadarNodeK79.h"
 
 const std::string RadarNodeK79::connect_cmd_str = std::string( "connect" );
-const std::string RadarNodeK79::connect_res_str = std::string( "Connection established." );
+const unsigned int RadarNodeK79::connect_res_len = 18;
 
 const std::string RadarNodeK79::run_cmd_str = std::string( "run" );
+
+const unsigned int RadarNodeK79::radar_msg_len = 1000;
+const unsigned int RadarNodeK79::target_msg_len = 8;
 
 RadarNodeK79::RadarNodeK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id )
 {
@@ -95,7 +98,7 @@ bool RadarNodeK79::connect(void)
   // Try to receive data until the timeout to see if the K79 is already running:
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len = sizeof( src_addr );
-  res = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
   if( res < 0 )
     {
       // If blocking recvfrom times out, errno is set to EAGAIN:
@@ -111,7 +114,7 @@ bool RadarNodeK79::connect(void)
 	    }
 
 	  // Wait for a response to the connect command:
-	  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_str.length(), MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+	  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( errno ) << std::endl;
@@ -119,10 +122,7 @@ bool RadarNodeK79::connect(void)
 	    }
 	  else
 	    {
-	      if( std::string( buffer_, res ).compare( RadarNodeK79::connect_res_str ) != 0 )
-		{
-		  std::cout << "WARNING >> Received incorrect response to connect from radar: " << std::string( buffer_, res ) << std::endl;
-		}
+	      // TODO: print settings stored on radar from connect response message
 	    }
 
 	  // Send the run command to the radar:
@@ -167,7 +167,7 @@ void RadarNodeK79::mainLoop(void)
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      msg_len = recvfrom( sockfd_, (char* )buffer_, MSG_LEN, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+      msg_len = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
       if( msg_len < 0 )
 	{
@@ -187,7 +187,7 @@ void RadarNodeK79::mainLoop(void)
 	  radar_data_msg_.alarms.clear();
 
 	  // Extract the target ID and data from the message:
-	  if( ( msg_len % TARGET_MSG_LEN ) != 0 )
+	  if( ( msg_len % RadarNodeK79::target_msg_len ) != 0 )
 	    {
 	      std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
 	    }
@@ -195,9 +195,9 @@ void RadarNodeK79::mainLoop(void)
 	    {
 	      radar_sensor_msgs::RadarTarget target;
 	      int offset;
-	      for( int i = 0; i < ( msg_len / TARGET_MSG_LEN ); ++i )
+	      for( int i = 0; i < ( msg_len / RadarNodeK79::target_msg_len ); ++i )
 		{
-		  offset = i * TARGET_MSG_LEN;
+		  offset = i * RadarNodeK79::target_msg_len;
 		  target.target_id = i;
 		  target.snr = 100.0; // K79 does not currently output SNR per target
 		  target.azimuth = static_cast<int16_t>( ( buffer_[offset + 1] << 8 ) + buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset

@@ -36,18 +36,6 @@
 #include <ros/ros.h>
 #include <radar_sensor_msgs/RadarData.h>
 
-#define MSG_LEN        1000 // maximum length in bytes
-#define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
-
-#define CONNECT_CMD_STR "connect"
-#define CONNECT_CMD_LEN         7
-
-#define CONNECT_RES_STR "Connection has been established"
-#define CONNECT_RES_LEN                                20
-
-#define RUN_CMD_STR "run"
-#define RUN_CMD_LEN     3
-#define RUN_RESP_LEN 
 class RadarNodeK79 {
 
 public:
@@ -56,11 +44,17 @@ public:
 
   bool connect( void );
   void mainLoop( void );
-
+  
   static const std::string connect_cmd_str;
-  static const std::string connect_res_str;
+  static const unsigned int connect_res_len;
 
   static const std::string run_cmd_str;
+
+  #define MSG_LEN        1000 // maximum length in bytes
+#define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
+
+  static const unsigned int radar_msg_len;
+  static const unsigned int target_msg_len;
   
 private:
   std::string host_ip_addr_;
