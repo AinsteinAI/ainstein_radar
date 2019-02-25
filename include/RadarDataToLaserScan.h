@@ -27,6 +27,7 @@
 #ifndef RADAR_DATA_TO_LASER_SCAN_H_
 #define RADAR_DATA_TO_LASER_SCAN_H_
 
+#include <cmath>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <geometry_msgs/Twist.h>
@@ -42,7 +43,7 @@ public:
   void radarVelCallback( const geometry_msgs::Twist &msg );     
   void radarDataCallback( const radar_sensor_msgs::RadarData &msg );
 
-  double solveForAngle( double x, double y, double z );
+  bool useTarget( const radar_sensor_msgs::RadarTarget &t );
   
 private:
   std::string data_topic_;
@@ -53,7 +54,8 @@ private:
   int laser_scan_length_;
   sensor_msgs::LaserScan laser_scan_msg_;
     
-  ros::NodeHandle node_handle_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
   ros::Subscriber sub_radar_data_;
   ros::Publisher pub_laser_scan_;
 
