@@ -62,7 +62,7 @@ private:
   ros::Subscriber sub_radar_vel_;
   bool is_vel_available_;
   Eigen::Vector3d vel_world_;
-  double max_speed_thresh_;
+  double rel_speed_thresh_;
   double min_dist_thresh_;
   double max_dist_thresh_;
   

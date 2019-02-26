@@ -27,7 +27,7 @@ RadarDataToLaserScan::RadarDataToLaserScan( std::string data_topic, std::string 
   nh_private_.param( "range_min", laser_scan_msg_.range_min, static_cast<float>( 1.0 ) );
   nh_private_.param( "range_max", laser_scan_msg_.range_max, static_cast<float>( 20.0 ) );
   
-  nh_private_.param( "max_speed_thresh", max_speed_thresh_, 1.0 );
+  nh_private_.param( "rel_speed_thresh", rel_speed_thresh_, 2.0 );
 
   // Set the laser scan message array lengths:
   laser_scan_length_ = static_cast<int>( std::floor( ( laser_scan_msg_.angle_max -
@@ -85,7 +85,7 @@ void RadarDataToLaserScan::radarDataCallback( const radar_sensor_msgs::RadarData
 	      double proj_speed = t.speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	  
 	      // Filter out targets based on project target absolute speed limit:
-	      if( std::abs( proj_speed ) < max_speed_thresh_ )
+	      if( std::abs( proj_speed ) < rel_speed_thresh_ )
 		{
 		  if( t.range < laser_scan_msg_.ranges.at( beam_ind ) )
 		    {
