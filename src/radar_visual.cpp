@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
@@ -9,7 +11,7 @@
 
 namespace rviz_radar_plugin
 {
-
+  
 RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
 {
   scene_manager_ = scene_manager;
@@ -25,6 +27,10 @@ RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* pa
 
   // Set showing speed arrows to false by default:
   show_speed_arrows_ = false;
+
+  // Set showing target info to false by default:
+  show_target_info_ = false;
+  
 }
 
 RadarVisual::~RadarVisual()
@@ -36,9 +42,9 @@ RadarVisual::~RadarVisual()
 void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
   // Clear the target shapes vector:
-  radar_target_shapes_raw_.clear();
+  radar_target_visuals_.clear();
   
-  // Fill the target shapes from RadarData message:
+  // Fill the target shapes from RadarData message (for now, only raw targets):
   for( const auto& target : msg->raw_targets )
     {
       if( target.range > min_range_ && target.range < max_range_ )
@@ -69,15 +75,30 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
 	  // The target speed points toward the radar sensor:
 	  s->speed.setDirection( s->pos.getPosition() /
 				 std::copysign( target.range, target.speed ) );
-	  
-	  radar_target_shapes_raw_.push_back( s );
+
+	  // Set the info text:
+	  // Set the target speed arrow length:
+	  if( show_target_info_ )
+	    {
+	      s->info.setLocalTranslation( s->pos.getPosition() );
+	      std::ostringstream ss;
+	      ss << target;
+	      s->info.setCaption( ss.str() );
+	    }
+	  else
+	    {
+	      s->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	    }
+
+	  // Push back the target shape (visual):
+	  radar_target_visuals_.push_back( s );
 	}
     }
 }
 
 void RadarVisual::clearMessageRaw( void )
 {
-  radar_target_shapes_raw_.clear();
+  radar_target_visuals_.clear();
 }
   
 // Position and orientation are passed through to the SceneNode.
@@ -94,7 +115,7 @@ void RadarVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
 // Color is passed through to the Shape object.
 void RadarVisual::setColorRaw( float r, float g, float b, float a )
 {
-  for( const auto& shape : radar_target_shapes_raw_ )
+  for( const auto& shape : radar_target_visuals_ )
     {
       shape->pos.setColor( Ogre::ColourValue( r, g, b, a) );
       shape->speed.setColor( Ogre::ColourValue( r, g, b, a) );
@@ -104,7 +125,7 @@ void RadarVisual::setColorRaw( float r, float g, float b, float a )
 // Scale is passed through to the Shape object.
 void RadarVisual::setScaleRaw( float scale )
 {
-  for( const auto& shape : radar_target_shapes_raw_ )
+  for( const auto& shape : radar_target_visuals_ )
     {
       shape->pos.setScale( Ogre::Vector3( scale, scale, scale ) );
     }
@@ -112,14 +133,14 @@ void RadarVisual::setScaleRaw( float scale )
 
   void RadarVisual::updateTargets( void )
   {
-    radar_target_shapes_raw_.erase( std::remove_if( radar_target_shapes_raw_.begin(),
-						    radar_target_shapes_raw_.end(),
+    radar_target_visuals_.erase( std::remove_if( radar_target_visuals_.begin(),
+						    radar_target_visuals_.end(),
 						    [this]( boost::shared_ptr<TargetVisual> s )
 						    {
 						      Ogre::Vector3 pos = s->pos.getPosition();
 						      return ( pos.length() > max_range_ ||
 							       pos.length() < min_range_ );
-						    }), radar_target_shapes_raw_.end() );
+						    }), radar_target_visuals_.end() );
   }
  
   void RadarVisual::setMinRange( float min_range )
@@ -140,12 +161,27 @@ void RadarVisual::setScaleRaw( float scale )
     // Update all the existing arrows if switched off:
     if( !show_speed_arrows_ )
       {
-	for( const auto& t : radar_target_shapes_raw_ )
+	for( const auto& t : radar_target_visuals_ )
 	  {
 	    t->speed.set( 0.0, 0.0, 0.0, 0.0 ); // arrow head diameter
 	  }
       }
   }
- 
+  
+  void RadarVisual::setShowTargetInfo( bool show_target_info )
+  {
+    // Store the desired state:
+    show_target_info_ = show_target_info;
+
+    // Update all the existing arrows if switched off:
+    if( !show_target_info_ )
+      {
+	for( const auto& t : radar_target_visuals_ )
+	  {
+	    t->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	  }
+      }
+  }
+
 } // end namespace rviz_radar_plugin
 

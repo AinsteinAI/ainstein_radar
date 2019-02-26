@@ -64,6 +64,11 @@ RadarDisplay::RadarDisplay()
   show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,
 						 "Toggles display of arrows indicating target speed.",
 						 this, SLOT( updateShowSpeedArrows() ) );
+
+  // Determines whether to show the speed arrows:
+  show_info_property_ = new rviz::BoolProperty( "Show Info", false,
+						"Toggles display of target info text.",
+						 this, SLOT( updateShowTargetInfo() ) );
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -216,6 +221,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
       visual->setMinRange( min_range_property_->getFloat() );
       visual->setMaxRange( max_range_property_->getFloat() );
       visual->setShowSpeedArrows( show_speed_property_->getBool() );
+      visual->setShowTargetInfo( show_info_property_->getBool() );
       visual->setMessageRaw( msg );
       alpha = alpha_raw_->getFloat();
       color = color_raw_->getOgreColor();
@@ -239,6 +245,14 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
     for( const auto& v : visuals_ )
       {
 	v->setShowSpeedArrows( show_speed_property_->getBool() );
+      }   
+  }    
+
+  void RadarDisplay::updateShowTargetInfo( void )
+  {
+    for( const auto& v : visuals_ )
+      {
+	v->setShowTargetInfo( show_info_property_->getBool() );
       }   
   }    
   

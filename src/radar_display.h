@@ -5,6 +5,8 @@
 #include <boost/circular_buffer.hpp>
 
 #include <rviz/message_filter_display.h>
+#include <rviz/tool.h>
+
 #include <radar_sensor_msgs/RadarData.h>
 #endif
 
@@ -19,6 +21,7 @@ class ColorProperty;
 class FloatProperty;
 class IntProperty;
 class BoolProperty;
+ class ViewportMouseEvent;
 }
 
 // All the source in this plugin is in its own namespace.  This is not
@@ -44,8 +47,8 @@ class RadarVisual;
 // themselves are represented by a separate class, RadarVisual.  The
 // idiom for the visuals is that when the objects exist, they appear
 // in the scene, and when they are deleted, they disappear.
-class RadarDisplay: public rviz::MessageFilterDisplay<radar_sensor_msgs::RadarData>
-{
+ class RadarDisplay: public rviz::MessageFilterDisplay<radar_sensor_msgs::RadarData>
+ {
 Q_OBJECT
 public:
   // Constructor.  pluginlib::ClassLoader creates instances by calling
@@ -73,6 +76,7 @@ private Q_SLOTS:
   void updateMaxRange();
   void updateShowRaw();
   void updateShowSpeedArrows();
+  void updateShowTargetInfo();
   
   // Function to handle an incoming ROS message.
 private:
@@ -94,7 +98,7 @@ private:
   rviz::FloatProperty* min_range_property_;
   rviz::FloatProperty* max_range_property_;
   rviz::BoolProperty* show_speed_property_;
-  
+  rviz::BoolProperty* show_info_property_;
 };
 
 } // end namespace rviz_radar_plugin

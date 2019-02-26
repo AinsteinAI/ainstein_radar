@@ -3,7 +3,7 @@
 
 #include <rviz/ogre_helpers/shape.h>
 #include <rviz/ogre_helpers/arrow.h>
-
+#include <rviz/ogre_helpers/movable_text.h>
 #include <radar_sensor_msgs/RadarData.h>
 
 namespace rviz
@@ -25,11 +25,17 @@ namespace rviz_radar_plugin
   public:
   TargetVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node ) :
     pos( rviz::Shape::Cube, scene_manager, parent_node ),
-      speed( scene_manager, parent_node ) {}      
+      speed( scene_manager, parent_node ),
+      info( "test" )
+	{
+	  parent_node->attachObject( &info );
+	  info.setCharacterHeight( 0.1 );
+	}      
     ~TargetVisual() {};
 
     rviz::Shape pos;
     rviz::Arrow speed;
+    rviz::MovableText info;
   };
   
 // Declare the visual class for this display.
@@ -78,10 +84,13 @@ public:
 
   // Set whether to render speed arrows:
   void setShowSpeedArrows( bool show_speed_arrows );
+
+  // Set whether to render target info text:
+  void setShowTargetInfo( bool show_target_info );
   
 private:
-  // The object implementing the raw radar target shapes
-  std::vector< boost::shared_ptr<TargetVisual> > radar_target_shapes_raw_;
+  // The object implementing the radar target visuals
+  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.
@@ -97,6 +106,9 @@ private:
 
   // Determines whether speed arrows are rendered with zero length:
   bool show_speed_arrows_;
+
+  // Determines whether target info is rendered:
+  bool show_target_info_;
 };
 
 } // end namespace rviz_radar_plugin
