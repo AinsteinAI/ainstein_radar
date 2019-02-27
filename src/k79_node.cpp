@@ -1,5 +1,5 @@
 /*
-Copyright <2018> <Ainstein, Inc.>
+Copyright <2018-2019> <Ainstein, Inc.>
 
 Redistribution and use in source and binary forms, with or without modification, are permitted 
 provided that the following conditions are met:
@@ -24,13 +24,12 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "RadarNodeK79.h"
-#include <signal.h>
+#include "radar_ros_interface/radar_interface_k79.h"
 
 int main( int argc, char** argv )
 {
   // Initialize ROS and the default node name:
-  ros::init( argc, argv, "radar_node_k79" );
+  ros::init( argc, argv, "k79_node" );
   
   // Radar node constructor arguments:
   std::string host_ip_address;
@@ -38,12 +37,12 @@ int main( int argc, char** argv )
   std::string radar_ip_address;
   int radar_port = 8;
   std::string radar_name = "k79";
-  std::string frame_id = "k79_link";
+  std::string frame_id = "map";
   
   // Parse the command line arguments for radar parameters:
   if( argc < 2 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_node_k79 --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface k79_node --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
       return -1;
     }
 
@@ -84,15 +83,15 @@ int main( int argc, char** argv )
 
   if( host_ip_address.empty() || host_ip_address.empty() )
     {
-      std::cerr << "IP addresses must be set. Usage: rosrun radar_ros_interface radar_node_k79 --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
+      std::cerr << "IP addresses must be set. Usage: rosrun radar_ros_interface k79_node --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
       return -1;
     }
 
   std::cout << "Running K79 node with host IP: " << host_ip_address << " host port: " << host_port << " radar IP: " << radar_ip_address << " radar port: " << radar_port << " name: " << radar_name << " frame: " << frame_id << std::endl;
 
   // Create the K79 interface and launch the data thread:
-  RadarNodeK79 k79( host_ip_address, host_port, radar_ip_address, radar_port, radar_name, frame_id );
-  k79.connect();
+  RadarInterfaceK79 k79_intf( host_ip_address, host_port, radar_ip_address, radar_port, radar_name, frame_id );
+  k79_intf.connect();
   
   ros::spin();
 

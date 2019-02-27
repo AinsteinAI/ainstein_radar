@@ -1,6 +1,32 @@
-#include "RadarNodeT79BSD.h"
+/*
+  Copyright <2018-2019> <Ainstein, Inc.>
 
-void RadarNodeT79BSD::startRadar( void )
+  Redistribution and use in source and binary forms, with or without modification, are permitted
+  provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this list of
+  conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice, this list of
+  conditions and the following disclaimer in the documentation and/or other materials provided
+  with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its contributors may be used to
+  endorse or promote products derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+  FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include "radar_ros_interface/radar_interface_t79_bsd.h"
+
+void RadarInterfaceT79BSD::startRadar( void )
 {
     // Send the start command:
     can_msgs::Frame can_frame;
@@ -23,7 +49,7 @@ void RadarNodeT79BSD::startRadar( void )
     pub_radar_cmd_.publish( can_frame );
 }
 
-void RadarNodeT79BSD::stopRadar( void )
+void RadarInterfaceT79BSD::stopRadar( void )
 {
     can_msgs::Frame can_frame;
     can_frame.header.frame_id = "0";
@@ -45,7 +71,7 @@ void RadarNodeT79BSD::stopRadar( void )
     pub_radar_cmd_.publish( can_frame );
 }
 
-void RadarNodeT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
+void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
 {
     // Parse out start radar response messages:
     if( msg.id == ConfigT79BSD::stop_ret.at( type_ ) )

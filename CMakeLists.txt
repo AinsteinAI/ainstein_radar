@@ -21,31 +21,23 @@ include_directories(
  ${catkin_INCLUDE_DIRS}
  )
 
-add_executable(radar_data_viz_node src/radar_data_viz_node.cpp)
-add_dependencies(radar_data_viz_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_data_viz_node ${catkin_LIBRARIES})
+add_executable(k79_node src/k79_node.cpp src/radar_interface_k79.cpp)
+add_dependencies(k79_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(k79_node ${catkin_LIBRARIES})
 
-add_executable(radar_data_viz_point_cloud_node src/radar_data_viz_point_cloud_node.cpp src/RadarDataVizPointCloud.cpp)
-add_dependencies(radar_data_viz_point_cloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_data_viz_point_cloud_node ${catkin_LIBRARIES})
+add_executable(t79_bsd_node src/t79_bsd_node.cpp src/radar_interface_t79_bsd.cpp)
+add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(t79_bsd_node ${catkin_LIBRARIES})
 
-add_executable(radar_data_to_laser_scan_node src/radar_data_to_laser_scan_node.cpp src/RadarDataToLaserScan.cpp)
-add_dependencies(radar_data_to_laser_scan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_data_to_laser_scan_node ${catkin_LIBRARIES})
+add_executable(radardata_to_pointcloud_node src/radardata_to_pointcloud_node.cpp src/radardata_to_pointcloud.cpp)
+add_dependencies(radardata_to_pointcloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radardata_to_pointcloud_node ${catkin_LIBRARIES})
 
-add_executable(car_demo_test_node src/car_demo_test_node.cpp src/RadarNodeT79BSD.cpp)
-add_dependencies(car_demo_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(car_demo_test_node ${catkin_LIBRARIES})
+add_executable(radardata_to_laserscan_node src/radardata_to_laserscan_node.cpp src/radardata_to_laserscan.cpp)
+add_dependencies(radardata_to_laserscan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radardata_to_laserscan_node ${catkin_LIBRARIES})
 
-add_executable(radar_node_k79 src/radar_node_k79.cpp src/RadarNodeK79.cpp)
-add_dependencies(radar_node_k79 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_node_k79 ${catkin_LIBRARIES})
-
-add_executable(radar_node_k79_gps src/radar_node_k79_gps.cpp src/RadarNodeK79GPS.cpp)
-add_dependencies(radar_node_k79_gps ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_node_k79_gps ${catkin_LIBRARIES})
-
-install(TARGETS radar_data_viz_node radar_data_viz_point_cloud_node radar_data_to_laser_scan_node car_demo_test_node radar_node_k79 radar_node_k79_gps
+install(TARGETS k79_node t79_bsd_node radardata_to_pointcloud_node radardata_to_laserscan_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

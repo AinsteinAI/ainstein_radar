@@ -1,3 +1,29 @@
+/*
+  Copyright <2018-2019> <Ainstein, Inc.>
+
+  Redistribution and use in source and binary forms, with or without modification, are permitted 
+  provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this list of 
+  conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice, this list of 
+  conditions and the following disclaimer in the documentation and/or other materials provided 
+  with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its contributors may be used to 
+  endorse or promote products derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+  FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,17 +36,17 @@
 #include <cstdint>
 #include <cerrno>
 
-#include "RadarNodeK79.h"
+#include "radar_ros_interface/radar_interface_k79.h"
 
-const std::string RadarNodeK79::connect_cmd_str = std::string( "connect" );
-const unsigned int RadarNodeK79::connect_res_len = 18;
+const std::string RadarInterfaceK79::connect_cmd_str = std::string( "connect" );
+const unsigned int RadarInterfaceK79::connect_res_len = 18;
 
-const std::string RadarNodeK79::run_cmd_str = std::string( "run" );
+const std::string RadarInterfaceK79::run_cmd_str = std::string( "run" );
 
-const unsigned int RadarNodeK79::radar_msg_len = 1000;
-const unsigned int RadarNodeK79::target_msg_len = 8;
+const unsigned int RadarInterfaceK79::radar_msg_len = 1000;
+const unsigned int RadarInterfaceK79::target_msg_len = 8;
 
-RadarNodeK79::RadarNodeK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id )
+RadarInterfaceK79::RadarInterfaceK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id )
 {
   // Store the host IP and port:
   host_ip_addr_ = host_ip_addr;
@@ -35,7 +61,7 @@ RadarNodeK79::RadarNodeK79( std::string host_ip_addr, int host_port, std::string
   radar_data_msg_.header.frame_id = frame_id;
 }
 
-RadarNodeK79::~RadarNodeK79(void)
+RadarInterfaceK79::~RadarInterfaceK79(void)
 {
   mutex_.lock();
   is_running_ = false;
@@ -46,7 +72,7 @@ RadarNodeK79::~RadarNodeK79(void)
   close( sockfd_ );
 }
 
-bool RadarNodeK79::connect(void)
+bool RadarInterfaceK79::connect(void)
 {
   // Create the host UDP socket:
   sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
@@ -98,15 +124,15 @@ bool RadarNodeK79::connect(void)
   // Try to receive data until the timeout to see if the K79 is already running:
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len = sizeof( src_addr );
-  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+  res = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
   if( res < 0 )
     {
       // If blocking recvfrom times out, errno is set to EAGAIN:
       if( errno == EAGAIN )
 	{
 	  // Send the connect command to the radar:
-	  RadarNodeK79::connect_cmd_str.copy( buffer_, RadarNodeK79::connect_cmd_str.length() );
-	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+	  RadarInterfaceK79::connect_cmd_str.copy( buffer_, RadarInterfaceK79::connect_cmd_str.length() );
+	  res = sendto( sockfd_, (char* )buffer_, RadarInterfaceK79::connect_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to send connect command to radar: " << std::strerror( errno ) << std::endl;
@@ -114,7 +140,7 @@ bool RadarNodeK79::connect(void)
 	    }
 
 	  // Wait for a response to the connect command:
-	  res = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::connect_res_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+	  res = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::connect_res_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( errno ) << std::endl;
@@ -126,8 +152,8 @@ bool RadarNodeK79::connect(void)
 	    }
 
 	  // Send the run command to the radar:
-	  RadarNodeK79::run_cmd_str.copy( buffer_, RadarNodeK79::run_cmd_str.length() );
-	  res = sendto( sockfd_, (char* )buffer_, RadarNodeK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+	  RadarInterfaceK79::run_cmd_str.copy( buffer_, RadarInterfaceK79::run_cmd_str.length() );
+	  res = sendto( sockfd_, (char* )buffer_, RadarInterfaceK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to send run command to radar: " << std::strerror( errno ) << std::endl;
@@ -142,7 +168,7 @@ bool RadarNodeK79::connect(void)
     }
   
   // Start the data collection thread:
-  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarNodeK79::mainLoop, this ) );
+  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceK79::mainLoop, this ) );
   mutex_.lock();
   is_running_ = true;
   mutex_.unlock();
@@ -153,7 +179,7 @@ bool RadarNodeK79::connect(void)
   return true;
 }
 
-void RadarNodeK79::mainLoop(void)
+void RadarInterfaceK79::mainLoop(void)
 {
   // Received message length:
   int msg_len;
@@ -167,7 +193,7 @@ void RadarNodeK79::mainLoop(void)
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      msg_len = recvfrom( sockfd_, (char* )buffer_, RadarNodeK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+      msg_len = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
       if( msg_len < 0 )
 	{
@@ -187,7 +213,7 @@ void RadarNodeK79::mainLoop(void)
 	  radar_data_msg_.alarms.clear();
 
 	  // Extract the target ID and data from the message:
-	  if( ( msg_len % RadarNodeK79::target_msg_len ) != 0 )
+	  if( ( msg_len % RadarInterfaceK79::target_msg_len ) != 0 )
 	    {
 	      std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
 	    }
@@ -195,9 +221,9 @@ void RadarNodeK79::mainLoop(void)
 	    {
 	      radar_sensor_msgs::RadarTarget target;
 	      int offset;
-	      for( int i = 0; i < ( msg_len / RadarNodeK79::target_msg_len ); ++i )
+	      for( int i = 0; i < ( msg_len / RadarInterfaceK79::target_msg_len ); ++i )
 		{
-		  offset = i * RadarNodeK79::target_msg_len;
+		  offset = i * RadarInterfaceK79::target_msg_len;
 		  target.target_id = i;
 		  target.snr = 100.0; // K79 does not currently output SNR per target
 		  target.azimuth = static_cast<int16_t>( ( buffer_[offset + 1] << 8 ) + buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
