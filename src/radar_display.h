@@ -99,6 +99,7 @@ private:
   rviz::FloatProperty* max_range_property_;
   rviz::BoolProperty* show_speed_property_;
   rviz::BoolProperty* show_info_property_;
+  rviz::FloatProperty* info_text_height_property_;
 };
 
 } // end namespace rviz_radar_plugin

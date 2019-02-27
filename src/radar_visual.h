@@ -10,6 +10,7 @@ namespace rviz
 {
   class Shape;
   class Arrow;
+  class MovableText;
 }
 
 namespace rviz_radar_plugin
@@ -29,7 +30,8 @@ namespace rviz_radar_plugin
       info( "test" )
 	{
 	  parent_node->attachObject( &info );
-	  info.setCharacterHeight( 0.1 );
+	  info.setTextAlignment( rviz::MovableText::H_LEFT,
+				 rviz::MovableText::V_CENTER );
 	}      
     ~TargetVisual() {};
 
@@ -87,6 +89,7 @@ public:
 
   // Set whether to render target info text:
   void setShowTargetInfo( bool show_target_info );
+  void setInfoTextHeight( float info_text_height );
   
 private:
   // The object implementing the radar target visuals
@@ -109,6 +112,9 @@ private:
 
   // Determines whether target info is rendered:
   bool show_target_info_;
+
+  // Target info character (text) height:
+  float info_text_height_;
 };
 
 } // end namespace rviz_radar_plugin

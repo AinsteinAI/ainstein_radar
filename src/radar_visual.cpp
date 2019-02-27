@@ -183,5 +183,18 @@ void RadarVisual::setScaleRaw( float scale )
       }
   }
 
+  void RadarVisual::setInfoTextHeight( float info_text_height )
+  {
+    // Store the desired state:
+    info_text_height_ = info_text_height;
+
+    // Update all the existing arrows if switched off:
+    for( const auto& t : radar_target_visuals_ )
+      {
+	t->info.setCharacterHeight( info_text_height_ );
+      }
+  }
+
+
 } // end namespace rviz_radar_plugin
 

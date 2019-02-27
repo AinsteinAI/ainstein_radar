@@ -69,6 +69,10 @@ RadarDisplay::RadarDisplay()
   show_info_property_ = new rviz::BoolProperty( "Show Info", false,
 						"Toggles display of target info text.",
 						 this, SLOT( updateShowTargetInfo() ) );
+
+  info_text_height_property_ = new rviz::FloatProperty( "Info Text Height", 0.05,
+							"Target info test height.",
+							this, SLOT( updateInfoTextHeight() ) );
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -216,6 +220,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   float alpha;
   float scale;
   Ogre::ColourValue color;
+  float info_text_height;
   if( show_raw_property_->getBool() )
     {
       visual->setMinRange( min_range_property_->getFloat() );
@@ -228,6 +233,8 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
       visual->setColorRaw( color.r, color.g, color.b, alpha );
       scale = scale_raw_->getFloat();
       visual->setScaleRaw( scale );
+      info_text_height = info_text_height_property_->getFloat();
+      visual->setInfoTextHeight( info_text_height );
     }
   else 
     {
