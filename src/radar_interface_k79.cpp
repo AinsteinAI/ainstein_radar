@@ -46,19 +46,19 @@ const std::string RadarInterfaceK79::run_cmd_str = std::string( "run" );
 const unsigned int RadarInterfaceK79::radar_msg_len = 1000;
 const unsigned int RadarInterfaceK79::target_msg_len = 8;
 
-RadarInterfaceK79::RadarInterfaceK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id )
+RadarInterfaceK79::RadarInterfaceK79( void ) :
+  nh_private_( "~" )
 {
   // Store the host IP and port:
-  host_ip_addr_ = host_ip_addr;
-  host_port_ = host_port;
+  nh_private_.param( "host_ip", host_ip_addr_, std::string( "10.0.0.75" ) );
+  nh_private_.param( "host_port", host_port_, 1024 );
 
   // Store the radar IP and port:
-  radar_ip_addr_ = radar_ip_addr;
-  radar_port_ = radar_port;
+  nh_private_.param( "radar_ip", radar_ip_addr_, std::string( "10.0.0.10" ) );
+  nh_private_.param( "radar_port", radar_port_, 7 );
 
-  // Store the radar name and data frame ID:
-  radar_name_ = radar_name;
-  radar_data_msg_.header.frame_id = frame_id;
+  // Store the radar data frame ID:
+  nh_private_.param( "frame_id", radar_data_msg_.header.frame_id, std::string( "map" ) );
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)
@@ -174,7 +174,7 @@ bool RadarInterfaceK79::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_radar_data_ = node_handle_.advertise<radar_sensor_msgs::RadarData>( radar_name_+"_data", 10 );
+  pub_radar_data_ = nh_private_.advertise<radar_sensor_msgs::RadarData>( "data", 10 );
   
   return true;
 }

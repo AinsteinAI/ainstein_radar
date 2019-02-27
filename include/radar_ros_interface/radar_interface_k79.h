@@ -13,7 +13,7 @@
 class RadarInterfaceK79 {
 
 public:
-  RadarInterfaceK79( std::string host_ip_addr, int host_port, std::string radar_ip_addr, int radar_port, std::string radar_name, std::string frame_id );
+  RadarInterfaceK79( void );
   ~RadarInterfaceK79();
 
   bool connect( void );
@@ -25,7 +25,7 @@ public:
   static const std::string run_cmd_str;
 
   #define MSG_LEN        1000 // maximum length in bytes
-#define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
+  #define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
 
   static const unsigned int radar_msg_len;
   static const unsigned int target_msg_len;
@@ -48,7 +48,8 @@ private:
   std::unique_ptr<std::thread> thread_;
   std::mutex mutex_;
 
-  ros::NodeHandle node_handle_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_;
 
   radar_sensor_msgs::RadarData radar_data_msg_;

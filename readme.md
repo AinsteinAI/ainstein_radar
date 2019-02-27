@@ -49,17 +49,24 @@ The file k79_node.cpp implements a ROS node using the RadarNodeK79 interface cla
 
 *Command line usage:*	
 
+The optional parameters are scoped private, eg host IP is read from /k79_node/host_ip in this case:
+
 ```bash
-rosrun radar_ros_interface k79_node --host-ip HOST_IP_ADDRESS --radar-ip RADAR_IP_ADDRESS [--radar-port RADAR_UDP_PORT] [--host-port HOST_UDP_PORT] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]
+rosrun radar_ros_interface k79_node [_host_ip:=HOST_IP_ADDRESS] [_host_port:=HOST_UDP_PORT] [_radar_ip:=RADAR_IP_ADDRESS] [_radar_port:=RADAR_UDP_PORT] [_frame_id:=RADAR_FRAME_ID]
 ```
 
-If unspecified, radar port defaults to 8, host port defaults to 1024, name defaults to "k79" and frame id defaults to "map".
+If unspecified, host IP defaults to 10.0.0.75, radar IP defaults to 10.0.0.10, radar port defaults to 7, host port defaults to 1024, name defaults to "k79" and frame id defaults to "map".
 
 *Example launch file usage (from launch/k79_node.launch):*
 
 ```xml
 <launch>
-  <node name="k79_node" pkg="radar_ros_interface" type="k79_node" args="--host-ip 10.0.0.75 --host-port 1024 --radar-ip 10.0.0.11 --radar-port 7" output="screen" required="true" />
+  <node name="k79_node" pkg="radar_ros_interface" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1024" />
+    <param name="radar_ip" value="10.0.0.10" />
+    <param name="radar_port" value="7" />
+  </node>
 </launch>
 ```
 
