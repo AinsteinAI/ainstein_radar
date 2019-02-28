@@ -29,43 +29,17 @@
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "radar_data_to_laser_scan_node" );
+  ros::init( argc, argv, "radardata_to_laserscan_node" );
 
-  // Data viz constructor arguments:
-  std::string data_topic;
-  std::string vel_topic;
-  std::string laser_scan_topic;
-    
-  // Parse the command line arguments for radar parameters:
-  if( argc < 2 )
+  // Usage:
+  if( argc < 1 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_data_to_laser_scan_node --topic TOPIC" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface radardata_to_laserscan_node" << std::endl;
       return -1;
     }
-
-  // Parse the command line arguments:
-  for( int i = 0; i < argc; ++i )
-    {
-      // Check for the data topic name:
-      if( std::string( argv[i] ) == std::string( "--topic" ) )
-	{
-	  data_topic = std::string( argv[++i] );
-	}
-    }
-
-  if( data_topic.empty() )
-    {
-      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_to_laser_scan_node --topic TOPIC" << std::endl;
-      return -1;
-    }
-
-  vel_topic = "car_vel";
-  laser_scan_topic = data_topic + "_laser_scan";
-  
-  std::cout << "Running radar data to laser scan node with data topic: " << data_topic << " radar velocity topic: " << vel_topic << " laser scan topic: " << laser_scan_topic << std::endl;
     
-  // Create visualization node to publish target laser scan:
-  RadarDataToLaserScan data_viz( data_topic, vel_topic, laser_scan_topic );
+  // Create node to publish target laser scan:
+  RadarDataToLaserScan radardata_to_laserscan;
 
   ros::spin();
 

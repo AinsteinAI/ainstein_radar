@@ -26,23 +26,14 @@
 
 #include "radar_ros_interface/radardata_to_laserscan.h"
 
-RadarDataToLaserScan::RadarDataToLaserScan( std::string data_topic, std::string vel_topic, std::string laser_scan_topic )
-  : data_topic_( data_topic ),
-    vel_topic_( vel_topic ),
-    laser_scan_topic_( laser_scan_topic ),
-    nh_private_( "~" ),
-    listen_tf_( buffer_tf_ )
-    
+RadarDataToLaserScan::RadarDataToLaserScan( void ) :
+  nh_private_( "~" ),
+  listen_tf_( buffer_tf_ )
 {
-  pub_laser_scan_ = nh_private_.advertise<sensor_msgs::LaserScan>( laser_scan_topic_, 10 );
-  sub_radar_data_ = nh_.subscribe( data_topic_, 10,
-					    &RadarDataToLaserScan::radarDataCallback,
-					    this );
-  sub_radar_vel_ = nh_.subscribe( vel_topic_, 10,
-					   &RadarDataToLaserScan::radarVelCallback,
-					   this );
-
   // Get parameters:
+  nh_private_.param( "data_topic", data_topic_, std::string(  ) );
+  
+  
   nh_private_.param( "angle_min", laser_scan_msg_.angle_min, static_cast<float>( -0.5 * M_PI ) );
   nh_private_.param( "angle_max", laser_scan_msg_.angle_max, static_cast<float>( 0.5 * M_PI ) );
   nh_private_.param( "angle_increment", laser_scan_msg_.angle_increment, static_cast<float>( 1.0 * ( M_PI / 180.0 ) ) );
@@ -64,6 +55,17 @@ RadarDataToLaserScan::RadarDataToLaserScan( std::string data_topic, std::string 
   
   // Assume radar velocity is not available until a message is received:
   is_vel_available_ = false;
+
+  // Create the LaserScan publisher:
+  pub_laser_scan_ = nh_private_.advertise<sensor_msgs::LaserScan>( "scan", 10 );
+
+  // Subscribe to radar data and radar velocity topics:
+  sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+				   &RadarDataToLaserScan::radarDataCallback,
+				   this );
+  sub_radar_vel_ = nh_.subscribe( "radar_vel", 10,
+				  &RadarDataToLaserScan::radarVelCallback,
+				  this );
 }
 
 void RadarDataToLaserScan::radarVelCallback( const geometry_msgs::Twist &msg )

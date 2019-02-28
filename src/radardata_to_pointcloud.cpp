@@ -26,40 +26,37 @@
 
 #include "radar_ros_interface/radardata_to_pointcloud.h"
 
-RadarDataVizPointCloud::RadarDataVizPointCloud( std::string data_topic, std::string vel_topic, std::string pcl_topic )
-  : data_topic_( data_topic ),
-    vel_topic_( vel_topic ),
-    pcl_topic_( pcl_topic ),
-    listen_tf_( buffer_tf_ )
-    
+RadarDataToPointCloud::RadarDataToPointCloud( void ) :
+  nh_private_( "~" ),
+  listen_tf_( buffer_tf_ )
 {
-  pub_pcl_ = node_handle_.advertise<sensor_msgs::PointCloud2>( pcl_topic_, 10 );
-  sub_radar_data_ = node_handle_.subscribe( data_topic_, 10,
-					    &RadarDataVizPointCloud::radarDataCallback,
-					    this );
-  sub_radar_vel_ = node_handle_.subscribe( vel_topic_, 10,
-					   &RadarDataVizPointCloud::radarVelCallback,
-					   this );
+  pub_pcl_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud", 10 );
+  sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+				   &RadarDataToPointCloud::radarDataCallback,
+				   this );
+  sub_radar_vel_ = nh_.subscribe( "radar_vel", 10,
+				  &RadarDataToPointCloud::radarVelCallback,
+				  this );
 
   // Get parameters:
-  node_handle_.param( "max_speed_thresh", max_speed_thresh_, 1.0 );
-  node_handle_.param( "min_dist_thresh", min_dist_thresh_, 1.0 );
-  node_handle_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
-  node_handle_.param( "compute_3d", compute_3d_, false );
-  node_handle_.param( "is_rotated", is_rotated_, false );
+  nh_private_.param( "max_speed_thresh", max_speed_thresh_, 1.0 );
+  nh_private_.param( "min_dist_thresh", min_dist_thresh_, 2.0 );
+  nh_private_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
+  nh_private_.param( "compute_3d", compute_3d_, false );
+  nh_private_.param( "is_rotated", is_rotated_, false );
   
   // Assume radar velocity is not available until a message is received:
   is_vel_available_ = false;
 }
 
-void RadarDataVizPointCloud::radarVelCallback( const geometry_msgs::Twist &msg )
+void RadarDataToPointCloud::radarVelCallback( const geometry_msgs::Twist &msg )
 {
   // Get the radar linear velocity in world frame:
   tf2::fromMsg( msg.linear, vel_world_ );
   is_vel_available_ = true;
 }
 
-void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarData &msg )
+void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarData &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world =
@@ -187,7 +184,7 @@ void RadarDataVizPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDa
   pub_pcl_.publish( cloud_msg_ );
 } 
 
-pcl::PointXYZ RadarDataVizPointCloud::radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target )
+pcl::PointXYZ RadarDataToPointCloud::radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target )
 {
   pcl::PointXYZ p;
   p.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
@@ -199,7 +196,7 @@ pcl::PointXYZ RadarDataVizPointCloud::radarDataToPclPoint( const radar_sensor_ms
   return p;
 }
 
-double RadarDataVizPointCloud::solveForAngle( double x, double y, double z )
+double RadarDataToPointCloud::solveForAngle( double x, double y, double z )
 {
   // Solve x*cos(th)+y*sin(th)=z for th:
   //

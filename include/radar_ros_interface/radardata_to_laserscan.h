@@ -11,7 +11,7 @@
 class RadarDataToLaserScan
 {
 public:
-  RadarDataToLaserScan( std::string data_topic, std::string vel_topic, std::string laser_scan_topic );
+  RadarDataToLaserScan( void );
   ~RadarDataToLaserScan(){}
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     

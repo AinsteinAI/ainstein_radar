@@ -29,43 +29,22 @@
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "radar_data_viz_point_cloud_node" );
+  ros::init( argc, argv, "radardata_to_pointcloud_node" );
 
   // Data viz constructor arguments:
   std::string data_topic;
   std::string vel_topic;
   std::string pcl_topic;
     
-  // Parse the command line arguments for radar parameters:
-  if( argc < 2 )
+  // Usage:
+  if( argc < 1 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface radardata_to_pointcloud_node" << std::endl;
       return -1;
     }
 
-  // Parse the command line arguments:
-  for( int i = 0; i < argc; ++i )
-    {
-      // Check for the data topic name:
-      if( std::string( argv[i] ) == std::string( "--topic" ) )
-	{
-	  data_topic = std::string( argv[++i] );
-	}
-    }
-
-  if( data_topic.empty() )
-    {
-      std::cerr << "Data topic name must be set. Usage: rosrun radar_ros_interface radar_data_viz_point_cloud_node --topic TOPIC" << std::endl;
-      return -1;
-    }
-
-  vel_topic = "car_vel";
-  pcl_topic = data_topic + "_pcl";
-  
-  std::cout << "Running radar data viz point cloud node with data topic: " << data_topic << " radar velocity topic: " << vel_topic << " point cloud topic: " << pcl_topic << std::endl;
-    
-  // Create visualization node to publish target point cloud:
-  RadarDataVizPointCloud data_viz( data_topic, vel_topic, pcl_topic );
+  // Create node to publish target point cloud:
+  RadarDataToPointCloud radardata_to_pointcloud;
 
   ros::spin();
 
