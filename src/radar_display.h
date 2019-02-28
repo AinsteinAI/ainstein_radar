@@ -77,6 +77,7 @@ private Q_SLOTS:
   void updateShowRaw();
   void updateShowSpeedArrows();
   void updateShowTargetInfo();
+  void updateInfoTextHeight();
   
   // Function to handle an incoming ROS message.
 private:

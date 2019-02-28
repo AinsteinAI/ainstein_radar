@@ -71,7 +71,7 @@ RadarDisplay::RadarDisplay()
 						 this, SLOT( updateShowTargetInfo() ) );
 
   info_text_height_property_ = new rviz::FloatProperty( "Info Text Height", 0.05,
-							"Target info test height.",
+							"Target info text height.",
 							this, SLOT( updateInfoTextHeight() ) );
 }
 
@@ -260,6 +260,14 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
     for( const auto& v : visuals_ )
       {
 	v->setShowTargetInfo( show_info_property_->getBool() );
+      }   
+  }    
+
+  void RadarDisplay::updateInfoTextHeight( void )
+  {
+    for( const auto& v : visuals_ )
+      {
+	v->setInfoTextHeight( info_text_height_property_->getFloat() );
       }   
   }    
   
