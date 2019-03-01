@@ -26,6 +26,23 @@
 
 #include "radar_ros_interface/radar_interface_t79_bsd.h"
 
+RadarInterfaceT79BSD::RadarInterfaceT79BSD( void ) :
+  RadarInterface<can_msgs::Frame>( ros::this_node::getName(),
+				   "received_messages",
+				   "sent_messages" )
+{
+  // Store the radar type:
+  int radar_type;
+  nh_private_.param( "radar_type", radar_type, static_cast<int>( ConfigT79BSD::TIPI_79_FL ) );
+  type_ = static_cast<ConfigT79BSD::RadarType>( radar_type );
+  
+  // Store the radar data frame ID:
+  nh_private_.param( "frame_id", radar_data_msg_.header.frame_id, std::string( "map" ) );
+
+  name_ = ConfigT79BSD::radar_names.at( type_ );
+  startRadar();
+}
+
 void RadarInterfaceT79BSD::startRadar( void )
 {
     // Send the start command:
@@ -107,7 +124,6 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     else if( msg.id == ConfigT79BSD::stop_frame.at( type_ ) )
     {
         ROS_INFO( "received stop frame from %s", name_.c_str() );
-        radar_data_msg_.header.frame_id = frame_id_;
         pub_radar_data_.publish( radar_data_msg_ );
     }
     // Parse out raw target data messages:

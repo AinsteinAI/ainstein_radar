@@ -19,20 +19,21 @@ class RadarInterface
 public:
 
     RadarInterface( std::string radar_name, std::string data_msg_topic, std::string radar_cmd_topic ) :
-            name_( radar_name )
+  nh_private_( "~" ),
+    name_( radar_name )
     {
         // Set up the subscriber to receive radar data:
-        sub_data_msg_ = node_handle_.subscribe( data_msg_topic, 10,
-                                                &RadarInterface::dataMsgCallback,
-                                                this );
+        sub_data_msg_ = nh_.subscribe( data_msg_topic, 10,
+				       &RadarInterface::dataMsgCallback,
+				       this );
 
         // Set up the publisher for sending commands to the radar:
-        pub_radar_cmd_ = node_handle_.advertise<data_msg_type>( radar_cmd_topic,
-                                                                10 );
+        pub_radar_cmd_ = nh_.advertise<data_msg_type>( radar_cmd_topic,
+						       10 );
 
         // Set up the publisher for sending out processed radar data:
-        pub_radar_data_ = node_handle_.advertise<radar_sensor_msgs::RadarData>( radar_name + "_data",
-                                                                            10 );
+        pub_radar_data_ = nh_private_.advertise<radar_sensor_msgs::RadarData>( "data",
+									       10 );
 
         // Sleep for a little to make sure messages are being advertised before we start sending:
         ros::Duration( 1.0 ).sleep();
@@ -52,7 +53,9 @@ protected:
 
     virtual void dataMsgCallback( const data_msg_type& data_msg ) = 0;
 
-    ros::NodeHandle node_handle_;
+    ros::NodeHandle nh_;
+    ros::NodeHandle nh_private_;
+    
     ros::Publisher pub_radar_cmd_;
     ros::Publisher pub_radar_data_;
 

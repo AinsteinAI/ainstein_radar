@@ -3,8 +3,9 @@ ROS nodes for interfacing with various radars based on a generic interface messa
 
 Currently supported radars include:
 
-- K79
-- T79 with BSD firmware
+- K79 (tested Feb. 2019)
+- K77 (tested Feb. 2019)
+- T79 with BSD firmware (tested Sept. 2018)
 
 ## Package Dependencies
 
@@ -24,7 +25,9 @@ radar_ros_interface/
 │       ├── radar_interface_k79.h
 │       └── radar_interface_t79_bsd.h
 ├── launch
-│   └── k79_node.launch
+    ├── k77_node.launch
+    ├── k79_node.launch
+│   └── t79_bsd_node.launch
 ├── LICENSE
 ├── package.xml
 ├── readme.md
@@ -45,9 +48,9 @@ radar_ros_interface/
 
 ### K79:
 
-The file k79_node.cpp implements a ROS node using the RadarNodeK79 interface class to create a UDP socket bound to the host IP address and port (which must match the radar's configuration), launch a thread to read and publish data to the RadarData message type.
+The file k79_node.cpp implements a ROS node using the RadarInterfaceK79 interface class to create a UDP socket bound to the host IP address and port (which must match the radar's configuration), launch a thread to read and publish data to the RadarData message type.
 
-*Command line usage:*	
+**Command line usage:**	
 
 The optional parameters are scoped private, eg host IP is read from /k79_node/host_ip in this case:
 
@@ -55,9 +58,9 @@ The optional parameters are scoped private, eg host IP is read from /k79_node/ho
 rosrun radar_ros_interface k79_node [_host_ip:=HOST_IP_ADDRESS] [_host_port:=HOST_UDP_PORT] [_radar_ip:=RADAR_IP_ADDRESS] [_radar_port:=RADAR_UDP_PORT] [_frame_id:=RADAR_FRAME_ID]
 ```
 
-If unspecified, host IP defaults to 10.0.0.75, radar IP defaults to 10.0.0.10, radar port defaults to 7, host port defaults to 1024, name defaults to "k79" and frame id defaults to "map".
+If unspecified, ```host_ip``` defaults to ```10.0.0.75```, ```radar_ip``` defaults to ```10.0.0.10```, ```radar_port``` defaults to ```7```, ```host_port``` defaults to ```1024``` and ```frame_id``` defaults to ```map```.
 
-*Example launch file usage (from launch/k79_node.launch):*
+**Example launch file usage (from launch/k79_node.launch):**
 
 ```xml
 <launch>
@@ -70,6 +73,62 @@ If unspecified, host IP defaults to 10.0.0.75, radar IP defaults to 10.0.0.10, r
 </launch>
 ```
 
-### T79:
+### K77 and T79+BSD:
 
-TODO
+The file ```src/t79_bsd_node.cpp``` implements a ROS node for both K77 and T79 using the RadarInterfaceT79BSD interface class.  With the current 4+1 firmware, this node works for both K77 and T79 *by specifying the radar type*.
+
+These CAN radars require a [socketcan_bridge](http://wiki.ros.org/socketcan_bridge) node publishing CAN frames to the ```/received_messages``` ROS topic (see the launch file below for an example).  This package can be installed with:
+
+```bash
+sudo apt install ros-kinetic-socketcan-bridge
+```
+
+**Command line usage:**	
+
+The optional parameters are scoped private, eg host IP is read from /k77_node/radar_type in this case:
+
+```bash
+rosrun radar_ros_interface t79_bsd_node [_radar_type:=RADAR_TYPE] [_frame_id:=RADAR_FRAME_ID]
+```
+
+where ```RADAR_TYPE``` is to be specified according to the following enum:
+
+```
+enum RadarType
+{
+    KANZA = 0,
+    TIPI_79_FL,
+    TIPI_79_FR,
+    TIPI_79_RL,
+    TIPI_79_RR,
+    N_RADARS
+};
+```
+
+For example, K77 is type ```0``` (KANZA), T79 on the front-left corner of a vehicle is type ```1``` (TIPI_79_FL) and so on.  If unspecified, ```radar_type``` defaults to ```0``` and ```frame_id``` defaults to ```map```.
+
+**Example launch file usage (from launch/k77_node.launch):**
+
+```xml
+<launch>
+  <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
+    <param name="can_device" value="can0" />
+  </node>
+  <node name="k77_node" pkg="radar_ros_interface" type="t79_bsd_node" required="true" >
+    <param name="radar_type" value="0" />
+  </node>
+</launch>
+```
+
+**Example launch file usage (from launch/t79_bsd_node.launch):**
+
+```xml
+<launch>
+  <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
+    <param name="can_device" value="can0" />
+  </node>
+  <node name="t79_node" pkg="radar_ros_interface" type="t79_bsd_node" required="true" >
+    <param name="radar_type" value="1" />
+  </node>
+</launch>
+```

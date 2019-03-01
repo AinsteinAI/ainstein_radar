@@ -9,19 +9,10 @@
 class RadarInterfaceT79BSD: public RadarInterface<can_msgs::Frame>
 {
 public:
-    RadarInterfaceT79BSD( ConfigT79BSD::RadarType radar_type, std::string radar_name,
-                     std::string frame_id ) :
-            type_( radar_type ),
-            frame_id_( frame_id ),
-            RadarInterface<can_msgs::Frame>( radar_name, "received_messages",
-                                                             "sent_messages" )
+  RadarInterfaceT79BSD( void );
+  ~RadarInterfaceT79BSD()
     {
-        name_ = ConfigT79BSD::radar_names.at( type_ );
-        startRadar();
-    }
-    ~RadarInterfaceT79BSD()
-    {
-        stopRadar();
+      stopRadar();
     }
 
     void startRadar( void );
@@ -32,7 +23,6 @@ private:
 
     ConfigT79BSD::RadarType type_;
     std::string name_;
-    std::string frame_id_;
 };
 
 

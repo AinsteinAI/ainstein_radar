@@ -31,42 +31,15 @@ int main( int argc, char** argv )
   // Initialize ROS and the default node name:
   ros::init( argc, argv, "t79_bsd_node" );
   
-  // Radar node constructor arguments:
-  ConfigT79BSD::RadarType radar_type = ConfigT79BSD::TIPI_79_FL;
-  std::string radar_name = "t79_bsd";
-  std::string frame_id = "map";
-  
   // Parse the command line arguments for radar parameters:
   if( argc < 1 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface t79_bsd_node [--type RADAR_TYPE] [--name RADAR_NAME] [--frame RADAR_FRAME_ID]" << std::endl;
+      std::cerr << "Usage: rosrun radar_ros_interface t79_bsd_node" << std::endl;
       return -1;
     }
 
-  // Parse the command line arguments:
-  for( int i = 0; i < argc; ++i )
-    {
-      // Check for the radar type:
-      if( std::string( argv[i] ) == std::string( "--type" ) )
-	{
-	  radar_type = static_cast<ConfigT79BSD::RadarType>( atoi( argv[++i] ) );
-	}
-      // Check for the radar name:
-      else if( std::string( argv[i] ) == std::string( "--name" ) )
-	{
-	  radar_name = std::string( argv[++i] );
-	}
-      // Check for the radar frame ID:
-      else if( std::string( argv[i] ) == std::string( "--frame" ) )
-	{
-	  frame_id = std::string( argv[++i] );
-	}
-    }
-
-  std::cout << "Running T79 BSD node with radar type: " << ConfigT79BSD::radar_names.at( radar_type ) << " name: " << radar_name << " frame: " << frame_id << std::endl;
-
   // Create the K79 interface and launch the data thread:
-  RadarInterfaceT79BSD t79_bsd_intf( radar_type, radar_name, frame_id );
+  RadarInterfaceT79BSD t79_bsd_intf;
   
   ros::spin();
 

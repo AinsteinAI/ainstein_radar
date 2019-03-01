@@ -63,7 +63,7 @@ const std::map<RadarType, int> stop_ret = {
 const std::map<RadarType, int> start_frame = {
                                                {
                                                  KANZA,
-                                                 0x421 },
+                                                 0x420 },
                                                {
                                                  TIPI_79_FL,
                                                  0x421 },
