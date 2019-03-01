@@ -66,13 +66,13 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
   pcl_.clear();
 
   // Iterate through raw targets and add them to the point cloud:
-  for( auto it = msg.raw_targets.begin(); it != msg.raw_targets.end(); ++it )
+  for( auto target : msg.raw_targets )
     {
       // If the radar world frame velocity is available from another source, use it for further processing:
       if( is_vel_available_ )
 	{
 	  // Copy the original radar target for further processing:
-	  radar_sensor_msgs::RadarTarget t = *it;
+	  radar_sensor_msgs::RadarTarget t = target;
 
 	  // Copy azimuth to elevation if the radar has been rotated:
 	  // In radar frame, +ve azimuth is LEFT, +ve elevation is DOWN.
@@ -170,7 +170,12 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
 	}
       else // No velocity information available
 	{
-	  pcl_.points.push_back( radarDataToPclPoint( *it ) );
+	  // Filter out targets based on range limits:
+	  if( target.range >= min_dist_thresh_ &&
+	      target.range <= max_dist_thresh_)
+	    {
+	      pcl_.points.push_back( radarDataToPclPoint( target ) );
+	    }
 	}
     }
 
