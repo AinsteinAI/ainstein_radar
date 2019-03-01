@@ -55,13 +55,13 @@ void RadarInterfaceT79BSD::startRadar( void )
     can_frame.dlc = 8;
     can_frame.id = ConfigT79BSD::RADAR_START_STOP;
     can_frame.data[0] = ConfigT79BSD::RADAR_START;
-    can_frame.data[1] = 0xff;
-    can_frame.data[2] = 0xff;
-    can_frame.data[3] = 0xff;
-    can_frame.data[4] = 0xff;
-    can_frame.data[5] = 0xff;
-    can_frame.data[6] = 0xff;
-    can_frame.data[7] = 0xff;
+    can_frame.data[1] = ConfigT79BSD::RADAR_CYCLES;
+    can_frame.data[2] = ConfigT79BSD::RESERVED;
+    can_frame.data[3] = ConfigT79BSD::RESERVED;
+    can_frame.data[4] = ConfigT79BSD::RESERVED;
+    can_frame.data[5] = ConfigT79BSD::RESERVED;
+    can_frame.data[6] = ConfigT79BSD::RESERVED;
+    can_frame.data[7] = ConfigT79BSD::RESERVED;
 
     pub_radar_cmd_.publish( can_frame );
 }
@@ -77,13 +77,13 @@ void RadarInterfaceT79BSD::stopRadar( void )
     can_frame.dlc = 8;
     can_frame.id = ConfigT79BSD::RADAR_START_STOP;
     can_frame.data[0] = ConfigT79BSD::RADAR_STOP;
-    can_frame.data[1] = 0x00;
-    can_frame.data[2] = 0xff;
-    can_frame.data[3] = 0xff;
-    can_frame.data[4] = 0xff;
-    can_frame.data[5] = 0xff;
-    can_frame.data[6] = 0xff;
-    can_frame.data[7] = 0xff;
+    can_frame.data[1] = ConfigT79BSD::RADAR_CYCLES;
+    can_frame.data[2] = ConfigT79BSD::RESERVED;
+    can_frame.data[3] = ConfigT79BSD::RESERVED;
+    can_frame.data[4] = ConfigT79BSD::RESERVED;
+    can_frame.data[5] = ConfigT79BSD::RESERVED;
+    can_frame.data[6] = ConfigT79BSD::RESERVED;
+    can_frame.data[7] = ConfigT79BSD::RESERVED;
 
     pub_radar_cmd_.publish( can_frame );
 }

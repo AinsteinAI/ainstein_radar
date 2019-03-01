@@ -35,6 +35,8 @@ const std::map<RadarType, std::string> radar_names = {
 const int RADAR_START_STOP = 0x100;
 const int RADAR_START = 0x01;
 const int RADAR_STOP = 0x02;
+const int RADAR_CYCLES = 0x00;
+const int RESERVED = 0xff; 
 
 const int RADAR_SEND_SPEED = 0x130;
 const int RADAR_SPEED_EFFECTIVE_POS = 0x01;
