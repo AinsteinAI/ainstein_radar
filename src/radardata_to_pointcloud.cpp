@@ -26,8 +26,10 @@
 
 #include "radar_ros_interface/radardata_to_pointcloud.h"
 
-RadarDataToPointCloud::RadarDataToPointCloud( void ) :
-  nh_private_( "~" ),
+RadarDataToPointCloud::RadarDataToPointCloud( ros::NodeHandle node_handle,
+					      ros::NodeHandle node_handle_private ) :
+  nh_( node_handle ),
+  nh_private_( node_handle_private ),
   listen_tf_( buffer_tf_ )
 {
   pub_pcl_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud", 10 );

@@ -30,11 +30,8 @@ int main( int argc, char** argv )
 {
   // Initialize ROS node:
   ros::init( argc, argv, "radardata_to_pointcloud_node" );
-
-  // Data viz constructor arguments:
-  std::string data_topic;
-  std::string vel_topic;
-  std::string pcl_topic;
+  ros::NodeHandle node_handle;
+  ros::NodeHandle node_handle_private( "~" );
     
   // Usage:
   if( argc < 1 )
@@ -44,7 +41,7 @@ int main( int argc, char** argv )
     }
 
   // Create node to publish target point cloud:
-  RadarDataToPointCloud radardata_to_pointcloud;
+  RadarDataToPointCloud radardata_to_pointcloud( node_handle, node_handle_private );
 
   ros::spin();
 

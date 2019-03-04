@@ -11,7 +11,8 @@
 class RadarDataToPointCloud
 {
 public:
-  RadarDataToPointCloud( void );
+  RadarDataToPointCloud( ros::NodeHandle node_handle,
+			 ros::NodeHandle node_handle_private );
   ~RadarDataToPointCloud(){}
 
   pcl::PointXYZ radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target );
