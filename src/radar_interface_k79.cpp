@@ -46,8 +46,10 @@ const std::string RadarInterfaceK79::run_cmd_str = std::string( "run" );
 const unsigned int RadarInterfaceK79::radar_msg_len = 1000;
 const unsigned int RadarInterfaceK79::target_msg_len = 8;
 
-RadarInterfaceK79::RadarInterfaceK79( void ) :
-  nh_private_( "~" )
+RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
+				      ros::NodeHandle node_handle_private ) :
+  nh_( node_handle ),
+  nh_private_( node_handle_private )
 {
   // Store the host IP and port:
   nh_private_.param( "host_ip", host_ip_addr_, std::string( "10.0.0.75" ) );

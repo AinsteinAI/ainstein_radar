@@ -13,7 +13,8 @@
 class RadarInterfaceK79 {
 
 public:
-  RadarInterfaceK79( void );
+  RadarInterfaceK79( ros::NodeHandle node_Handle,
+		     ros::NodeHandle node_Handle_private );
   ~RadarInterfaceK79();
 
   bool connect( void );

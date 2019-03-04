@@ -20,7 +20,8 @@
   <build_depend>visualization_msgs</build_depend>
   <build_depend>radar_sensor_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
-
+  <build_depend>nodelet</build_depend>
+  
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>can_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
@@ -31,8 +32,10 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>radar_sensor_msgs</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
+  <exec_depend>nodelet</exec_depend>
 
   <export>
+    <nodelet plugin="${prefix}/nodelet_k79.xml" />
   </export>
 
 </package>
