@@ -79,7 +79,7 @@ void RadarDataToLaserScan::radarDataCallback( const radar_sensor_msgs::RadarData
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world =
-    tf2::transformToEigen(buffer_tf_.lookupTransform( "base_link", msg.header.frame_id, ros::Time( 0 ) ) );
+    tf2::transformToEigen(buffer_tf_.lookupTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) );
   
   // Clear the point laser_scan point vector:
   std::fill( laser_scan_msg_.ranges.begin(), laser_scan_msg_.ranges.end(), std::numeric_limits<float>::infinity() );

@@ -49,7 +49,8 @@ const unsigned int RadarInterfaceK79::target_msg_len = 8;
 RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 				      ros::NodeHandle node_handle_private ) :
   nh_( node_handle ),
-  nh_private_( node_handle_private )
+  nh_private_( node_handle_private ),
+  radar_data_msg_ptr_( new radar_sensor_msgs::RadarData )
 {
   // Store the host IP and port:
   nh_private_.param( "host_ip", host_ip_addr_, std::string( "10.0.0.75" ) );
@@ -60,7 +61,7 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
   nh_private_.param( "radar_port", radar_port_, 7 );
 
   // Store the radar data frame ID:
-  nh_private_.param( "frame_id", radar_data_msg_.header.frame_id, std::string( "map" ) );
+  nh_private_.param( "frame_id", radar_data_msg_ptr_->header.frame_id, std::string( "map" ) );
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)
@@ -209,10 +210,10 @@ void RadarInterfaceK79::mainLoop(void)
 	  // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
       
 	  // Prepare the radar targets message:
-	  radar_data_msg_.header.stamp = ros::Time(0); // ros::Time::now();
-	  radar_data_msg_.raw_targets.clear();
-	  radar_data_msg_.tracked_targets.clear();
-	  radar_data_msg_.alarms.clear();
+	  radar_data_msg_ptr_->header.stamp = ros::Time(0); // ros::Time::now();
+	  radar_data_msg_ptr_->raw_targets.clear();
+	  radar_data_msg_ptr_->tracked_targets.clear();
+	  radar_data_msg_ptr_->alarms.clear();
 
 	  // Extract the target ID and data from the message:
 	  if( ( msg_len % RadarInterfaceK79::target_msg_len ) != 0 )
@@ -244,11 +245,11 @@ void RadarInterfaceK79::mainLoop(void)
 	      
 		  target.elevation = 0.0; // K79 does not output elevation angle
 
-		  radar_data_msg_.raw_targets.push_back( target );
+		  radar_data_msg_ptr_->raw_targets.push_back( target );
 		}
 
 	      // Publish the target data:
-	      pub_radar_data_.publish( radar_data_msg_ );
+	      pub_radar_data_.publish( radar_data_msg_ptr_ );
 	    }
 	}
 

@@ -60,7 +60,7 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world =
-    tf2::transformToEigen(buffer_tf_.lookupTransform( "base_link", msg.header.frame_id, ros::Time( 0 ) ) );
+    tf2::transformToEigen(buffer_tf_.lookupTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) );
   
   // Clear the point cloud point vector:
   pcl_.clear();

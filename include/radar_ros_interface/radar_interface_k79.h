@@ -53,7 +53,7 @@ private:
   ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_;
 
-  radar_sensor_msgs::RadarData radar_data_msg_;
+  boost::shared_ptr<radar_sensor_msgs::RadarData> radar_data_msg_ptr_;
     
 };
 
