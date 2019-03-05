@@ -36,6 +36,7 @@
 
   <export>
     <nodelet plugin="${prefix}/nodelet_k79.xml" />
+    <nodelet plugin="${prefix}/nodelet_radardata_to_pointcloud.xml" />
   </export>
 
 </package>
