@@ -60,6 +60,10 @@ public:
   void setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg );
   void clearMessageRaw( void );
 
+  // Configure the visual to show the data in the message.
+  void setMessageTracked( const radar_sensor_msgs::RadarData::ConstPtr& msg );
+  void clearMessageTracked( void );
+
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
   // calls to FrameManager and error handling inside setMessage(),
@@ -71,13 +75,15 @@ public:
   // Set the color and alpha of the visual, which are user-editable
   // parameters and therefore don't come from the Radar message.
   void setColorRaw( float r, float g, float b, float a );
+  void setColorTracked( float r, float g, float b, float a );
 
   // Set the scale of the visual, which are user-editable
   // parameters and therefore don't come from the Radar message.
   void setScaleRaw( float scale );
+  void setScaleTracked( float scale );
 
   // Update the targets based on new user-set parameters.
-  void updateTargets();
+  void updateFilteredTargets();
   
   // Set the min and max range, which are user-editable
   // parameters and therefore don't come from the Radar message.
@@ -92,8 +98,9 @@ public:
   void setInfoTextHeight( float info_text_height );
   
 private:
-  // The object implementing the radar target visuals
-  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_;
+  // The objects implementing the radar target visuals
+  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_raw_;
+  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_tracked_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.

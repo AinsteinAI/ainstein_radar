@@ -21,11 +21,10 @@ namespace rviz_radar_plugin
 // constructor the parameters it needs to fully initialize.
 RadarDisplay::RadarDisplay()
 {
-  // For now, turning off "show raw" is equivalent to turning off the visualization
-  // entirely. May add tracked targets back in if desired, with "show tracked".
+  // Options for displaying raw targets:
   show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
 					       "Toggles display of raw target markers.",
-					       this, SLOT( updateShowRaw() ) );
+					       this, SLOT( updateShowTargets() ) );
 
   color_raw_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
 					"Color to draw the target markers.",
@@ -39,6 +38,24 @@ RadarDisplay::RadarDisplay()
 					"Marker scale, in meters.",
 					this, SLOT( updateScale() ) );
 
+  // Options for displaying tracked targets:
+  show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
+					       "Toggles display of tracked target markers.",
+					       this, SLOT( updateShowTargets() ) );
+
+  color_tracked_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+					"Color to dtracked the target markers.",
+					this, SLOT( updateColorAndAlpha() ) );
+  
+  alpha_tracked_ = new rviz::FloatProperty( "Alpha", 1.0,
+					"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+					this, SLOT( updateColorAndAlpha() ) );
+
+  scale_tracked_ = new rviz::FloatProperty( "Scale", 0.2,
+					"Marker scale, in meters.",
+					this, SLOT( updateScale() ) );
+
+  
   // Create the history length option:
   history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
                                                     "Number of radar scans to display.",
@@ -150,7 +167,7 @@ void RadarDisplay::updateMinRange()
   for( const auto& v : visuals_ )
     {
       v->setMinRange( min_range_property_->getFloat() );
-      v->updateTargets();
+      v->updateFilteredTargets();
     }   
 }
 
@@ -164,14 +181,18 @@ void RadarDisplay::updateMaxRange()
   for( const auto& v : visuals_ )
     {
       v->setMaxRange( max_range_property_->getFloat() );
-      v->updateTargets();
+      v->updateFilteredTargets();
     }   
 }
 
-// Set whether to display raw markers.
-void RadarDisplay::updateShowRaw()
+// Set whether to display raw and/or tracked markers.
+void RadarDisplay::updateShowTargets()
 {
+  // Get the visual options settings:
   show_raw_ = show_raw_property_->getBool();
+  show_tracked_ = show_tracked_property_->getBool();
+
+  // Raw visual options:
   if( show_raw_ )
     {
       color_raw_->show();
@@ -185,8 +206,43 @@ void RadarDisplay::updateShowRaw()
       scale_raw_->hide();
       visuals_.clear();
     }
+
+  // Tracked visual options:
+  if( show_tracked_ )
+    {
+      color_tracked_->show();
+      alpha_tracked_->show();
+      scale_tracked_->show();
+    }
+  else
+    {
+      color_tracked_->hide();
+      alpha_tracked_->hide();
+      scale_tracked_->hide();
+      visuals_.clear();
+    }
+
+  // General visual options:
+  if( show_raw_ || show_tracked_ )
+    {
+      history_length_property_->show();
+      min_range_property_->show();
+      max_range_property_->show();
+      show_speed_property_->show();
+      show_info_property_->show();
+      info_text_height_property_->show();
+    }
+  else
+    {
+      history_length_property_->hide();
+      min_range_property_->hide();
+      max_range_property_->hide();
+      show_speed_property_->hide();
+      show_info_property_->hide();
+      info_text_height_property_->hide();
+    }      
 }
-  
+
 // This is our callback to handle an incoming message.
 void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
@@ -197,10 +253,10 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   Ogre::Vector3 position;
   if( !context_->getFrameManager()->getTransform( msg->header.frame_id,
                                                   msg->header.stamp,
-                                                  position, orientation ))
+                                                  position, orientation ) )
   {
     ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'",
-               msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
+               msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ) );
     return;
   }
 
@@ -213,7 +269,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   }
   else
   {
-    visual.reset(new RadarVisual( context_->getSceneManager(), scene_node_ ));
+    visual.reset( new RadarVisual( context_->getSceneManager(), scene_node_ ) );
   }
 
   // Now set or update the contents of the chosen visual.
@@ -221,25 +277,54 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   float scale;
   Ogre::ColourValue color;
   float info_text_height;
+
+  // Set min/max range filter:
+  visual->setMinRange( min_range_property_->getFloat() );
+  visual->setMaxRange( max_range_property_->getFloat() );
+
+  // Set diagnostics options:
+  visual->setShowSpeedArrows( show_speed_property_->getBool() );
+  visual->setShowTargetInfo( show_info_property_->getBool() );
+  info_text_height = info_text_height_property_->getFloat();
+  visual->setInfoTextHeight( info_text_height );
+
+  // Set raw target data and visual options:
   if( show_raw_property_->getBool() )
     {
-      visual->setMinRange( min_range_property_->getFloat() );
-      visual->setMaxRange( max_range_property_->getFloat() );
-      visual->setShowSpeedArrows( show_speed_property_->getBool() );
-      visual->setShowTargetInfo( show_info_property_->getBool() );
+      // First set the target data from message:
       visual->setMessageRaw( msg );
+
+      // Set the target visual options:
       alpha = alpha_raw_->getFloat();
       color = color_raw_->getOgreColor();
       visual->setColorRaw( color.r, color.g, color.b, alpha );
       scale = scale_raw_->getFloat();
       visual->setScaleRaw( scale );
-      info_text_height = info_text_height_property_->getFloat();
-      visual->setInfoTextHeight( info_text_height );
     }
   else 
     {
       visual->clearMessageRaw();
     }
+
+  // Set tracked target data and visual options:
+  if( show_tracked_property_->getBool() )
+    {
+      // First set the target data from message:
+      visual->setMessageTracked( msg );
+
+      // Set the target visual options:
+      alpha = alpha_tracked_->getFloat();
+      color = color_tracked_->getOgreColor();
+      visual->setColorTracked( color.r, color.g, color.b, alpha );
+      scale = scale_tracked_->getFloat();
+      visual->setScaleTracked( scale );
+    
+    }
+  else 
+    {
+      visual->clearMessageTracked();
+    }
+
   visual->setFramePosition( position );
   visual->setFrameOrientation( orientation );
 

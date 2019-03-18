@@ -71,10 +71,10 @@ protected:
 private Q_SLOTS:
   void updateColorAndAlpha();
   void updateScale();
+  void updateShowTargets();
   void updateHistoryLength();
   void updateMinRange();
   void updateMaxRange();
-  void updateShowRaw();
   void updateShowSpeedArrows();
   void updateShowTargetInfo();
   void updateInfoTextHeight();
@@ -89,12 +89,17 @@ private:
 
   // Booleans to store whether to show targets:
   bool show_raw_;
+  bool show_tracked_;
   
   // User-editable property variables.
   rviz::BoolProperty* show_raw_property_;
   rviz::ColorProperty* color_raw_;
   rviz::FloatProperty* alpha_raw_;
   rviz::FloatProperty* scale_raw_;
+  rviz::BoolProperty* show_tracked_property_;
+  rviz::ColorProperty* color_tracked_;
+  rviz::FloatProperty* alpha_tracked_;
+  rviz::FloatProperty* scale_tracked_;
   rviz::IntProperty* history_length_property_;
   rviz::FloatProperty* min_range_property_;
   rviz::FloatProperty* max_range_property_;
