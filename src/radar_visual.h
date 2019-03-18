@@ -96,11 +96,14 @@ public:
   // Set whether to render target info text:
   void setShowTargetInfo( bool show_target_info );
   void setInfoTextHeight( float info_text_height );
+
+  // Maximum number of target visuals:
+  static const int max_target_visuals;
   
 private:
   // The objects implementing the radar target visuals
-  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_raw_;
-  std::vector< boost::shared_ptr<TargetVisual> > radar_target_visuals_tracked_;
+  std::vector<TargetVisual> radar_target_visuals_raw_;
+  std::vector<TargetVisual> radar_target_visuals_tracked_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.

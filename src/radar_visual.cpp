@@ -11,6 +11,8 @@
 
 namespace rviz_radar_plugin
 {
+
+  const int RadarVisual::max_target_visuals = 1000;
   
 RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
 {
@@ -30,7 +32,10 @@ RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* pa
 
   // Set showing target info to false by default:
   show_target_info_ = false;
-  
+
+  // Set the target visuals vector capacities:
+  radar_target_visuals_raw_.reserve( RadarVisual::max_target_visuals );
+  radar_target_visuals_tracked_.reserve( RadarVisual::max_target_visuals );
 }
 
 RadarVisual::~RadarVisual()
@@ -41,57 +46,54 @@ RadarVisual::~RadarVisual()
 
 void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
-  // Clear the target shapes vector:
+  // Resize the target shapes vector:
   radar_target_visuals_raw_.clear();
-  
+
   // Fill the target shapes from RadarData message:
   for( const auto& target : msg->raw_targets )
     {
       if( target.range > min_range_ && target.range < max_range_ )
 	{
 	  // Create the new target shape, fill it and push back:
-	  boost::shared_ptr<TargetVisual> s( new TargetVisual( scene_manager_, frame_node_ ) );
+	  radar_target_visuals_raw_.emplace_back( scene_manager_, frame_node_ );
 	  
 	  // Compute the target's Cartesian position:
-	  s->pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
+	  radar_target_visuals_raw_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 					sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 					sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
 	  // Set the target speed arrow length:
 	  if( show_speed_arrows_ )
 	    {
-	      s->speed.set( std::abs( target.speed ), // shaft length
+	      radar_target_visuals_raw_.back().speed.set( std::abs( target.speed ), // shaft length
 			    0.01, // shaft diameter
 			    0.1, // arrow head length
 			    0.05 ); // arrow head diameter
 	    }
 	  else
 	    {
-	      s->speed.set( 0.0, 0.0, 0.0, 0.0 );
+	      radar_target_visuals_raw_.back().speed.set( 0.0, 0.0, 0.0, 0.0 );
 	    }
 
 	  // Set the target speed arrow position to the target position:
-	  s->speed.setPosition( s->pos.getPosition() );
+	  radar_target_visuals_raw_.back().speed.setPosition( radar_target_visuals_raw_.back().pos.getPosition() );
 
 	  // The target speed points toward the radar sensor:
-	  s->speed.setDirection( s->pos.getPosition() /
+	  radar_target_visuals_raw_.back().speed.setDirection( radar_target_visuals_raw_.back().pos.getPosition() /
 				 std::copysign( target.range, target.speed ) );
 
 	  // Set the info text:
 	  // Set the target speed arrow length:
 	  if( show_target_info_ )
 	    {
-	      s->info.setLocalTranslation( s->pos.getPosition() );
+	      radar_target_visuals_raw_.back().info.setLocalTranslation( radar_target_visuals_raw_.back().pos.getPosition() );
 	      std::ostringstream ss;
 	      ss << target;
-	      s->info.setCaption( ss.str() );
+	      radar_target_visuals_raw_.back().info.setCaption( ss.str() );
 	    }
 	  else
 	    {
-	      s->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	      radar_target_visuals_raw_.back().info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	    }
-
-	  // Push back the target shape (visual):
-	  radar_target_visuals_raw_.push_back( s );
 	}
     }
 }
@@ -103,7 +105,7 @@ void RadarVisual::clearMessageRaw( void )
 
 void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPtr& msg )
 {
-  // Clear the target shapes vector:
+  // Resize the target shapes vector:
   radar_target_visuals_tracked_.clear();
   
   // Fill the target shapes from RadarData message:
@@ -111,49 +113,46 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
     {
       if( target.range > min_range_ && target.range < max_range_ )
 	{
-	  // Create the new target shape, fill it and push back:
-	  boost::shared_ptr<TargetVisual> s( new TargetVisual( scene_manager_, frame_node_ ) );
+	  // Create the new target shape, fill it and push back:	
+	  radar_target_visuals_tracked_.emplace_back( scene_manager_, frame_node_ );
 	  
 	  // Compute the target's Cartesian position:
-	  s->pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
+	  radar_target_visuals_tracked_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 					sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 					sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
 	  // Set the target speed arrow length:
 	  if( show_speed_arrows_ )
 	    {
-	      s->speed.set( std::abs( target.speed ), // shaft length
+	      radar_target_visuals_tracked_.back().speed.set( std::abs( target.speed ), // shaft length
 			    0.01, // shaft diameter
 			    0.1, // arrow head length
 			    0.05 ); // arrow head diameter
 	    }
 	  else
 	    {
-	      s->speed.set( 0.0, 0.0, 0.0, 0.0 );
+	      radar_target_visuals_tracked_.back().speed.set( 0.0, 0.0, 0.0, 0.0 );
 	    }
 
 	  // Set the target speed arrow position to the target position:
-	  s->speed.setPosition( s->pos.getPosition() );
+	  radar_target_visuals_tracked_.back().speed.setPosition( radar_target_visuals_tracked_.back().pos.getPosition() );
 
 	  // The target speed points toward the radar sensor:
-	  s->speed.setDirection( s->pos.getPosition() /
+	  radar_target_visuals_tracked_.back().speed.setDirection( radar_target_visuals_tracked_.back().pos.getPosition() /
 				 std::copysign( target.range, target.speed ) );
 
 	  // Set the info text:
 	  // Set the target speed arrow length:
 	  if( show_target_info_ )
 	    {
-	      s->info.setLocalTranslation( s->pos.getPosition() );
+	      radar_target_visuals_tracked_.back().info.setLocalTranslation( radar_target_visuals_tracked_.back().pos.getPosition() );
 	      std::ostringstream ss;
 	      ss << target;
-	      s->info.setCaption( ss.str() );
+	      radar_target_visuals_tracked_.back().info.setCaption( ss.str() );
 	    }
 	  else
 	    {
-	      s->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	      radar_target_visuals_tracked_.back().info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	    }
-
-	  // Push back the target shape (visual):
-	  radar_target_visuals_tracked_.push_back( s );
 	}
     }
 }
@@ -177,37 +176,37 @@ void RadarVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
 // Color is passed through to the Shape object.
 void RadarVisual::setColorRaw( float r, float g, float b, float a )
 {
-  for( const auto& shape : radar_target_visuals_raw_ )
+  for( auto& shape : radar_target_visuals_raw_ )
     {
-      shape->pos.setColor( Ogre::ColourValue( r, g, b, a) );
-      shape->speed.setColor( Ogre::ColourValue( r, g, b, a) );
+      shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
+      shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
     }
 }
 
   void RadarVisual::setColorTracked( float r, float g, float b, float a )
 {
-  for( const auto& shape : radar_target_visuals_tracked_ )
+  for( auto& shape : radar_target_visuals_tracked_ )
     {
-      shape->pos.setColor( Ogre::ColourValue( r, g, b, a) );
-      shape->speed.setColor( Ogre::ColourValue( r, g, b, a) );
+      shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
+      shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
     }
 }
 
 // Scale is passed through to the Shape object.
 void RadarVisual::setScaleRaw( float scale )
 {
-  for( const auto& shape : radar_target_visuals_raw_ )
+  for( auto& shape : radar_target_visuals_raw_ )
     {
-      shape->pos.setScale( Ogre::Vector3( scale, scale, scale ) );
+      shape.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
     }
 }
 
   // Scale is passed through to the Shape object.
 void RadarVisual::setScaleTracked( float scale )
 {
-  for( const auto& shape : radar_target_visuals_tracked_ )
+  for( auto& shape : radar_target_visuals_tracked_ )
     {
-      shape->pos.setScale( Ogre::Vector3( scale, scale, scale ) );
+      shape.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
     }
 }
 
@@ -216,9 +215,9 @@ void RadarVisual::setScaleTracked( float scale )
     // Remove raw targets based on updated range filters:
     radar_target_visuals_raw_.erase( std::remove_if( radar_target_visuals_raw_.begin(),
 						     radar_target_visuals_raw_.end(),
-						     [this]( boost::shared_ptr<TargetVisual> s )
+						     [this]( TargetVisual s )
 						     {
-						       Ogre::Vector3 pos = s->pos.getPosition();
+						       Ogre::Vector3 pos = s.pos.getPosition();
 						       return ( pos.length() > max_range_ ||
 								pos.length() < min_range_ );
 						     }), radar_target_visuals_raw_.end() );
@@ -226,9 +225,9 @@ void RadarVisual::setScaleTracked( float scale )
     // Remove tracked targets based on updated range filters:
     radar_target_visuals_tracked_.erase( std::remove_if( radar_target_visuals_tracked_.begin(),
 							 radar_target_visuals_tracked_.end(),
-							 [this]( boost::shared_ptr<TargetVisual> s )
+							 [this]( TargetVisual s )
 							 {
-							   Ogre::Vector3 pos = s->pos.getPosition();
+							   Ogre::Vector3 pos = s.pos.getPosition();
 							   return ( pos.length() > max_range_ ||
 								    pos.length() < min_range_ );
 							 }), radar_target_visuals_tracked_.end() );
@@ -253,13 +252,13 @@ void RadarVisual::setScaleTracked( float scale )
     if( !show_speed_arrows_ )
       {
 	// Easiest way to hide arrows is to scale them down to zero:
-	for( const auto& t : radar_target_visuals_raw_ )
+	for( auto& t : radar_target_visuals_raw_ )
 	  {
-	    t->speed.set( 0.0, 0.0, 0.0, 0.0 );
+	    t.speed.set( 0.0, 0.0, 0.0, 0.0 );
 	  }
-	for( const auto& t : radar_target_visuals_tracked_ )
+	for( auto& t : radar_target_visuals_tracked_ )
 	  {
-	    t->speed.set( 0.0, 0.0, 0.0, 0.0 );
+	    t.speed.set( 0.0, 0.0, 0.0, 0.0 );
 	  }
 	
       }
@@ -273,13 +272,13 @@ void RadarVisual::setScaleTracked( float scale )
     // Update all the existing text if switched off:
     if( !show_target_info_ )
       {
-	for( const auto& t : radar_target_visuals_raw_ )
+	for( auto& t : radar_target_visuals_raw_ )
 	  {
-	    t->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	    t.info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	  }
-	for( const auto& t : radar_target_visuals_tracked_ )
+	for( auto& t : radar_target_visuals_tracked_ )
 	  {
-	    t->info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	    t.info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	  }       
       }
   }
@@ -290,13 +289,13 @@ void RadarVisual::setScaleTracked( float scale )
     info_text_height_ = info_text_height;
 
     // Update all the existing text if switched off:
-    for( const auto& t : radar_target_visuals_raw_ )
+    for( auto& t : radar_target_visuals_raw_ )
       {
-	t->info.setCharacterHeight( info_text_height_ );
+	t.info.setCharacterHeight( info_text_height_ );
       }
-    for( const auto& t : radar_target_visuals_tracked_ )
+    for( auto& t : radar_target_visuals_tracked_ )
       {
-	t->info.setCharacterHeight( info_text_height_ );
+	t.info.setCharacterHeight( info_text_height_ );
       }    
   }
 

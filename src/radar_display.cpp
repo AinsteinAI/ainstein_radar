@@ -329,7 +329,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   visual->setFrameOrientation( orientation );
 
   // And send it to the end of the circular buffer
-  visuals_.push_back(visual);
+  visuals_.push_back( visual );
 }
 
   void RadarDisplay::updateShowSpeedArrows( void )
