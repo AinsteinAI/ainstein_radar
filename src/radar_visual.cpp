@@ -212,25 +212,25 @@ void RadarVisual::setScaleTracked( float scale )
 
   void RadarVisual::updateFilteredTargets( void )
   {
-    // Remove raw targets based on updated range filters:
-    radar_target_visuals_raw_.erase( std::remove_if( radar_target_visuals_raw_.begin(),
-						     radar_target_visuals_raw_.end(),
-						     [this]( TargetVisual s )
-						     {
-						       Ogre::Vector3 pos = s.pos.getPosition();
-						       return ( pos.length() > max_range_ ||
-								pos.length() < min_range_ );
-						     }), radar_target_visuals_raw_.end() );
+    // // Remove raw targets based on updated range filters:
+    // radar_target_visuals_raw_.erase( std::remove_if( radar_target_visuals_raw_.begin(),
+    // 						     radar_target_visuals_raw_.end(),
+    // 						     [this]( TargetVisual s )
+    // 						     {
+    // 						       Ogre::Vector3 pos = s.pos.getPosition();
+    // 						       return ( pos.length() > max_range_ ||
+    // 								pos.length() < min_range_ );
+    // 						     }), radar_target_visuals_raw_.end() );
     
-    // Remove tracked targets based on updated range filters:
-    radar_target_visuals_tracked_.erase( std::remove_if( radar_target_visuals_tracked_.begin(),
-							 radar_target_visuals_tracked_.end(),
-							 [this]( TargetVisual s )
-							 {
-							   Ogre::Vector3 pos = s.pos.getPosition();
-							   return ( pos.length() > max_range_ ||
-								    pos.length() < min_range_ );
-							 }), radar_target_visuals_tracked_.end() );
+    // // Remove tracked targets based on updated range filters:
+    // radar_target_visuals_tracked_.erase( std::remove_if( radar_target_visuals_tracked_.begin(),
+    // 							 radar_target_visuals_tracked_.end(),
+    // 							 [this]( TargetVisual s )
+    // 							 {
+    // 							   Ogre::Vector3 pos = s.pos.getPosition();
+    // 							   return ( pos.length() > max_range_ ||
+    // 								    pos.length() < min_range_ );
+    // 							 }), radar_target_visuals_tracked_.end() );
   }
  
   void RadarVisual::setMinRange( float min_range )
