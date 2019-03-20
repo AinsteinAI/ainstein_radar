@@ -49,7 +49,7 @@ RadarDataToLaserScan::RadarDataToLaserScan( void ) :
   // Set the laser scan message array lengths:
   laser_scan_length_ = static_cast<int>( std::floor( ( laser_scan_msg_.angle_max -
 							laser_scan_msg_.angle_min ) /
-						      laser_scan_msg_.angle_increment ) );
+						     laser_scan_msg_.angle_increment ) ) + 1;
   laser_scan_msg_.ranges.resize( laser_scan_length_, std::numeric_limits<float>::infinity() );
   laser_scan_msg_.intensities.clear(); // do not fill intensities
   
@@ -141,10 +141,10 @@ void RadarDataToLaserScan::radarDataCallback( const radar_sensor_msgs::RadarData
 bool RadarDataToLaserScan::useTarget( const radar_sensor_msgs::RadarTarget &t )
 {
   // Check that target range and azimuth are within bounds:
-  if( t.range < laser_scan_msg_.range_min ||
-      t.range > laser_scan_msg_.range_max ||
-      ( ( M_PI / 180.0 ) * t.azimuth ) < laser_scan_msg_.angle_min ||
-      ( ( M_PI / 180.0 ) * t.azimuth ) > laser_scan_msg_.angle_max )
+  if( t.range <= laser_scan_msg_.range_min ||
+      t.range >= laser_scan_msg_.range_max ||
+      ( ( M_PI / 180.0 ) * t.azimuth ) <= laser_scan_msg_.angle_min ||
+      ( ( M_PI / 180.0 ) * t.azimuth ) >= laser_scan_msg_.angle_max )
     {
       return false;
     }
