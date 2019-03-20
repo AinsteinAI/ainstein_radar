@@ -21,6 +21,7 @@ class ColorProperty;
 class FloatProperty;
 class IntProperty;
 class BoolProperty;
+ class EnumProperty;
  class ViewportMouseEvent;
 }
 
@@ -78,6 +79,7 @@ private Q_SLOTS:
   void updateShowSpeedArrows();
   void updateShowTargetInfo();
   void updateInfoTextHeight();
+  void updateTargetShape();
   
   // Function to handle an incoming ROS message.
 private:
@@ -93,6 +95,8 @@ private:
   
   // User-editable property variables.
   rviz::BoolProperty* show_raw_property_;
+  rviz::EnumProperty* shape_raw_property_;
+  rviz::EnumProperty* shape_tracked_property_;
   rviz::ColorProperty* color_raw_;
   rviz::FloatProperty* alpha_raw_;
   rviz::FloatProperty* scale_raw_;

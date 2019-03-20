@@ -24,8 +24,8 @@ namespace rviz_radar_plugin
   class TargetVisual
   {
   public:
-  TargetVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node ) :
-    pos( rviz::Shape::Cube, scene_manager, parent_node ),
+  TargetVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, rviz::Shape::Type type ) :
+    pos( type, scene_manager, parent_node ),
       speed( scene_manager, parent_node ),
       info( "test" )
 	{
@@ -97,6 +97,16 @@ public:
   void setShowTargetInfo( bool show_target_info );
   void setInfoTextHeight( float info_text_height );
 
+  // Set target shapes for rendering:
+  void setTargetShapeRaw( int type )
+  {
+    shape_type_raw_ = static_cast<rviz::Shape::Type>( type );
+  }
+  void setTargetShapeTracked( int type )
+  {
+    shape_type_tracked_ = static_cast<rviz::Shape::Type>( type );
+  }
+  
   // Maximum number of target visuals:
   static const int max_target_visuals;
   
@@ -117,6 +127,10 @@ private:
   float min_range_;
   float max_range_;
 
+  // Shapes to use for rendering:
+  rviz::Shape::Type shape_type_raw_;
+  rviz::Shape::Type shape_type_tracked_;
+  
   // Determines whether speed arrows are rendered with zero length:
   bool show_speed_arrows_;
 

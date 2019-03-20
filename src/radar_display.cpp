@@ -8,6 +8,7 @@
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
 #include <rviz/properties/bool_property.h>
+#include <rviz/properties/enum_property.h>
 #include <rviz/frame_manager.h>
 
 #include "radar_visual.h"
@@ -17,81 +18,92 @@
 namespace rviz_radar_plugin
 {
 
-// The constructor must have no arguments, so we can't give the
-// constructor the parameters it needs to fully initialize.
-RadarDisplay::RadarDisplay()
-{
-  // Options for displaying raw targets:
-  show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
-					       "Toggles display of raw target markers.",
-					       this, SLOT( updateShowTargets() ) );
+  // The constructor must have no arguments, so we can't give the
+  // constructor the parameters it needs to fully initialize.
+  RadarDisplay::RadarDisplay()
+  {
+    // Options for displaying raw targets:
+    show_raw_property_ = new rviz::BoolProperty( "Show Raw Targets", true,
+						 "Toggles display of raw target markers.",
+						 this, SLOT( updateShowTargets() ) );
 
-  color_raw_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-					"Color to draw the target markers.",
-					this, SLOT( updateColorAndAlpha() ) );
+    color_raw_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+					  "Color to draw the target markers.",
+					  this, SLOT( updateColorAndAlpha() ) );
   
-  alpha_raw_ = new rviz::FloatProperty( "Alpha", 1.0,
-					"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-					this, SLOT( updateColorAndAlpha() ) );
+    alpha_raw_ = new rviz::FloatProperty( "Alpha", 1.0,
+					  "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+					  this, SLOT( updateColorAndAlpha() ) );
 
-  scale_raw_ = new rviz::FloatProperty( "Scale", 0.2,
-					"Marker scale, in meters.",
-					this, SLOT( updateScale() ) );
+    scale_raw_ = new rviz::FloatProperty( "Scale", 0.2,
+					  "Marker scale, in meters.",
+					  this, SLOT( updateScale() ) );
 
-  // Options for displaying tracked targets:
-  show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
-					       "Toggles display of tracked target markers.",
-					       this, SLOT( updateShowTargets() ) );
+    shape_raw_property_ = new rviz::EnumProperty( "Shape", "Cube",
+						  "Target shape type.",
+						  this, SLOT( updateTargetShape() ) );
+    shape_raw_property_->addOptionStd( "Cube", 1 );
+    shape_raw_property_->addOptionStd( "Sphere", 3 );
 
-  color_tracked_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-					"Color to dtracked the target markers.",
-					this, SLOT( updateColorAndAlpha() ) );
+    // Options for displaying tracked targets:
+    show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
+						     "Toggles display of tracked target markers.",
+						     this, SLOT( updateShowTargets() ) );
   
-  alpha_tracked_ = new rviz::FloatProperty( "Alpha", 1.0,
-					"Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-					this, SLOT( updateColorAndAlpha() ) );
-
-  scale_tracked_ = new rviz::FloatProperty( "Scale", 0.2,
-					"Marker scale, in meters.",
-					this, SLOT( updateScale() ) );
-
+    color_tracked_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+					      "Color to dtracked the target markers.",
+					      this, SLOT( updateColorAndAlpha() ) );
   
-  // Create the history length option:
-  history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
-                                                    "Number of radar scans to display.",
-                                                    this, SLOT( updateHistoryLength() ));
-  history_length_property_->setMin( 1 );
-  history_length_property_->setMax( 1000000 );
+    alpha_tracked_ = new rviz::FloatProperty( "Alpha", 1.0,
+					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+					      this, SLOT( updateColorAndAlpha() ) );
 
-  // Create the minimum target range option:
-  min_range_property_ = new rviz::FloatProperty( "Min Range", 0.0,
-						 "Minimum distance of targets to be displayed.",
-						 this, SLOT( updateMinRange() ));
-  min_range_property_->setMin( 0.0 );
-  min_range_property_->setMax( 20.0 );
+    scale_tracked_ = new rviz::FloatProperty( "Scale", 0.2,
+					      "Marker scale, in meters.",
+					      this, SLOT( updateScale() ) );
 
-  // Create the maximum target range option:
-  max_range_property_ = new rviz::FloatProperty( "Max Range", 20.0,
-						 "Maximum distance of targets to be displayed.",
-						 this, SLOT( updateMaxRange() ));
-  max_range_property_->setMin( 0.0 );
-  max_range_property_->setMax( 20.0 );
+    shape_tracked_property_ = new rviz::EnumProperty( "Shape", "Cube",
+						      "Target shape type.",
+						      this, SLOT( updateTargetShape() ) );
+    shape_tracked_property_->addOptionStd( "Cube", 1 );
+    shape_tracked_property_->addOptionStd( "Sphere", 3 );
+  
+    // Create the history length option:
+    history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
+						      "Number of radar scans to display.",
+						      this, SLOT( updateHistoryLength() ));
+    history_length_property_->setMin( 1 );
+    history_length_property_->setMax( 1000000 );
 
-  // Determines whether to show the speed arrows:
-  show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,
-						 "Toggles display of arrows indicating target speed.",
-						 this, SLOT( updateShowSpeedArrows() ) );
+    // Create the minimum target range option:
+    min_range_property_ = new rviz::FloatProperty( "Min Range", 0.0,
+						   "Minimum distance of targets to be displayed.",
+						   this, SLOT( updateMinRange() ));
+    min_range_property_->setMin( 0.0 );
+    min_range_property_->setMax( 20.0 );
 
-  // Determines whether to show the speed arrows:
-  show_info_property_ = new rviz::BoolProperty( "Show Info", false,
-						"Toggles display of target info text.",
-						 this, SLOT( updateShowTargetInfo() ) );
+    // Create the maximum target range option:
+    max_range_property_ = new rviz::FloatProperty( "Max Range", 20.0,
+						   "Maximum distance of targets to be displayed.",
+						   this, SLOT( updateMaxRange() ));
+    max_range_property_->setMin( 0.0 );
+    max_range_property_->setMax( 20.0 );
 
-  info_text_height_property_ = new rviz::FloatProperty( "Info Text Height", 0.05,
-							"Target info text height.",
-							this, SLOT( updateInfoTextHeight() ) );
-}
+    // Determines whether to show the speed arrows:
+    show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,
+						   "Toggles display of arrows indicating target speed.",
+						   this, SLOT( updateShowSpeedArrows() ) );
 
+    // Determines whether to show the speed arrows:
+    show_info_property_ = new rviz::BoolProperty( "Show Info", false,
+						  "Toggles display of target info text.",
+						  this, SLOT( updateShowTargetInfo() ) );
+
+    info_text_height_property_ = new rviz::FloatProperty( "Info Text Height", 0.05,
+							  "Target info text height.",
+							  this, SLOT( updateInfoTextHeight() ) );
+  }
+  
 // After the top-level rviz::Display::initialize() does its own setup,
 // it calls the subclass's onInitialize() function.  This is where we
 // instantiate all the workings of the class.  We make sure to also
@@ -108,6 +120,7 @@ void RadarDisplay::onInitialize()
   updateHistoryLength();
   updateMinRange();
   updateMaxRange();
+  updateTargetShape();
 }
 
 RadarDisplay::~RadarDisplay()
@@ -198,12 +211,14 @@ void RadarDisplay::updateShowTargets()
       color_raw_->show();
       alpha_raw_->show();
       scale_raw_->show();
+      shape_raw_property_->show();
     }
   else
     {
       color_raw_->hide();
       alpha_raw_->hide();
       scale_raw_->hide();
+      shape_raw_property_->hide();
       visuals_.clear();
     }
 
@@ -213,12 +228,14 @@ void RadarDisplay::updateShowTargets()
       color_tracked_->show();
       alpha_tracked_->show();
       scale_tracked_->show();
+      shape_tracked_property_->show();
     }
   else
     {
       color_tracked_->hide();
       alpha_tracked_->hide();
       scale_tracked_->hide();
+      shape_tracked_property_->hide();
       visuals_.clear();
     }
 
@@ -288,10 +305,14 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   info_text_height = info_text_height_property_->getFloat();
   visual->setInfoTextHeight( info_text_height );
 
+  
   // Set raw target data and visual options:
   if( show_raw_property_->getBool() )
     {
-      // First set the target data from message:
+      // First set target shapes:
+      visual->setTargetShapeRaw( shape_raw_property_->getOptionInt() );
+
+      // Then set the target data from message:
       visual->setMessageRaw( msg );
 
       // Set the target visual options:
@@ -309,7 +330,10 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   // Set tracked target data and visual options:
   if( show_tracked_property_->getBool() )
     {
-      // First set the target data from message:
+      // First set target shapes:
+      visual->setTargetShapeTracked( shape_tracked_property_->getOptionInt() );
+
+      // Then set the target data from message:
       visual->setMessageTracked( msg );
 
       // Set the target visual options:
@@ -354,8 +378,16 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
       {
 	v->setInfoTextHeight( info_text_height_property_->getFloat() );
       }   
-  }    
-  
+  }
+
+  void RadarDisplay::updateTargetShape( void )
+  {
+    for( const auto& v : visuals_ )
+      {
+	v->setTargetShapeRaw( shape_raw_property_->getOptionInt() );
+	v->setTargetShapeTracked( shape_tracked_property_->getOptionInt() );
+      }       
+  }
 } // end namespace rviz_radar_plugin
 
 // Tell pluginlib about this class.  It is important to do this in

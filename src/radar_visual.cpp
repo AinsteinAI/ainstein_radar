@@ -55,7 +55,7 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
       if( target.range > min_range_ && target.range < max_range_ )
 	{
 	  // Create the new target shape, fill it and push back:
-	  radar_target_visuals_raw_.emplace_back( scene_manager_, frame_node_ );
+	  radar_target_visuals_raw_.emplace_back( scene_manager_, frame_node_, shape_type_raw_ );
 	  
 	  // Compute the target's Cartesian position:
 	  radar_target_visuals_raw_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
@@ -114,7 +114,7 @@ void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPt
       if( target.range > min_range_ && target.range < max_range_ )
 	{
 	  // Create the new target shape, fill it and push back:	
-	  radar_target_visuals_tracked_.emplace_back( scene_manager_, frame_node_ );
+	  radar_target_visuals_tracked_.emplace_back( scene_manager_, frame_node_, shape_type_tracked_ );
 	  
 	  // Compute the target's Cartesian position:
 	  radar_target_visuals_tracked_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
