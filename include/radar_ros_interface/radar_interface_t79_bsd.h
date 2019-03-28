@@ -9,7 +9,8 @@
 class RadarInterfaceT79BSD: public RadarInterface<can_msgs::Frame>
 {
 public:
-  RadarInterfaceT79BSD( void );
+  RadarInterfaceT79BSD( ros::NodeHandle node_Handle,
+			ros::NodeHandle node_Handle_private );
   ~RadarInterfaceT79BSD()
     {
       stopRadar();

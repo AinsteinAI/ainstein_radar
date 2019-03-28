@@ -18,9 +18,16 @@ class RadarInterface
 
 public:
 
-    RadarInterface( std::string radar_name, std::string data_msg_topic, std::string radar_cmd_topic ) :
-  nh_private_( "~" ),
-    name_( radar_name )
+ RadarInterface( ros::NodeHandle node_handle,
+		 ros::NodeHandle node_handle_private,
+		 std::string radar_name,
+		 std::string data_msg_topic,
+		 std::string radar_cmd_topic ) :
+  nh_( node_handle ),
+    nh_private_( node_handle_private ),
+    name_( radar_name ),
+    radar_data_msg_ptr_( new radar_sensor_msgs::RadarData )
+    
     {
         // Set up the subscriber to receive radar data:
         sub_data_msg_ = nh_.subscribe( data_msg_topic, 10,
@@ -61,7 +68,7 @@ protected:
 
     ros::Subscriber sub_data_msg_;
 
-    radar_sensor_msgs::RadarData radar_data_msg_;
+    boost::shared_ptr<radar_sensor_msgs::RadarData> radar_data_msg_ptr_;
 
 };
 

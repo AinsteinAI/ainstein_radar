@@ -26,8 +26,11 @@
 
 #include "radar_ros_interface/radar_interface_t79_bsd.h"
 
-RadarInterfaceT79BSD::RadarInterfaceT79BSD( void ) :
-  RadarInterface<can_msgs::Frame>( ros::this_node::getName(),
+RadarInterfaceT79BSD::RadarInterfaceT79BSD( ros::NodeHandle node_handle,
+					    ros::NodeHandle node_handle_private ) :
+  RadarInterface<can_msgs::Frame>( node_handle,
+				   node_handle_private,
+				   ros::this_node::getName(),
 				   "received_messages",
 				   "sent_messages" )
 {
@@ -37,7 +40,7 @@ RadarInterfaceT79BSD::RadarInterfaceT79BSD( void ) :
   type_ = static_cast<ConfigT79BSD::RadarType>( radar_type );
   
   // Store the radar data frame ID:
-  nh_private_.param( "frame_id", radar_data_msg_.header.frame_id, std::string( "map" ) );
+  nh_private_.param( "frame_id", radar_data_msg_ptr_->header.frame_id, std::string( "map" ) );
 
   name_ = ConfigT79BSD::radar_names.at( type_ );
   startRadar();
@@ -115,16 +118,16 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     {
         ROS_INFO( "received start frame from %s", name_.c_str() );
         // clear radar data message arrays here
-        radar_data_msg_.header.stamp = ros::Time::now();
-        radar_data_msg_.raw_targets.clear();
-        radar_data_msg_.tracked_targets.clear();
-        radar_data_msg_.alarms.clear();
+        radar_data_msg_ptr_->header.stamp = ros::Time::now();
+        radar_data_msg_ptr_->raw_targets.clear();
+        radar_data_msg_ptr_->tracked_targets.clear();
+        radar_data_msg_ptr_->alarms.clear();
     }
     // Parse out end of frame messages:
     else if( msg.id == ConfigT79BSD::stop_frame.at( type_ ) )
     {
         ROS_INFO( "received stop frame from %s", name_.c_str() );
-        pub_radar_data_.publish( radar_data_msg_ );
+        pub_radar_data_.publish( radar_data_msg_ptr_ );
     }
     // Parse out raw target data messages:
     else if( msg.id == ConfigT79BSD::raw_id.at( type_ ) )
@@ -140,7 +143,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         target.azimuth = (int16_t)( ( msg.data[6] << 8 ) + msg.data[7] ) / 100.0 * -1;
         target.elevation = 0.0;
 
-        radar_data_msg_.raw_targets.push_back( target );
+        radar_data_msg_ptr_->raw_targets.push_back( target );
     }
     // Parse out tracked target data messages:
     else if( msg.id == ConfigT79BSD::tracked_id.at( type_ ) )
@@ -156,7 +159,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         target.azimuth = (int16_t)( ( msg.data[6] << 8 ) + msg.data[7] ) / 100.0 * -1;
         target.elevation = 0.0;
 
-        radar_data_msg_.tracked_targets.push_back( target );
+        radar_data_msg_ptr_->tracked_targets.push_back( target );
     }
     // Parse out BSD data messages:
     else if( msg.id == ConfigT79BSD::bsd_id.at( type_ ) )
@@ -169,7 +172,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         alarms.CVW_alarm = ( 1UL << 4 ) & msg.data[1];
         alarms.BSD_alarm = ( 1UL << 2 ) & msg.data[1];
 
-        radar_data_msg_.alarms.push_back( alarms );
+        radar_data_msg_ptr_->alarms.push_back( alarms );
     }
     else
     {

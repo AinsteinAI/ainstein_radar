@@ -33,6 +33,9 @@ add_executable(t79_bsd_node src/t79_bsd_node.cpp src/radar_interface_t79_bsd.cpp
 add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(t79_bsd_node ${catkin_LIBRARIES})
 
+add_library(t79_bsd_nodelet src/t79_bsd_nodelet.cpp src/radar_interface_t79_bsd.cpp)
+target_link_libraries(t79_bsd_nodelet ${catkin_LIBRARIES})
+
 add_executable(radardata_to_pointcloud_node src/radardata_to_pointcloud_node.cpp src/radardata_to_pointcloud.cpp)
 add_dependencies(radardata_to_pointcloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radardata_to_pointcloud_node ${catkin_LIBRARIES})
@@ -44,7 +47,7 @@ add_executable(radardata_to_laserscan_node src/radardata_to_laserscan_node.cpp s
 add_dependencies(radardata_to_laserscan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radardata_to_laserscan_node ${catkin_LIBRARIES})
 
-install(TARGETS k79_node k79_nodelet t79_bsd_node radardata_to_pointcloud_node radardata_to_pointcloud_nodelet radardata_to_laserscan_node
+install(TARGETS k79_node k79_nodelet t79_bsd_node t79_bsd_nodelet radardata_to_pointcloud_node radardata_to_pointcloud_nodelet radardata_to_laserscan_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

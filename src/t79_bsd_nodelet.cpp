@@ -24,26 +24,24 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
 #include "radar_ros_interface/radar_interface_t79_bsd.h"
 
-int main( int argc, char** argv )
+class NodeletT79BSD : public nodelet::Nodelet
 {
-  // Initialize ROS and the default node name:
-  ros::init( argc, argv, "t79_bsd_node" );
-  ros::NodeHandle node_handle;
-  ros::NodeHandle node_handle_private( "~" );
-  
-  // Parse the command line arguments for radar parameters:
-  if( argc < 1 )
-    {
-      std::cerr << "Usage: rosrun radar_ros_interface t79_bsd_node [_radar_type:=RADAR_TYPE] [_frame_id:=RADAR_FRAME_ID]" << std::endl;
-      return -1;
-    }
+public:
+  NodeletT79BSD( void ) {}
+  ~NodeletT79BSD( void ) {}
 
-  // Create the K79 interface and launch the data thread:
-  RadarInterfaceT79BSD t79_bsd_intf( node_handle, node_handle_private );
-  
-  ros::spin();
+  virtual void onInit( void )
+  {
+    NODELET_DEBUG("Initializing T79 BSD interface nodelet");
+    intf_ptr_.reset( new RadarInterfaceT79BSD( getNodeHandle(), getPrivateNodeHandle() ) );
+  }
 
-  return 0;
-}
+  private:
+  std::unique_ptr<RadarInterfaceT79BSD> intf_ptr_;
+};
+
+PLUGINLIB_EXPORT_CLASS( NodeletT79BSD, nodelet::Nodelet )
