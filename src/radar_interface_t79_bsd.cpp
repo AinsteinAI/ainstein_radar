@@ -63,6 +63,7 @@ void RadarInterfaceT79BSD::startRadar( void )
     can_frame.data[6] = ConfigT79BSD::RESERVED;
     can_frame.data[7] = ConfigT79BSD::RESERVED;
 
+    ROS_INFO( "starting data streaming for %s", name_.c_str() );
     pub_radar_cmd_.publish( can_frame );
 }
 
@@ -85,13 +86,24 @@ void RadarInterfaceT79BSD::stopRadar( void )
     can_frame.data[6] = ConfigT79BSD::RESERVED;
     can_frame.data[7] = ConfigT79BSD::RESERVED;
 
+    ROS_INFO( "stopping data streaming for %s", name_.c_str() );
     pub_radar_cmd_.publish( can_frame );
 }
 
 void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
 {
+    // Parse out heartbeat frame 1 messages:
+    if( msg.id == ConfigT79BSD::heartbeat_1.at( type_ ) )
+    {
+      ROS_INFO( "received hearbeat frame 1 from %s", name_.c_str() );
+    }
+    // Parse out heartbeat frame 2 messages:
+    if( msg.id == ConfigT79BSD::heartbeat_2.at( type_ ) )
+    {
+      ROS_INFO( "received hearbeat frame 2 from %s", name_.c_str() );
+    }
     // Parse out start radar response messages:
-    if( msg.id == ConfigT79BSD::stop_ret.at( type_ ) )
+    if( msg.id == ConfigT79BSD::start_stop_ret.at( type_ ) )
     {
         // Check whether the response is for a start or stop radar message:
         uint8_t start_stop_byte = msg.data[0];

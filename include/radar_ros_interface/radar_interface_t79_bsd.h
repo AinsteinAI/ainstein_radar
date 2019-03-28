@@ -12,6 +12,7 @@ public:
   RadarInterfaceT79BSD( void );
   ~RadarInterfaceT79BSD()
     {
+      // Stop the radar (doesn't seem to get called):
       stopRadar();
     }
 

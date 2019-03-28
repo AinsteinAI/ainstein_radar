@@ -45,24 +45,41 @@ const int RADAR_SET_DISABLE_BSD = 0x00;
 const int RADAR_SET_ENABLE_BSD = 0x01;
 
 // Message IDs specific to each type of BSD firmware radar:
-const std::map<RadarType, int> stop_ret = {
+ const std::map<RadarType, int> heartbeat_1 = {
                                             {
                                               KANZA,
-                                              0x101 },
+                                              0xDEAD },
                                             {
                                               TIPI_79_FL,
-                                              0x111 },
+                                              0x502 },
                                             {
                                               TIPI_79_FR,
-                                              0x121 },
+                                              0x503 },
                                             {
                                               TIPI_79_RL,
-                                              0x131 },
+                                              0x504 },
                                             {
                                               TIPI_79_RR,
-                                              0x141 } };
+                                              0x505 } };
 
-const std::map<RadarType, int> start_frame = {
+ const std::map<RadarType, int> heartbeat_2 = {
+                                            {
+                                              KANZA,
+                                              0xDEAD },
+                                            {
+                                              TIPI_79_FL,
+                                              0x503 },
+                                            {
+                                              TIPI_79_FR,
+                                              0x504 },
+                                            {
+                                              TIPI_79_RL,
+                                              0x505 },
+                                            {
+                                              TIPI_79_RR,
+                                              0x506 } };
+
+ const std::map<RadarType, int> start_frame = {
                                                {
                                                  KANZA,
                                                  0x420 },
@@ -95,6 +112,24 @@ const std::map<RadarType, int> stop_frame = {
                                               {
                                                 TIPI_79_RR,
                                                 0x484 } };
+
+
+ const std::map<RadarType, int> start_stop_ret = {
+                                            {
+                                              KANZA,
+                                              0x101 },
+                                            {
+                                              TIPI_79_FL,
+                                              0x111 },
+                                            {
+                                              TIPI_79_FR,
+                                              0x121 },
+                                            {
+                                              TIPI_79_RL,
+                                              0x131 },
+                                            {
+                                              TIPI_79_RR,
+                                              0x141 } };
 
 const std::map<RadarType, int> radar_id = {
                                             {
