@@ -27,47 +27,57 @@ namespace rviz_radar_plugin
 						 "Toggles display of raw target markers.",
 						 this, SLOT( updateShowTargets() ) );
 
-    color_raw_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-					  "Color to draw the target markers.",
-					  this, SLOT( updateColorAndAlpha() ) );
+    list_raw_ = new rviz::Property( "Raw Targets", QVariant(),
+				    "Raw target display options.",
+				    this, 0 );
+
+    list_raw_->addChild( new rviz::ColorProperty( "Color Raw", QColor( 255, 0, 0 ),
+						  "Color to draw the target markers.",
+						  this, SLOT( updateColorAndAlpha() ) ) );
   
-    alpha_raw_ = new rviz::FloatProperty( "Alpha", 1.0,
-					  "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-					  this, SLOT( updateColorAndAlpha() ) );
+    list_raw_->addChild( new rviz::FloatProperty( "Alpha Raw", 1.0,
+						  "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+						  this, SLOT( updateColorAndAlpha() ) ) );
 
-    scale_raw_ = new rviz::FloatProperty( "Scale", 0.2,
-					  "Marker scale, in meters.",
-					  this, SLOT( updateScale() ) );
+    list_raw_->addChild( new rviz::FloatProperty( "Scale Raw", 0.2,
+						  "Marker scale, in meters.",
+						  this, SLOT( updateScale() ) ) );
 
-    shape_raw_property_ = new rviz::EnumProperty( "Shape", "Cube",
-						  "Target shape type.",
-						  this, SLOT( updateTargetShape() ) );
-    shape_raw_property_->addOptionStd( "Cube", 1 );
-    shape_raw_property_->addOptionStd( "Sphere", 3 );
+    list_raw_->addChild( new rviz::EnumProperty( "Shape Raw", "Cube",
+						 "Target shape type.",
+						 this, SLOT( updateTargetShape() ) ) );
+    rviz::EnumProperty* shape_raw = static_cast<rviz::EnumProperty*>( list_raw_->subProp( "Shape Raw" ) );
+    shape_raw->addOptionStd( "Cube", 1 );
+    shape_raw->addOptionStd( "Sphere", 3 );
 
     // Options for displaying tracked targets:
     show_tracked_property_ = new rviz::BoolProperty( "Show Tracked Targets", true,
 						     "Toggles display of tracked target markers.",
 						     this, SLOT( updateShowTargets() ) );
-  
-    color_tracked_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-					      "Color to dtracked the target markers.",
-					      this, SLOT( updateColorAndAlpha() ) );
-  
-    alpha_tracked_ = new rviz::FloatProperty( "Alpha", 1.0,
-					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-					      this, SLOT( updateColorAndAlpha() ) );
+    
+    list_tracked_ = new rviz::Property( "Tracked Targets", QVariant(),
+					"Tracked target display options.",
+					this, 0 );
 
-    scale_tracked_ = new rviz::FloatProperty( "Scale", 0.2,
-					      "Marker scale, in meters.",
-					      this, SLOT( updateScale() ) );
-
-    shape_tracked_property_ = new rviz::EnumProperty( "Shape", "Cube",
-						      "Target shape type.",
-						      this, SLOT( updateTargetShape() ) );
-    shape_tracked_property_->addOptionStd( "Cube", 1 );
-    shape_tracked_property_->addOptionStd( "Sphere", 3 );
+    list_tracked_->addChild( new rviz::ColorProperty( "Color Tracked", QColor( 255, 0, 0 ),
+						      "Color to draw the target markers.",
+						      this, SLOT( updateColorAndAlpha() ) ) );
   
+    list_tracked_->addChild( new rviz::FloatProperty( "Alpha Tracked", 1.0,
+						      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+						      this, SLOT( updateColorAndAlpha() ) ) );
+
+    list_tracked_->addChild( new rviz::FloatProperty( "Scale Tracked", 0.2,
+						      "Marker scale, in meters.",
+						      this, SLOT( updateScale() ) ) );
+
+    list_tracked_->addChild( new rviz::EnumProperty( "Shape Tracked", "Cube",
+						     "Target shape type.",
+						     this, SLOT( updateTargetShape() ) ) );
+    rviz::EnumProperty* shape_tracked = static_cast<rviz::EnumProperty*>( list_tracked_->subProp( "Shape Tracked" ) );
+    shape_tracked->addOptionStd( "Cube", 1 );
+    shape_tracked->addOptionStd( "Sphere", 3 );
+
     // Create the history length option:
     history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
 						      "Number of radar scans to display.",
@@ -103,7 +113,12 @@ namespace rviz_radar_plugin
 							  "Target info text height.",
 							  this, SLOT( updateInfoTextHeight() ) );
   }
+
   
+  RadarDisplay::~RadarDisplay()
+  {
+  }
+
 // After the top-level rviz::Display::initialize() does its own setup,
 // it calls the subclass's onInitialize() function.  This is where we
 // instantiate all the workings of the class.  We make sure to also
@@ -123,10 +138,6 @@ void RadarDisplay::onInitialize()
   updateTargetShape();
 }
 
-RadarDisplay::~RadarDisplay()
-{
-}
-
 // Clear the visuals by deleting their objects.
 void RadarDisplay::reset()
 {
@@ -139,13 +150,24 @@ void RadarDisplay::updateColorAndAlpha()
 {
   float alpha;
   Ogre::ColourValue color;
+
+  // Set raw targets color and alpha:
   if( show_raw_property_->getBool() )
     {
-      alpha = alpha_raw_->getFloat();
-      color = color_raw_->getOgreColor();
-      for( const auto& v : visuals_ )
+      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha Raw" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color Raw" ) )->getOgreColor();      for( const auto& v : visuals_ )
   	{
   	  v->setColorRaw( color.r, color.g, color.b, alpha );
+  	}
+    }
+  
+  // Set tracked targets color and alpha:
+  if( show_tracked_property_->getBool() )
+    {
+      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha Tracked" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color Tracked" ) )->getOgreColor();      for( const auto& v : visuals_ )
+  	{
+  	  v->setColorTracked( color.r, color.g, color.b, alpha );
   	}
     }
 }
@@ -154,12 +176,24 @@ void RadarDisplay::updateColorAndAlpha()
 void RadarDisplay::updateScale()
 {
   float scale;
+
+  // Set raw targets scale:
   if( show_raw_property_->getBool() )
     {
-      scale = scale_raw_->getFloat();
+      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale Raw" ) )->getFloat();
       for( const auto& v : visuals_ )
   	{
   	  v->setScaleRaw( scale );
+  	}
+    }
+
+  // Set tracked targets scale:
+  if( show_tracked_property_->getBool() )
+    {
+      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale Tracked" ) )->getFloat();
+      for( const auto& v : visuals_ )
+  	{
+  	  v->setScaleTracked( scale );
   	}
     }
 }
@@ -208,34 +242,24 @@ void RadarDisplay::updateShowTargets()
   // Raw visual options:
   if( show_raw_ )
     {
-      color_raw_->show();
-      alpha_raw_->show();
-      scale_raw_->show();
-      shape_raw_property_->show();
+      list_raw_->show();
+      list_raw_->expand();
     }
   else
     {
-      color_raw_->hide();
-      alpha_raw_->hide();
-      scale_raw_->hide();
-      shape_raw_property_->hide();
+      list_raw_->hide();
       visuals_.clear();
     }
 
   // Tracked visual options:
   if( show_tracked_ )
     {
-      color_tracked_->show();
-      alpha_tracked_->show();
-      scale_tracked_->show();
-      shape_tracked_property_->show();
+      list_tracked_->show();
+      list_tracked_->expand();
     }
   else
     {
-      color_tracked_->hide();
-      alpha_tracked_->hide();
-      scale_tracked_->hide();
-      shape_tracked_property_->hide();
+      list_tracked_->hide();
       visuals_.clear();
     }
 
@@ -290,6 +314,7 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   }
 
   // Now set or update the contents of the chosen visual.
+  int shape;
   float alpha;
   float scale;
   Ogre::ColourValue color;
@@ -305,21 +330,21 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   info_text_height = info_text_height_property_->getFloat();
   visual->setInfoTextHeight( info_text_height );
 
-  
   // Set raw target data and visual options:
   if( show_raw_property_->getBool() )
     {
       // First set target shapes:
-      visual->setTargetShapeRaw( shape_raw_property_->getOptionInt() );
+      shape = static_cast<rviz::EnumProperty*>( list_raw_->subProp( "Shape Raw" ) )->getOptionInt();
+      visual->setTargetShapeRaw( shape );
 
       // Then set the target data from message:
       visual->setMessageRaw( msg );
 
       // Set the target visual options:
-      alpha = alpha_raw_->getFloat();
-      color = color_raw_->getOgreColor();
+      alpha = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Alpha Raw" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_raw_->subProp( "Color Raw" ) )->getOgreColor();
       visual->setColorRaw( color.r, color.g, color.b, alpha );
-      scale = scale_raw_->getFloat();
+      scale = static_cast<rviz::FloatProperty*>( list_raw_->subProp( "Scale Raw" ) )->getFloat();
       visual->setScaleRaw( scale );
     }
   else 
@@ -331,18 +356,18 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
   if( show_tracked_property_->getBool() )
     {
       // First set target shapes:
-      visual->setTargetShapeTracked( shape_tracked_property_->getOptionInt() );
+      shape = static_cast<rviz::EnumProperty*>( list_tracked_->subProp( "Shape Tracked" ) )->getOptionInt();
+      visual->setTargetShapeTracked( shape );
 
       // Then set the target data from message:
       visual->setMessageTracked( msg );
 
       // Set the target visual options:
-      alpha = alpha_tracked_->getFloat();
-      color = color_tracked_->getOgreColor();
+      alpha = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Alpha Tracked" ) )->getFloat();
+      color = static_cast<rviz::ColorProperty*>( list_tracked_->subProp( "Color Tracked" ) )->getOgreColor();
       visual->setColorTracked( color.r, color.g, color.b, alpha );
-      scale = scale_tracked_->getFloat();
-      visual->setScaleTracked( scale );
-    
+      scale = static_cast<rviz::FloatProperty*>( list_tracked_->subProp( "Scale Tracked" ) )->getFloat();
+      visual->setScaleTracked( scale );    
     }
   else 
     {
@@ -382,10 +407,13 @@ void RadarDisplay::processMessage( const radar_sensor_msgs::RadarData::ConstPtr&
 
   void RadarDisplay::updateTargetShape( void )
   {
+    int shape;
     for( const auto& v : visuals_ )
       {
-	v->setTargetShapeRaw( shape_raw_property_->getOptionInt() );
-	v->setTargetShapeTracked( shape_tracked_property_->getOptionInt() );
+	shape = static_cast<rviz::EnumProperty*>( list_raw_->subProp( "Shape Raw" ) )->getOptionInt();
+	v->setTargetShapeRaw( shape );
+	shape = static_cast<rviz::EnumProperty*>( list_tracked_->subProp( "Shape Tracked" ) )->getOptionInt();
+	v->setTargetShapeTracked( shape );
       }       
   }
 } // end namespace rviz_radar_plugin

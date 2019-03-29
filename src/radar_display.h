@@ -95,15 +95,11 @@ private:
   
   // User-editable property variables.
   rviz::BoolProperty* show_raw_property_;
-  rviz::EnumProperty* shape_raw_property_;
-  rviz::EnumProperty* shape_tracked_property_;
-  rviz::ColorProperty* color_raw_;
-  rviz::FloatProperty* alpha_raw_;
-  rviz::FloatProperty* scale_raw_;
+  rviz::Property* list_raw_;
+
   rviz::BoolProperty* show_tracked_property_;
-  rviz::ColorProperty* color_tracked_;
-  rviz::FloatProperty* alpha_tracked_;
-  rviz::FloatProperty* scale_tracked_;
+  rviz::Property* list_tracked_;
+
   rviz::IntProperty* history_length_property_;
   rviz::FloatProperty* min_range_property_;
   rviz::FloatProperty* max_range_property_;
