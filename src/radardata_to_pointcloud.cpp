@@ -41,9 +41,10 @@ RadarDataToPointCloud::RadarDataToPointCloud( ros::NodeHandle node_handle,
 				  this );
 
   // Get parameters:
+  nh_private_.param( "target_type", target_type_, std::string( "raw" ) );
   nh_private_.param( "max_speed_thresh", max_speed_thresh_, 1.0 );
-  nh_private_.param( "min_dist_thresh", min_dist_thresh_, 2.0 );
-  nh_private_.param( "max_dist_thresh", max_dist_thresh_, 20.0 );
+  nh_private_.param( "min_dist_thresh", min_dist_thresh_, 0.0 );
+  nh_private_.param( "max_dist_thresh", max_dist_thresh_, 100.0 );
   nh_private_.param( "compute_3d", compute_3d_, false );
   nh_private_.param( "is_rotated", is_rotated_, false );
   
@@ -67,8 +68,18 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
   // Clear the point cloud point vector:
   pcl_.clear();
 
-  // Iterate through raw targets and add them to the point cloud:
-  for( auto target : msg.raw_targets )
+  // Iterate through targets of specified type and add them to the point cloud:
+  std::vector<radar_sensor_msgs::RadarTarget> targets;
+  if( target_type_.compare( "raw" ) == 0 )
+    {
+      targets = msg.raw_targets;
+    }
+  else
+    {
+       targets = msg.tracked_targets;
+    }
+  
+  for( auto target : targets )
     {
       // If the radar world frame velocity is available from another source, use it for further processing:
       if( is_vel_available_ )
@@ -161,8 +172,7 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
 	  // v_{T,proj} = n^{T} * R^{T} * v_{T} = s + n^{T} * R^{T} * v_{car}
 	  double proj_speed = t.speed - meas_dir.dot( tf_sensor_to_world.linear().inverse() * vel_world_ );
 	  
-	  // Filter out targets based on project target absolute speed
-	  // and range limits:
+	  // Filter out targets based on projected target absolute speed and range limits:
 	  if( std::abs( proj_speed ) < max_speed_thresh_ &&
 	      t.range >= min_dist_thresh_ &&
 	      t.range <= max_dist_thresh_)
