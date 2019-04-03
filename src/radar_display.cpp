@@ -90,14 +90,14 @@ namespace rviz_radar_plugin
 						   "Minimum distance of targets to be displayed.",
 						   this, SLOT( updateMinRange() ));
     min_range_property_->setMin( 0.0 );
-    min_range_property_->setMax( 20.0 );
+    min_range_property_->setMax( 100.0 );
 
     // Create the maximum target range option:
-    max_range_property_ = new rviz::FloatProperty( "Max Range", 20.0,
+    max_range_property_ = new rviz::FloatProperty( "Max Range", 100.0,
 						   "Maximum distance of targets to be displayed.",
 						   this, SLOT( updateMaxRange() ));
     max_range_property_->setMin( 0.0 );
-    max_range_property_->setMax( 20.0 );
+    max_range_property_->setMax( 100.0 );
 
     // Determines whether to show the speed arrows:
     show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,

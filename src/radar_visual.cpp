@@ -65,9 +65,9 @@ void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& m
 	  if( show_speed_arrows_ )
 	    {
 	      radar_target_visuals_raw_.back().speed.set( std::abs( target.speed ), // shaft length
-			    0.01, // shaft diameter
-			    0.1, // arrow head length
-			    0.05 ); // arrow head diameter
+			    0.1, // shaft diameter
+			    0.2, // arrow head length
+			    0.2 ); // arrow head diameter
 	    }
 	  else
 	    {
