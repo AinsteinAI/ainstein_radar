@@ -35,7 +35,13 @@ private:
   bool is_vel_available_;
   Eigen::Vector3d vel_world_;
   std::string target_type_;
+  
+  bool filter_stationary_;
+  double min_speed_thresh_;
+
+  bool filter_moving_;
   double max_speed_thresh_;
+
   double min_dist_thresh_;
   double max_dist_thresh_;
   bool compute_3d_;

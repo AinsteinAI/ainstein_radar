@@ -150,10 +150,18 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         radar_sensor_msgs::RadarTarget target;
         target.target_id = msg.data[0];
         target.snr = msg.data[1];
-        target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
-        target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) / 100.0;
-        target.azimuth = (int16_t)( ( msg.data[6] << 8 ) + msg.data[7] ) / 100.0 * -1;
-        target.elevation = 0.0;
+
+	// Range scaling is 0.01m per count:
+	target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
+
+	// Speed scaling is 0.01m/s per count, +ve AWAY from radar, -ve TOWARDS:
+	target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) / 100.0;
+
+	// Azimuth angle scaling is -0.01rad per count: 
+	target.azimuth = (int16_t)( ( msg.data[6] << 8 ) + msg.data[7] ) / 100.0 * -1;
+
+	// Elevation angle is unused for T79:
+	target.elevation = 0.0;
 
         radar_data_msg_ptr_->raw_targets.push_back( target );
     }
