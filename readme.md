@@ -7,7 +7,17 @@ Currently supported radars include:
 - K77 (tested Feb. 2019)
 - T79 with BSD firmware (tested Sept. 2018)
 
-## Package Dependencies
+## System Dependencies
+
+None.
+
+## ROS Package Dependencies
+
+The following packages can be installed from apt using ```rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y```, replacing ```kinetic``` with your ROS distro.
+
+[ros_canopen](http://wiki.ros.org/ros_canopen?distro=melodic) : A generic canopen implementation for ROS
+
+The following packages are not available from [ros.org](ros.org) and must be cloned separately:
 
 [radar_sensor_msgs](https://github.com/AinsteinAI/radar_sensor_msgs) : Package defining custom radar message types. 
 
