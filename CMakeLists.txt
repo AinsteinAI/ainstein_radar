@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   std_msgs
   can_msgs
+  socketcan_bridge
   visualization_msgs
   pcl_ros
   tf2

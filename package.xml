@@ -17,6 +17,7 @@
 
   <build_depend>roscpp</build_depend>
   <build_depend>can_msgs</build_depend>
+  <build_depend>socketcan_bridge</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>radar_sensor_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
@@ -24,11 +25,13 @@
   
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>can_msgs</build_export_depend>
+  <build_export_depend>socketcan_bridge</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>radar_sensor_msgs</build_export_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>can_msgs</exec_depend>
+  <exec_depend>socketcan_bridge</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>radar_sensor_msgs</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
