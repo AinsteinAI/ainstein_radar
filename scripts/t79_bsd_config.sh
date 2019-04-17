@@ -13,6 +13,10 @@ stopme() {
     cansend can0 100#02ffffff
 }
 
+setK77() {
+    cansend can0 100#030100ffffffffff
+}
+
 setFL() {
     cansend can0 100#030200ffffffffff
 }
@@ -34,11 +38,12 @@ case "$1" in
     start)        startme ;;
     stop)         stopme ;;
     restart)      stopme; startme ;;
+    setK77)       setK77 ;;
     setFL)        setFL ;;
     setFR)        setFR ;;
     setRL)        setRL ;;
     setRR)        setRR ;;
-    *) echo "usage: $0 configure|start|stop|restart|setFL|setFR|setRL|setRR|" >&2
+    *) echo "usage: $0 configure|start|stop|restart|setK77|setFL|setFR|setRL|setRR|" >&2
        exit 1
        ;;
     esac
