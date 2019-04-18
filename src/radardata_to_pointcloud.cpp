@@ -74,8 +74,17 @@ void RadarDataToPointCloud::radarVelCallback( const geometry_msgs::Twist &msg )
 void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarData &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
-  Eigen::Affine3d tf_sensor_to_world =
-    tf2::transformToEigen(buffer_tf_.lookupTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) );
+  Eigen::Affine3d tf_sensor_to_world;
+  if( buffer_tf_.canTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) )
+    {
+      tf_sensor_to_world =
+	tf2::transformToEigen(buffer_tf_.lookupTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) );
+    }
+  else
+    {
+      std::cout << "Timeout while waiting for transform to frame " << msg.header.frame_id << std::endl;
+      return;
+    }
   
   // Clear the point cloud point vector:
   pcl_.clear();
