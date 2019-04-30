@@ -1,16 +1,21 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ainstein_radar</name>
+  <name>ainstein_radar_msgs</name>
   <version>1.0.0</version>
-  <description>ROS support for Ainstein radar sensors.</description>
+  <description>ROS message definitions for Ainstein radars.</description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
   <author>Nick Rotella</author>
   <license>BSD</license>
+
   <url type="website">https://ainstein.ai/</url>
   <url type="repository">https://github.com/AinsteinAI/ainstein_radar</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <exec_depend>ainstein_radar_msgs</exec_depend>
- 
+  <build_depend>message_generation</build_depend>
+
+  <depend>std_msgs</depend>
+  
+  <exec_depend>message_runtime</exec_depend>
+
 </package>
