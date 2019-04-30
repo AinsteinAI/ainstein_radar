@@ -6,7 +6,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 
-#include <radar_sensor_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarData.h>
 
 class RadarDataToPointCloud
 {
@@ -15,10 +15,10 @@ public:
 			 ros::NodeHandle node_handle_private );
   ~RadarDataToPointCloud(){}
 
-  pcl::PointXYZ radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target );
+  pcl::PointXYZ radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target );
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     
-  void radarDataCallback( const radar_sensor_msgs::RadarData &msg );
+  void radarDataCallback( const ainstein_radar_msgs::RadarData &msg );
 
   double solveForAngle( double x, double y, double z );
   

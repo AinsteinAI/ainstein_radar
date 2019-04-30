@@ -24,7 +24,7 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "radar_ros_interface/radardata_to_pointcloud.h"
+#include "ainstein_radar_drivers/radardata_to_pointcloud.h"
 
 RadarDataToPointCloud::RadarDataToPointCloud( ros::NodeHandle node_handle,
 					      ros::NodeHandle node_handle_private ) :
@@ -71,7 +71,7 @@ void RadarDataToPointCloud::radarVelCallback( const geometry_msgs::Twist &msg )
   is_vel_available_ = true;
 }
 
-void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarData &msg )
+void RadarDataToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarData &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world;
@@ -90,7 +90,7 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
   pcl_.clear();
 
   // Iterate through targets of specified type and add them to the point cloud:
-  std::vector<radar_sensor_msgs::RadarTarget> targets;
+  std::vector<ainstein_radar_msgs::RadarTarget> targets;
   if( target_type_.compare( "raw" ) == 0 )
     {
       targets = msg.raw_targets;
@@ -110,7 +110,7 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
 	  if( is_vel_available_ )
 	    {
 	      // Copy the original radar target for further processing:
-	      radar_sensor_msgs::RadarTarget t = target;
+	      ainstein_radar_msgs::RadarTarget t = target;
 
 	      // Copy azimuth to elevation if the radar has been rotated:
 	      // In radar frame, +ve azimuth is LEFT, +ve elevation is DOWN.
@@ -229,7 +229,7 @@ void RadarDataToPointCloud::radarDataCallback( const radar_sensor_msgs::RadarDat
   pub_pcl_.publish( cloud_msg_ );
 } 
 
-pcl::PointXYZ RadarDataToPointCloud::radarDataToPclPoint( const radar_sensor_msgs::RadarTarget &target )
+pcl::PointXYZ RadarDataToPointCloud::radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target )
 {
   pcl::PointXYZ p;
   p.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )

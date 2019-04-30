@@ -24,26 +24,23 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "radar_ros_interface/radar_interface_t79_bsd.h"
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
+#include "ainstein_radar_drivers/radardata_to_pointcloud.h"
 
-int main( int argc, char** argv )
+class NodeletRadarToPcl : public nodelet::Nodelet
 {
-  // Initialize ROS and the default node name:
-  ros::init( argc, argv, "t79_bsd_node" );
-  ros::NodeHandle node_handle;
-  ros::NodeHandle node_handle_private( "~" );
+public:
+  NodeletRadarToPcl( void ) {}
+  ~NodeletRadarToPcl( void ) {}
   
-  // Parse the command line arguments for radar parameters:
-  if( argc < 1 )
-    {
-      std::cerr << "Usage: rosrun radar_ros_interface t79_bsd_node [_radar_type:=RADAR_TYPE] [_frame_id:=RADAR_FRAME_ID]" << std::endl;
-      return -1;
-    }
+  virtual void onInit( void )
+  {
+    radar_to_pcl_ptr_.reset( new RadarDataToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
+  }
 
-  // Create the K79 interface and launch the data thread:
-  RadarInterfaceT79BSD t79_bsd_intf( node_handle, node_handle_private );
-  
-  ros::spin();
+private:
+  std::unique_ptr<RadarDataToPointCloud> radar_to_pcl_ptr_;
+};
 
-  return 0;
-}
+PLUGINLIB_EXPORT_CLASS( NodeletRadarToPcl, nodelet::Nodelet )

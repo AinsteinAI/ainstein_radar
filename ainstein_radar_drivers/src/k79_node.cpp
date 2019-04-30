@@ -24,26 +24,27 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <nodelet/nodelet.h>
-#include <pluginlib/class_list_macros.h>
-#include "radar_ros_interface/radar_interface_k79.h"
+#include "ainstein_radar_drivers/radar_interface_k79.h"
 
-class NodeletK79 : public nodelet::Nodelet
+int main( int argc, char** argv )
 {
-public:
-  NodeletK79( void ) {}
-  ~NodeletK79( void ) {}
+  // Initialize ROS and the default node name:
+  ros::init( argc, argv, "k79_node" );
+  ros::NodeHandle node_handle;
+  ros::NodeHandle node_handle_private( "~" );
   
-  virtual void onInit( void )
-  {
-    // Create the K79 interface and launch the data thread:
-    NODELET_DEBUG("Initializing K79 interface nodelet");
-    intf_ptr_.reset( new RadarInterfaceK79( getNodeHandle(), getPrivateNodeHandle() ) );
-    intf_ptr_-> connect();
-  }
+  // Parse the command line arguments for radar parameters:
+  if( argc < 1 )
+    {
+      std::cerr << "Usage: rosrun ainstein_radar_drivers k79_node k79_node [_host_ip:=HOST_IP_ADDRESS] [_host_port:=HOST_UDP_PORT] [_radar_ip:=RADAR_IP_ADDRESS] [_radar_port:=RADAR_UDP_PORT] [_frame_id:=RADAR_FRAME_ID]" << std::endl;
+      return -1;
+    }
 
-private:
-  std::unique_ptr<RadarInterfaceK79> intf_ptr_;
-};
+  // Create the K79 interface and launch the data thread:
+  RadarInterfaceK79 k79_intf( node_handle, node_handle_private );
+  k79_intf.connect();
+  
+  ros::spin();
 
-PLUGINLIB_EXPORT_CLASS( NodeletK79, nodelet::Nodelet )
+  return 0;
+}

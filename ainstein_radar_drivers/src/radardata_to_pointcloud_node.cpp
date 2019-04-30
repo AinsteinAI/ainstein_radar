@@ -24,7 +24,7 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "radar_ros_interface/radardata_to_pointcloud.h"
+#include "ainstein_radar_drivers/radardata_to_pointcloud.h"
 
 int main( int argc, char** argv )
 {
@@ -36,7 +36,7 @@ int main( int argc, char** argv )
   // Usage:
   if( argc < 1 )
     {
-      std::cerr << "Usage: rosrun radar_ros_interface radardata_to_pointcloud_node" << std::endl;
+      std::cerr << "Usage: rosrun ainstein_radar_drivers radardata_to_pointcloud_node" << std::endl;
       return -1;
     }
 

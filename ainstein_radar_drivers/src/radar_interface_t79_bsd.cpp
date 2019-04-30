@@ -24,7 +24,7 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "radar_ros_interface/radar_interface_t79_bsd.h"
+#include "ainstein_radar_drivers/radar_interface_t79_bsd.h"
 
 RadarInterfaceT79BSD::RadarInterfaceT79BSD( ros::NodeHandle node_handle,
 					    ros::NodeHandle node_handle_private ) :
@@ -147,7 +147,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received raw target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
-        radar_sensor_msgs::RadarTarget target;
+        ainstein_radar_msgs::RadarTarget target;
         target.target_id = msg.data[0];
         target.snr = msg.data[1];
 
@@ -171,7 +171,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received tracked target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
-        radar_sensor_msgs::RadarTarget target;
+        ainstein_radar_msgs::RadarTarget target;
         target.target_id = msg.data[0];
         target.snr = msg.data[1];
         target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
@@ -187,7 +187,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         ROS_INFO( "received BSD from %s", name_.c_str() );
 
         // Extract alarm data from the message:
-        radar_sensor_msgs::RadarAlarm alarms;
+        ainstein_radar_msgs::RadarAlarm alarms;
         alarms.LCA_alarm = ( 1UL << 6 ) & msg.data[1];
         alarms.CVW_alarm = ( 1UL << 4 ) & msg.data[1];
         alarms.BSD_alarm = ( 1UL << 2 ) & msg.data[1];

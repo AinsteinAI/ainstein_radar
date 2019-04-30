@@ -36,7 +36,7 @@
 #include <cstdint>
 #include <cerrno>
 
-#include "radar_ros_interface/radar_interface_k79.h"
+#include "ainstein_radar_drivers/radar_interface_k79.h"
 
 const std::string RadarInterfaceK79::connect_cmd_str = std::string( "connect" );
 const unsigned int RadarInterfaceK79::connect_res_len = 18;
@@ -50,7 +50,7 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 				      ros::NodeHandle node_handle_private ) :
   nh_( node_handle ),
   nh_private_( node_handle_private ),
-  radar_data_msg_ptr_( new radar_sensor_msgs::RadarData )
+  radar_data_msg_ptr_( new ainstein_radar_msgs::RadarData )
 {
   // Store the host IP and port:
   nh_private_.param( "host_ip", host_ip_addr_, std::string( "10.0.0.75" ) );
@@ -177,7 +177,7 @@ bool RadarInterfaceK79::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_radar_data_ = nh_private_.advertise<radar_sensor_msgs::RadarData>( "data", 10 );
+  pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarData>( "data", 10 );
   
   return true;
 }
@@ -222,7 +222,7 @@ void RadarInterfaceK79::mainLoop(void)
 	    }
 	  else
 	    {
-	      radar_sensor_msgs::RadarTarget target;
+	      ainstein_radar_msgs::RadarTarget target;
 	      int offset;
 	      for( int i = 0; i < ( msg_len / RadarInterfaceK79::target_msg_len ); ++i )
 		{

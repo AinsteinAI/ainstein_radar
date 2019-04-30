@@ -26,21 +26,24 @@
 
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
-#include "radar_ros_interface/radardata_to_pointcloud.h"
+#include "ainstein_radar_drivers/radar_interface_k79.h"
 
-class NodeletRadarToPcl : public nodelet::Nodelet
+class NodeletK79 : public nodelet::Nodelet
 {
 public:
-  NodeletRadarToPcl( void ) {}
-  ~NodeletRadarToPcl( void ) {}
+  NodeletK79( void ) {}
+  ~NodeletK79( void ) {}
   
   virtual void onInit( void )
   {
-    radar_to_pcl_ptr_.reset( new RadarDataToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
+    // Create the K79 interface and launch the data thread:
+    NODELET_DEBUG("Initializing K79 interface nodelet");
+    intf_ptr_.reset( new RadarInterfaceK79( getNodeHandle(), getPrivateNodeHandle() ) );
+    intf_ptr_-> connect();
   }
 
 private:
-  std::unique_ptr<RadarDataToPointCloud> radar_to_pcl_ptr_;
+  std::unique_ptr<RadarInterfaceK79> intf_ptr_;
 };
 
-PLUGINLIB_EXPORT_CLASS( NodeletRadarToPcl, nodelet::Nodelet )
+PLUGINLIB_EXPORT_CLASS( NodeletK79, nodelet::Nodelet )

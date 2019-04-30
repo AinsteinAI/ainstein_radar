@@ -24,7 +24,7 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "radar_ros_interface/radardata_to_laserscan.h"
+#include "ainstein_radar_drivers/radardata_to_laserscan.h"
 
 RadarDataToLaserScan::RadarDataToLaserScan( void ) :
   nh_private_( "~" ),
@@ -75,7 +75,7 @@ void RadarDataToLaserScan::radarVelCallback( const geometry_msgs::Twist &msg )
   is_vel_available_ = true;
 }
 
-void RadarDataToLaserScan::radarDataCallback( const radar_sensor_msgs::RadarData &msg )
+void RadarDataToLaserScan::radarDataCallback( const ainstein_radar_msgs::RadarData &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world =
@@ -138,7 +138,7 @@ void RadarDataToLaserScan::radarDataCallback( const radar_sensor_msgs::RadarData
   pub_laser_scan_.publish( laser_scan_msg_ );
 } 
 
-bool RadarDataToLaserScan::useTarget( const radar_sensor_msgs::RadarTarget &t )
+bool RadarDataToLaserScan::useTarget( const ainstein_radar_msgs::RadarTarget &t )
 {
   // Check that target range and azimuth are within bounds:
   if( t.range <= laser_scan_msg_.range_min ||

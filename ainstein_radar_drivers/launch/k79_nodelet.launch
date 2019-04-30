@@ -1,7 +1,7 @@
 <launch>
   <node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
 
-  <node pkg="nodelet" type="nodelet" name="k79_nodelet" args="load radar_ros_interface/k79_nodelet standalone_nodelet" output="screen" required="true" >
+  <node pkg="nodelet" type="nodelet" name="k79_nodelet" args="load ainstein_radar_drivers/k79_nodelet standalone_nodelet" output="screen" required="true" >
     <param name="host_ip" value="10.0.0.75" />
     <param name="host_port" value="1024" />
     <param name="radar_ip" value="10.0.0.10" />

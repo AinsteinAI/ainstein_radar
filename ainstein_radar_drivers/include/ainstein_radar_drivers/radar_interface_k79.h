@@ -8,7 +8,7 @@
 #include <thread>
 
 #include <ros/ros.h>
-#include <radar_sensor_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarData.h>
 
 class RadarInterfaceK79 {
 
@@ -53,7 +53,7 @@ private:
   ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_;
 
-  boost::shared_ptr<radar_sensor_msgs::RadarData> radar_data_msg_ptr_;
+  boost::shared_ptr<ainstein_radar_msgs::RadarData> radar_data_msg_ptr_;
     
 };
 

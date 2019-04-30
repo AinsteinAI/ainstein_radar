@@ -1,39 +1,35 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>radar_ros_interface</name>
-  <version>0.1.0</version>
-  <description>The radar_ros_interface package</description>
-
+  <name>ainstein_radar_drivers</name>
+  <version>1.0.0</version>
+  <description>ROS drivers (interfaces) and nodes for Ainstein radars.</description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
-
+  <author>Nick Rotella</author>
   <license>BSD</license>
 
   <url type="website">https://ainstein.ai/</url>
-  <url type="repository">https://github.com/AinsteinAI/radar_ros_interface</url>
-  <author email="nick.rotella@ainstein.ai">Nick Rotella</author>
+  <url type="repository">https://github.com/AinsteinAI/ainstein_radar</url>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>urdf</depend>
 
   <build_depend>roscpp</build_depend>
   <build_depend>can_msgs</build_depend>
   <build_depend>socketcan_bridge</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>radar_sensor_msgs</build_depend>
+  <build_depend>ainstein_radar_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>nodelet</build_depend>
   
-  <build_export_depend>visualization_msgs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>can_msgs</build_export_depend>
   <build_export_depend>socketcan_bridge</build_export_depend>
-  <build_export_depend>roscpp</build_export_depend>
-  <build_export_depend>radar_sensor_msgs</build_export_depend>
+  <build_export_depend>ainstein_radar_msgs</build_export_depend>
+  <build_export_depend>pcl_ros</build_export_depend>
+  <build_export_depend>nodelet</build_export_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>can_msgs</exec_depend>
   <exec_depend>socketcan_bridge</exec_depend>
-  <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>radar_sensor_msgs</exec_depend>
+  <exec_depend>ainstein_radar_msgs</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
   <exec_depend>nodelet</exec_depend>
 
