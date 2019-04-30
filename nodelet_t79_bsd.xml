@@ -1,0 +1,7 @@
+<library path="libt79_bsd_nodelet">
+  <class name="radar_ros_interface/t79_bsd_nodelet" type="NodeletT79BSD" base_class_type="nodelet::Nodelet">
+    <description>
+      T79 BSD interface nodelet.
+    </description>
+  </class>
+</library>

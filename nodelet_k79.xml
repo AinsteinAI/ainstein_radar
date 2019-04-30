@@ -1,0 +1,7 @@
+<library path="libk79_nodelet">
+  <class name="radar_ros_interface/k79_nodelet" type="NodeletK79" base_class_type="nodelet::Nodelet">
+    <description>
+      K79 interface nodelet.
+    </description>
+  </class>
+</library>

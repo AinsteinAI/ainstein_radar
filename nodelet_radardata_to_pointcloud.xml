@@ -1,0 +1,7 @@
+<library path="libradardata_to_pointcloud_nodelet">
+  <class name="radar_ros_interface/radardata_to_pointcloud_nodelet" type="NodeletRadarToPcl" base_class_type="nodelet::Nodelet">
+    <description>
+      RadarData to PointCloud (PointCloud2) nodelet.
+    </description>
+  </class>
+</library>
