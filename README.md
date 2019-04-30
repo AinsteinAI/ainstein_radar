@@ -172,3 +172,9 @@ If unspecified, ```host_ip``` defaults to ```10.0.0.75```, ```radar_ip``` defaul
 ```
 
 See the ```k79_nodelet.launch``` file for example nodelet usage.
+
+## ainstein_rviz_plugins
+
+RViz plugins for radar data types.  Currently, support exists for the following message types:
+
+1. [ainstein_radar_msgs/RadarData](https://github.com/AinsteinAI/ainstein_radar/blob/master/ainstein_radar_msgs/msg/RadarData.msg)

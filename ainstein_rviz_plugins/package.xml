@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ainstein_rviz_plugins</name>
+  <version>1.0.0</version>
+  <description>Radar message type plugins for RViz.</description>
+  
+  <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
+  <author>Nick Rotella</author>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>rviz</build_depend>
+  <build_depend>ainstein_radar_msgs</build_depend>
+  
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>ainstein_radar_msgs</exec_depend>
+  <exec_depend>libpcl-all</exec_depend>
+  
+  <export>
+      <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+  
+</package>
