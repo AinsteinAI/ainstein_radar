@@ -6,9 +6,12 @@
 #include "ainstein_radar_drivers/radar_interface.h"
 #include "ainstein_radar_drivers/config_t79_bsd.h"
 
+namespace ainstein_radar_drivers
+{
+
 class RadarInterfaceT79BSD: public RadarInterface<can_msgs::Frame>
 {
-public:
+ public:
   RadarInterfaceT79BSD( ros::NodeHandle node_Handle,
 			ros::NodeHandle node_Handle_private );
   ~RadarInterfaceT79BSD()
@@ -24,8 +27,11 @@ private:
     void dataMsgCallback( const can_msgs::Frame &msg );
 
     ConfigT79BSD::RadarType type_;
+    std::string frame_id_;
     std::string name_;
 };
+
+} // namespace ainstein_drivers
 
 
 #endif

@@ -6,7 +6,10 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/LaserScan.h>
-#include <ainstein_radar_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+
+namespace ainstein_radar_drivers
+{
 
 class RadarDataToLaserScan
 {
@@ -15,7 +18,7 @@ public:
   ~RadarDataToLaserScan(){}
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     
-  void radarDataCallback( const ainstein_radar_msgs::RadarData &msg );
+  void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
 
   bool useTarget( const ainstein_radar_msgs::RadarTarget &t );
   
@@ -45,4 +48,6 @@ private:
 
 };
 
-#endif
+} // namespace ainstein_radar_drivers
+
+#endif // RADAR_DATA_TO_LASER_SCAN_H_

@@ -38,12 +38,12 @@ public:
   {
     // Create the K79 interface and launch the data thread:
     NODELET_DEBUG("Initializing K79 interface nodelet");
-    intf_ptr_.reset( new RadarInterfaceK79( getNodeHandle(), getPrivateNodeHandle() ) );
+    intf_ptr_.reset( new ainstein_radar_drivers::RadarInterfaceK79( getNodeHandle(), getPrivateNodeHandle() ) );
     intf_ptr_-> connect();
   }
 
 private:
-  std::unique_ptr<RadarInterfaceK79> intf_ptr_;
+  std::unique_ptr<ainstein_radar_drivers::RadarInterfaceK79> intf_ptr_;
 };
 
 PLUGINLIB_EXPORT_CLASS( NodeletK79, nodelet::Nodelet )

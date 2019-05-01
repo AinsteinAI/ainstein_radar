@@ -26,6 +26,7 @@
 
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
+
 #include "ainstein_radar_drivers/radardata_to_pointcloud.h"
 
 class NodeletRadarToPcl : public nodelet::Nodelet
@@ -36,11 +37,11 @@ public:
   
   virtual void onInit( void )
   {
-    radar_to_pcl_ptr_.reset( new RadarDataToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
+    radar_to_pcl_ptr_.reset( new ainstein_radar_drivers::RadarDataToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
   }
 
 private:
-  std::unique_ptr<RadarDataToPointCloud> radar_to_pcl_ptr_;
+  std::unique_ptr<ainstein_radar_drivers::RadarDataToPointCloud> radar_to_pcl_ptr_;
 };
 
 PLUGINLIB_EXPORT_CLASS( NodeletRadarToPcl, nodelet::Nodelet )

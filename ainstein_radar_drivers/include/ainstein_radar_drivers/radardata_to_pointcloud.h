@@ -6,7 +6,10 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 
-#include <ainstein_radar_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+
+namespace ainstein_radar_drivers
+{
 
 class RadarDataToPointCloud
 {
@@ -18,7 +21,7 @@ public:
   pcl::PointXYZ radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target );
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     
-  void radarDataCallback( const ainstein_radar_msgs::RadarData &msg );
+  void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
 
   double solveForAngle( double x, double y, double z );
   
@@ -34,7 +37,6 @@ private:
   ros::Subscriber sub_radar_vel_;
   bool is_vel_available_;
   Eigen::Vector3d vel_world_;
-  std::string target_type_;
   
   bool filter_stationary_;
   double min_speed_thresh_;
@@ -52,4 +54,6 @@ private:
 
 };
 
-#endif
+} // namespace ainstein_radar_drivers
+
+#endif // RADAR_DATA_TO_POINT_CLOUD_H_

@@ -5,7 +5,11 @@
 #include <can_msgs/Frame.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <ainstein_radar_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_msgs/RadarAlarmArray.h>
+
+namespace ainstein_radar_drivers
+{
 
 // Generic class from which all RADAR sensor ROS interface interfaces should derive.
 // Example:
@@ -26,8 +30,9 @@ public:
   nh_( node_handle ),
     nh_private_( node_handle_private ),
     name_( radar_name ),
-    radar_data_msg_ptr_( new ainstein_radar_msgs::RadarData )
-    
+    radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_alarms_( new ainstein_radar_msgs::RadarAlarmArray )
     {
         // Set up the subscriber to receive radar data:
         sub_data_msg_ = nh_.subscribe( data_msg_topic, 10,
@@ -38,9 +43,13 @@ public:
         pub_radar_cmd_ = nh_.advertise<data_msg_type>( radar_cmd_topic,
 						       10 );
 
-        // Set up the publisher for sending out processed radar data:
-        pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarData>( "data",
-									       10 );
+        // Set up the publishers for sending out processed radar data:
+        pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "raw_targets",
+											10 );
+        pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked_targets",
+												10 );
+        pub_radar_data_alarms_ = nh_private_.advertise<ainstein_radar_msgs::RadarAlarmArray>( "alarms",
+											      10 );
 
         // Sleep for a little to make sure messages are being advertised before we start sending:
         ros::Duration( 1.0 ).sleep();
@@ -64,12 +73,17 @@ protected:
     ros::NodeHandle nh_private_;
     
     ros::Publisher pub_radar_cmd_;
-    ros::Publisher pub_radar_data_;
+    ros::Publisher pub_radar_data_raw_;
+    ros::Publisher pub_radar_data_tracked_;
+    ros::Publisher pub_radar_data_alarms_;
 
     ros::Subscriber sub_data_msg_;
 
-    boost::shared_ptr<ainstein_radar_msgs::RadarData> radar_data_msg_ptr_;
-
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarAlarmArray> radar_data_msg_ptr_alarms_;
 };
 
+} // namespace ainstein_radar_drivers
+ 
 #endif // RADAR_INTERFACE_H_

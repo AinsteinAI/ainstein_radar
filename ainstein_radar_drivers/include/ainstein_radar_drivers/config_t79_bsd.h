@@ -1,6 +1,9 @@
 #ifndef CONFIG_T79_BSD_H_
 #define CONFIG_T79_BSD_H_
 
+namespace ainstein_radar_drivers
+{
+  
 namespace ConfigT79BSD
 {
 
@@ -199,6 +202,8 @@ const std::map<RadarType, int> bsd_id = {
                                             TIPI_79_RR,
                                             0x454 } };
 
-}
+} // namespace ConfigT79BSD
+
+} // namespace ainstein_radar_drivers
 
 #endif // CONFIG_T79_BSD_H_

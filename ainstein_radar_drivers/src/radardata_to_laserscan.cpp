@@ -26,14 +26,14 @@
 
 #include "ainstein_radar_drivers/radardata_to_laserscan.h"
 
+namespace ainstein_radar_drivers
+{
+
 RadarDataToLaserScan::RadarDataToLaserScan( void ) :
   nh_private_( "~" ),
   listen_tf_( buffer_tf_ )
 {
   // Get parameters:
-  nh_private_.param( "data_topic", data_topic_, std::string(  ) );
-  
-  
   nh_private_.param( "angle_min", laser_scan_msg_.angle_min, static_cast<float>( -0.5 * M_PI ) );
   nh_private_.param( "angle_max", laser_scan_msg_.angle_max, static_cast<float>( 0.5 * M_PI ) );
   nh_private_.param( "angle_increment", laser_scan_msg_.angle_increment, static_cast<float>( 1.0 * ( M_PI / 180.0 ) ) );
@@ -75,7 +75,7 @@ void RadarDataToLaserScan::radarVelCallback( const geometry_msgs::Twist &msg )
   is_vel_available_ = true;
 }
 
-void RadarDataToLaserScan::radarDataCallback( const ainstein_radar_msgs::RadarData &msg )
+void RadarDataToLaserScan::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world =
@@ -85,8 +85,8 @@ void RadarDataToLaserScan::radarDataCallback( const ainstein_radar_msgs::RadarDa
   std::fill( laser_scan_msg_.ranges.begin(), laser_scan_msg_.ranges.end(), std::numeric_limits<float>::infinity() );
   std::fill( laser_scan_msg_.intensities.begin(), laser_scan_msg_.intensities.end(), 0.0 );
 
-  // Iterate through raw targets and add them to the point laser_scan:
-  for( auto t : msg.raw_targets )
+  // Iterate through targets and add them to the point laser_scan:
+  for( auto t : msg.targets )
     {
       if( useTarget( t ) )
 	{
@@ -151,3 +151,5 @@ bool RadarDataToLaserScan::useTarget( const ainstein_radar_msgs::RadarTarget &t 
 
   return true;
 }
+
+} // namespace ainstein_radar_drivers

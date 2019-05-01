@@ -1,7 +1,7 @@
 <library path="libradardata_to_pointcloud_nodelet">
   <class name="ainstein_radar_drivers/radardata_to_pointcloud_nodelet" type="NodeletRadarToPcl" base_class_type="nodelet::Nodelet">
     <description>
-      RadarData to PointCloud (PointCloud2) nodelet.
+      RadarTargetArray to PointCloud2 conversion nodelet.
     </description>
   </class>
 </library>

@@ -41,7 +41,7 @@ int main( int argc, char** argv )
     }
 
   // Create the K79 interface and launch the data thread:
-  RadarInterfaceT79BSD t79_bsd_intf( node_handle, node_handle_private );
+  ainstein_radar_drivers::RadarInterfaceT79BSD t79_bsd_intf( node_handle, node_handle_private );
   
   ros::spin();
 

@@ -38,19 +38,22 @@
 
 #include "ainstein_radar_drivers/radar_interface_k79.h"
 
+namespace ainstein_radar_drivers
+{
+
 const std::string RadarInterfaceK79::connect_cmd_str = std::string( "connect" );
 const unsigned int RadarInterfaceK79::connect_res_len = 18;
 
 const std::string RadarInterfaceK79::run_cmd_str = std::string( "run" );
 
-const unsigned int RadarInterfaceK79::radar_msg_len = 1000;
-const unsigned int RadarInterfaceK79::target_msg_len = 8;
+const unsigned int RadarInterfaceK79::radar_msg_len = RADAR_MSG_LEN;
+const unsigned int RadarInterfaceK79::target_msg_len = TARGET_MSG_LEN;
 
 RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 				      ros::NodeHandle node_handle_private ) :
   nh_( node_handle ),
   nh_private_( node_handle_private ),
-  radar_data_msg_ptr_( new ainstein_radar_msgs::RadarData )
+  radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray )
 {
   // Store the host IP and port:
   nh_private_.param( "host_ip", host_ip_addr_, std::string( "10.0.0.75" ) );
@@ -61,7 +64,10 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
   nh_private_.param( "radar_port", radar_port_, 7 );
 
   // Store the radar data frame ID:
-  nh_private_.param( "frame_id", radar_data_msg_ptr_->header.frame_id, std::string( "map" ) );
+  nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
+
+  // Set the frame ID:
+  radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)
@@ -78,7 +84,7 @@ RadarInterfaceK79::~RadarInterfaceK79(void)
 bool RadarInterfaceK79::connect(void)
 {
   // Create the host UDP socket:
-  sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
+  sockfd_ = socket( AF_INET, SOCK_DGRAM, 0 );
   if( sockfd_ < 0 )
     {
       std::cout << "ERROR >> Failed to create socket." << std::endl;
@@ -98,7 +104,7 @@ bool RadarInterfaceK79::connect(void)
 
   // Set socket options:
   int reuseaddr = 1;
-  int res = setsockopt( sockfd_, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr) );
+  int res = setsockopt( sockfd_, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof( reuseaddr ) );
   if( res < 0 )
     {
       std::cout << "ERROR >> Failed to set socket options: " << std::strerror( errno ) << std::endl;
@@ -117,7 +123,7 @@ bool RadarInterfaceK79::connect(void)
     }
     
   // Explicitly bind the host UDP socket:
-  res = bind( sockfd_, (struct sockaddr *)( &sockaddr_ ), sizeof( sockaddr_ ) );
+  res = bind( sockfd_, ( struct sockaddr * )( &sockaddr_ ), sizeof( sockaddr_ ) );
   if( res < 0 )
     {
       std::cout << "ERROR >> Failed to bind socket: " << std::strerror( errno ) << std::endl;
@@ -127,7 +133,7 @@ bool RadarInterfaceK79::connect(void)
   // Try to receive data until the timeout to see if the K79 is already running:
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len = sizeof( src_addr );
-  res = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+  res = recvfrom( sockfd_, ( char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
   if( res < 0 )
     {
       // If blocking recvfrom times out, errno is set to EAGAIN:
@@ -143,7 +149,7 @@ bool RadarInterfaceK79::connect(void)
 	    }
 
 	  // Wait for a response to the connect command:
-	  res = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::connect_res_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+	  res = recvfrom( sockfd_, ( char* )buffer_, RadarInterfaceK79::connect_res_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to receive connect response from radar: " << std::strerror( errno ) << std::endl;
@@ -156,7 +162,7 @@ bool RadarInterfaceK79::connect(void)
 
 	  // Send the run command to the radar:
 	  RadarInterfaceK79::run_cmd_str.copy( buffer_, RadarInterfaceK79::run_cmd_str.length() );
-	  res = sendto( sockfd_, (char* )buffer_, RadarInterfaceK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
+	  res = sendto( sockfd_, ( char* )buffer_, RadarInterfaceK79::run_cmd_str.length(), 0, ( struct sockaddr *)( &destaddr_ ), sizeof( destaddr_ ) );
 	  if( res < 0 )
 	    {
 	      std::cout << "ERROR >> Failed to send run command to radar: " << std::strerror( errno ) << std::endl;
@@ -177,7 +183,7 @@ bool RadarInterfaceK79::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarData>( "data", 10 );
+  pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "data/raw", 10 );
   
   return true;
 }
@@ -196,7 +202,7 @@ void RadarInterfaceK79::mainLoop(void)
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      msg_len = recvfrom( sockfd_, (char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
+      msg_len = recvfrom( sockfd_, ( char* )buffer_, RadarInterfaceK79::radar_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
       if( msg_len < 0 )
 	{
@@ -205,15 +211,13 @@ void RadarInterfaceK79::mainLoop(void)
       else
 	{
 	  // Extract the sender's IP address:
-	  struct sockaddr_in* sin = (struct sockaddr_in* )&src_addr;
-	  unsigned char* src_ip = (unsigned char*)(&sin->sin_addr.s_addr);
+	  struct sockaddr_in* sin = ( struct sockaddr_in* )&src_addr;
+	  unsigned char* src_ip = ( unsigned char* )( &sin->sin_addr.s_addr );
 	  // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
       
-	  // Prepare the radar targets message:
-	  radar_data_msg_ptr_->header.stamp = ros::Time(0); // ros::Time::now();
-	  radar_data_msg_ptr_->raw_targets.clear();
-	  radar_data_msg_ptr_->tracked_targets.clear();
-	  radar_data_msg_ptr_->alarms.clear();
+	  // Prepare the radar targets messages:
+	  radar_data_msg_ptr_raw_->header.stamp = ros::Time( 0.0 ); // ros::Time::now();
+	  radar_data_msg_ptr_raw_->targets.clear();
 
 	  // Extract the target ID and data from the message:
 	  if( ( msg_len % RadarInterfaceK79::target_msg_len ) != 0 )
@@ -245,11 +249,11 @@ void RadarInterfaceK79::mainLoop(void)
 	      
 		  target.elevation = 0.0; // K79 does not output elevation angle
 
-		  radar_data_msg_ptr_->raw_targets.push_back( target );
+		  radar_data_msg_ptr_raw_->targets.push_back( target );
 		}
 
 	      // Publish the target data:
-	      pub_radar_data_.publish( radar_data_msg_ptr_ );
+	      pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
 	    }
 	}
 
@@ -259,3 +263,5 @@ void RadarInterfaceK79::mainLoop(void)
       mutex_.unlock();  
      }
 }
+
+} // namespace ainstein_radar_drivers

@@ -26,6 +26,9 @@
 
 #include "ainstein_radar_drivers/radardata_to_pointcloud.h"
 
+namespace ainstein_radar_drivers
+{
+
 RadarDataToPointCloud::RadarDataToPointCloud( ros::NodeHandle node_handle,
 					      ros::NodeHandle node_handle_private ) :
   nh_( node_handle ),
@@ -41,8 +44,6 @@ RadarDataToPointCloud::RadarDataToPointCloud( ros::NodeHandle node_handle,
 				  this );
 
   // Get parameters:
-  nh_private_.param( "target_type", target_type_, std::string( "raw" ) );
-
   if( nh_private_.hasParam( "min_speed_thresh" ) )
     {
       nh_private_.param( "min_speed_thresh", min_speed_thresh_, 1.0 );
@@ -71,7 +72,7 @@ void RadarDataToPointCloud::radarVelCallback( const geometry_msgs::Twist &msg )
   is_vel_available_ = true;
 }
 
-void RadarDataToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarData &msg )
+void RadarDataToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
 {
   // Get the data frame ID and look up the corresponding tf transform:
   Eigen::Affine3d tf_sensor_to_world;
@@ -89,18 +90,8 @@ void RadarDataToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarD
   // Clear the point cloud point vector:
   pcl_.clear();
 
-  // Iterate through targets of specified type and add them to the point cloud:
-  std::vector<ainstein_radar_msgs::RadarTarget> targets;
-  if( target_type_.compare( "raw" ) == 0 )
-    {
-      targets = msg.raw_targets;
-    }
-  else
-    {
-      targets = msg.tracked_targets;
-    }
-  
-  for( auto target : targets )
+  // Iterate through targets and add them to the point cloud:
+  for( auto target : msg.targets )
     {
       // Filter first based on specified range limits:
       if( target.range >= min_dist_thresh_ &&
@@ -264,3 +255,5 @@ double RadarDataToPointCloud::solveForAngle( double x, double y, double z )
       return -( 180.0 / M_PI ) * ( std::abs( th_p ) < std::abs( th_m ) ? th_p : th_m ); // negative here from comparing to Yan's, not sure why needed yet...
     }
 }
+
+} // namespace ainstein_radar_drivers

@@ -37,11 +37,11 @@ public:
   virtual void onInit( void )
   {
     NODELET_DEBUG("Initializing T79 BSD interface nodelet");
-    intf_ptr_.reset( new RadarInterfaceT79BSD( getNodeHandle(), getPrivateNodeHandle() ) );
+    intf_ptr_.reset( new ainstein_radar_drivers::RadarInterfaceT79BSD( getNodeHandle(), getPrivateNodeHandle() ) );
   }
 
   private:
-  std::unique_ptr<RadarInterfaceT79BSD> intf_ptr_;
+  std::unique_ptr<ainstein_radar_drivers::RadarInterfaceT79BSD> intf_ptr_;
 };
 
 PLUGINLIB_EXPORT_CLASS( NodeletT79BSD, nodelet::Nodelet )

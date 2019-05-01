@@ -41,7 +41,7 @@ int main( int argc, char** argv )
     }
 
   // Create node to publish target point cloud:
-  RadarDataToPointCloud radardata_to_pointcloud( node_handle, node_handle_private );
+  ainstein_radar_drivers::RadarDataToPointCloud radardata_to_pointcloud( node_handle, node_handle_private );
 
   ros::spin();
 

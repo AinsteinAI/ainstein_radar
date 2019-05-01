@@ -39,7 +39,7 @@ int main( int argc, char** argv )
     }
     
   // Create node to publish target laser scan:
-  RadarDataToLaserScan radardata_to_laserscan;
+  ainstein_radar_drivers::RadarDataToLaserScan radardata_to_laserscan;
 
   ros::spin();
 

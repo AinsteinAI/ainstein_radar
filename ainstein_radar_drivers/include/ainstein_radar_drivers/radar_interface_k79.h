@@ -8,7 +8,10 @@
 #include <thread>
 
 #include <ros/ros.h>
-#include <ainstein_radar_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+
+namespace ainstein_radar_drivers
+{
 
 class RadarInterfaceK79 {
 
@@ -25,8 +28,8 @@ public:
 
   static const std::string run_cmd_str;
 
-  #define MSG_LEN        1000 // maximum length in bytes
-  #define TARGET_MSG_LEN    8 // 8 bytes per target, first 4 are nonzero
+  #define RADAR_MSG_LEN  1000    // maximum length in bytes
+  #define TARGET_MSG_LEN 8       // 8 bytes per target, first 4 are nonzero
 
   static const unsigned int radar_msg_len;
   static const unsigned int target_msg_len;
@@ -38,10 +41,11 @@ private:
   std::string radar_name_;
   std::string radar_ip_addr_;
   int radar_port_;
+  std::string frame_id_;
 
   int sockfd_; // socket file descriptor
   struct sockaddr_in sockaddr_;
-  char buffer_[MSG_LEN];
+  char buffer_[RADAR_MSG_LEN];
 
   struct sockaddr_in destaddr_;
   
@@ -51,10 +55,11 @@ private:
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-  ros::Publisher pub_radar_data_;
+  ros::Publisher pub_radar_data_raw_;
 
-  boost::shared_ptr<ainstein_radar_msgs::RadarData> radar_data_msg_ptr_;
-    
+  boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
 };
 
-#endif
+} // namespace ainstein_radar_drivers
+
+#endif // RADAR_INTERFACE_K79_H_
