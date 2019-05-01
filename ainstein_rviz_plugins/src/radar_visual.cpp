@@ -1,3 +1,29 @@
+/*
+  Copyright <2018-2019> <Ainstein, Inc.>
+
+  Redistribution and use in source and binary forms, with or without modification, are permitted 
+  provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this list of 
+  conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice, this list of 
+  conditions and the following disclaimer in the documentation and/or other materials provided 
+  with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its contributors may be used to 
+  endorse or promote products derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+  FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <sstream>
 
 #include <OGRE/OgreVector3.h>
@@ -9,10 +35,10 @@
 
 #include "radar_visual.h"
 
-namespace rviz_radar_plugin
+namespace ainstein_rviz_plugins
 {
 
-  const int RadarVisual::max_target_visuals = 1000;
+const int RadarVisual::max_target_visuals = 1000;
   
 RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
 {
@@ -34,8 +60,7 @@ RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* pa
   show_target_info_ = false;
 
   // Set the target visuals vector capacities:
-  radar_target_visuals_raw_.reserve( RadarVisual::max_target_visuals );
-  radar_target_visuals_tracked_.reserve( RadarVisual::max_target_visuals );
+  radar_target_visuals_.reserve( RadarVisual::max_target_visuals );
 }
 
 RadarVisual::~RadarVisual()
@@ -44,122 +69,63 @@ RadarVisual::~RadarVisual()
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
-void RadarVisual::setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg )
+void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
 {
   // Resize the target shapes vector:
-  radar_target_visuals_raw_.clear();
+  radar_target_visuals_.clear();
 
-  // Fill the target shapes from RadarData message:
-  for( const auto& target : msg->raw_targets )
+  // Fill the target shapes from RadarTargetArray message:
+  for( const auto& target : msg->targets )
     {
       if( target.range > min_range_ && target.range < max_range_ )
 	{
 	  // Create the new target shape, fill it and push back:
-	  radar_target_visuals_raw_.emplace_back( scene_manager_, frame_node_, shape_type_raw_ );
+	  radar_target_visuals_.emplace_back( scene_manager_, frame_node_, shape_type_ );
 	  
 	  // Compute the target's Cartesian position:
-	  radar_target_visuals_raw_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-					sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-					sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
+	  radar_target_visuals_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
+								      sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
+								      sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
 	  // Set the target speed arrow length:
 	  if( show_speed_arrows_ )
 	    {
-	      radar_target_visuals_raw_.back().speed.set( std::abs( target.speed ), // shaft length
-			    0.1, // shaft diameter
-			    0.2, // arrow head length
-			    0.2 ); // arrow head diameter
+	      radar_target_visuals_.back().speed.set( std::abs( target.speed ), // shaft length
+						      0.1, // shaft diameter
+						      0.2, // arrow head length
+						      0.2 ); // arrow head diameter
 	    }
 	  else
 	    {
-	      radar_target_visuals_raw_.back().speed.set( 0.0, 0.0, 0.0, 0.0 );
+	      radar_target_visuals_.back().speed.set( 0.0, 0.0, 0.0, 0.0 );
 	    }
 
 	  // Set the target speed arrow position to the target position:
-	  radar_target_visuals_raw_.back().speed.setPosition( radar_target_visuals_raw_.back().pos.getPosition() );
-
+	  radar_target_visuals_.back().speed.setPosition( radar_target_visuals_.back().pos.getPosition() );
+	  
 	  // The target speed points toward the radar sensor:
-	  radar_target_visuals_raw_.back().speed.setDirection( radar_target_visuals_raw_.back().pos.getPosition() /
-				 std::copysign( target.range, target.speed ) );
+	  radar_target_visuals_.back().speed.setDirection( radar_target_visuals_.back().pos.getPosition() /
+							   std::copysign( target.range, target.speed ) );
 
 	  // Set the info text:
 	  // Set the target speed arrow length:
 	  if( show_target_info_ )
 	    {
-	      radar_target_visuals_raw_.back().info.setLocalTranslation( radar_target_visuals_raw_.back().pos.getPosition() );
+	      radar_target_visuals_.back().info.setLocalTranslation( radar_target_visuals_.back().pos.getPosition() );
 	      std::ostringstream ss;
 	      ss << target;
-	      radar_target_visuals_raw_.back().info.setCaption( ss.str() );
+	      radar_target_visuals_.back().info.setCaption( ss.str() );
 	    }
 	  else
 	    {
-	      radar_target_visuals_raw_.back().info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
+	      radar_target_visuals_.back().info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	    }
 	}
     }
 }
 
-void RadarVisual::clearMessageRaw( void )
+void RadarVisual::clearMessage( void )
 {
-  radar_target_visuals_raw_.clear();
-}
-
-void RadarVisual::setMessageTracked( const radar_sensor_msgs::RadarData::ConstPtr& msg )
-{
-  // Resize the target shapes vector:
-  radar_target_visuals_tracked_.clear();
-  
-  // Fill the target shapes from RadarData message:
-  for( const auto& target : msg->tracked_targets )
-    {
-      if( target.range > min_range_ && target.range < max_range_ )
-	{
-	  // Create the new target shape, fill it and push back:	
-	  radar_target_visuals_tracked_.emplace_back( scene_manager_, frame_node_, shape_type_tracked_ );
-	  
-	  // Compute the target's Cartesian position:
-	  radar_target_visuals_tracked_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-					sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-					sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
-	  // Set the target speed arrow length:
-	  if( show_speed_arrows_ )
-	    {
-	      radar_target_visuals_tracked_.back().speed.set( std::abs( target.speed ), // shaft length
-			    0.01, // shaft diameter
-			    0.1, // arrow head length
-			    0.05 ); // arrow head diameter
-	    }
-	  else
-	    {
-	      radar_target_visuals_tracked_.back().speed.set( 0.0, 0.0, 0.0, 0.0 );
-	    }
-
-	  // Set the target speed arrow position to the target position:
-	  radar_target_visuals_tracked_.back().speed.setPosition( radar_target_visuals_tracked_.back().pos.getPosition() );
-
-	  // The target speed points toward the radar sensor:
-	  radar_target_visuals_tracked_.back().speed.setDirection( radar_target_visuals_tracked_.back().pos.getPosition() /
-				 std::copysign( target.range, target.speed ) );
-
-	  // Set the info text:
-	  // Set the target speed arrow length:
-	  if( show_target_info_ )
-	    {
-	      radar_target_visuals_tracked_.back().info.setLocalTranslation( radar_target_visuals_tracked_.back().pos.getPosition() );
-	      std::ostringstream ss;
-	      ss << target;
-	      radar_target_visuals_tracked_.back().info.setCaption( ss.str() );
-	    }
-	  else
-	    {
-	      radar_target_visuals_tracked_.back().info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
-	    }
-	}
-    }
-}
-
-void RadarVisual::clearMessageTracked( void )
-{
-  radar_target_visuals_tracked_.clear();
+  radar_target_visuals_.clear();
 }
   
 // Position and orientation are passed through to the SceneNode.
@@ -174,18 +140,9 @@ void RadarVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
 }
   
 // Color is passed through to the Shape object.
-void RadarVisual::setColorRaw( float r, float g, float b, float a )
+void RadarVisual::setColor( float r, float g, float b, float a )
 {
-  for( auto& shape : radar_target_visuals_raw_ )
-    {
-      shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
-      shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
-    }
-}
-
-  void RadarVisual::setColorTracked( float r, float g, float b, float a )
-{
-  for( auto& shape : radar_target_visuals_tracked_ )
+  for( auto& shape : radar_target_visuals_ )
     {
       shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
       shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
@@ -193,23 +150,14 @@ void RadarVisual::setColorRaw( float r, float g, float b, float a )
 }
 
 // Scale is passed through to the Shape object.
-void RadarVisual::setScaleRaw( float scale )
+void RadarVisual::setScale( float scale )
 {
-  for( auto& shape : radar_target_visuals_raw_ )
+  for( auto& shape : radar_target_visuals_ )
     {
       shape.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
     }
 }
-
-  // Scale is passed through to the Shape object.
-void RadarVisual::setScaleTracked( float scale )
-{
-  for( auto& shape : radar_target_visuals_tracked_ )
-    {
-      shape.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
-    }
-}
-
+  
   void RadarVisual::updateFilteredTargets( void )
   {
     // // Remove raw targets based on updated range filters:
@@ -252,15 +200,10 @@ void RadarVisual::setScaleTracked( float scale )
     if( !show_speed_arrows_ )
       {
 	// Easiest way to hide arrows is to scale them down to zero:
-	for( auto& t : radar_target_visuals_raw_ )
+	for( auto& t : radar_target_visuals_ )
 	  {
 	    t.speed.set( 0.0, 0.0, 0.0, 0.0 );
 	  }
-	for( auto& t : radar_target_visuals_tracked_ )
-	  {
-	    t.speed.set( 0.0, 0.0, 0.0, 0.0 );
-	  }
-	
       }
   }
   
@@ -272,14 +215,10 @@ void RadarVisual::setScaleTracked( float scale )
     // Update all the existing text if switched off:
     if( !show_target_info_ )
       {
-	for( auto& t : radar_target_visuals_raw_ )
+	for( auto& t : radar_target_visuals_ )
 	  {
 	    t.info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
 	  }
-	for( auto& t : radar_target_visuals_tracked_ )
-	  {
-	    t.info.setColor( Ogre::ColourValue( 0.0, 0.0, 0.0, 0.0 ) );
-	  }       
       }
   }
 
@@ -289,16 +228,12 @@ void RadarVisual::setScaleTracked( float scale )
     info_text_height_ = info_text_height;
 
     // Update all the existing text if switched off:
-    for( auto& t : radar_target_visuals_raw_ )
+    for( auto& t : radar_target_visuals_ )
       {
 	t.info.setCharacterHeight( info_text_height_ );
       }
-    for( auto& t : radar_target_visuals_tracked_ )
-      {
-	t.info.setCharacterHeight( info_text_height_ );
-      }    
   }
 
 
-} // end namespace rviz_radar_plugin
+} // namespace ainstein_rviz_plugins
 

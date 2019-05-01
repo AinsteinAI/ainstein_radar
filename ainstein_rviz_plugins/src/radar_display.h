@@ -1,5 +1,5 @@
-#ifndef RADAR_DISPLAY_H
-#define RADAR_DISPLAY_H
+#ifndef RADAR_DISPLAY_H_
+#define RADAR_DISPLAY_H_
 
 #ifndef Q_MOC_RUN
 #include <boost/circular_buffer.hpp>
@@ -7,8 +7,8 @@
 #include <rviz/message_filter_display.h>
 #include <rviz/tool.h>
 
-#include <radar_sensor_msgs/RadarData.h>
-#endif
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+#endif 
 
 namespace Ogre
 {
@@ -27,7 +27,7 @@ class BoolProperty;
 
 // All the source in this plugin is in its own namespace.  This is not
 // required but is good practice.
-namespace rviz_radar_plugin
+namespace ainstein_rviz_plugins
 {
 
 class RadarVisual;
@@ -48,7 +48,7 @@ class RadarVisual;
 // themselves are represented by a separate class, RadarVisual.  The
 // idiom for the visuals is that when the objects exist, they appear
 // in the scene, and when they are deleted, they disappear.
- class RadarDisplay: public rviz::MessageFilterDisplay<radar_sensor_msgs::RadarData>
+ class RadarDisplay: public rviz::MessageFilterDisplay<ainstein_radar_msgs::RadarTargetArray>
  {
 Q_OBJECT
 public:
@@ -83,22 +83,18 @@ private Q_SLOTS:
   
   // Function to handle an incoming ROS message.
 private:
-  void processMessage( const radar_sensor_msgs::RadarData::ConstPtr& msg );
+  void processMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg );
 
   // Storage for the list of visuals.  It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)
   boost::circular_buffer<boost::shared_ptr<RadarVisual> > visuals_;
 
-  // Booleans to store whether to show targets:
-  bool show_raw_;
-  bool show_tracked_;
+  // Boolean to store whether to show targets:
+  bool show_targets_;
   
   // User-editable property variables.
-  rviz::BoolProperty* show_raw_property_;
-  rviz::Property* list_raw_;
-
-  rviz::BoolProperty* show_tracked_property_;
-  rviz::Property* list_tracked_;
+  rviz::BoolProperty* show_targets_property_;
+  rviz::Property* list_targets_;
 
   rviz::IntProperty* history_length_property_;
   rviz::FloatProperty* min_range_property_;
@@ -108,7 +104,7 @@ private:
   rviz::FloatProperty* info_text_height_property_;
 };
 
-} // end namespace rviz_radar_plugin
+} // end namespace ainstein_rviz_plugins
 
-#endif // RADAR_DISPLAY_H
+#endif // RADAR_DISPLAY_H_
 

@@ -4,7 +4,8 @@
 #include <rviz/ogre_helpers/shape.h>
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/movable_text.h>
-#include <radar_sensor_msgs/RadarData.h>
+
+#include <ainstein_radar_msgs/RadarTargetArray.h>
 
 namespace rviz
 {
@@ -13,7 +14,7 @@ namespace rviz
   class MovableText;
 }
 
-namespace rviz_radar_plugin
+namespace ainstein_rviz_plugins
 {
 
   // Create an aggregate class for different types of basic visual elements
@@ -57,12 +58,8 @@ public:
   virtual ~RadarVisual();
 
   // Configure the visual to show the data in the message.
-  void setMessageRaw( const radar_sensor_msgs::RadarData::ConstPtr& msg );
-  void clearMessageRaw( void );
-
-  // Configure the visual to show the data in the message.
-  void setMessageTracked( const radar_sensor_msgs::RadarData::ConstPtr& msg );
-  void clearMessageTracked( void );
+  void setMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg );
+  void clearMessage( void );
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
@@ -74,13 +71,11 @@ public:
 
   // Set the color and alpha of the visual, which are user-editable
   // parameters and therefore don't come from the Radar message.
-  void setColorRaw( float r, float g, float b, float a );
-  void setColorTracked( float r, float g, float b, float a );
+  void setColor( float r, float g, float b, float a );
 
   // Set the scale of the visual, which are user-editable
   // parameters and therefore don't come from the Radar message.
-  void setScaleRaw( float scale );
-  void setScaleTracked( float scale );
+  void setScale( float scale );
 
   // Update the targets based on new user-set parameters.
   void updateFilteredTargets();
@@ -98,13 +93,9 @@ public:
   void setInfoTextHeight( float info_text_height );
 
   // Set target shapes for rendering:
-  void setTargetShapeRaw( int type )
+  void setTargetShape( int type )
   {
-    shape_type_raw_ = static_cast<rviz::Shape::Type>( type );
-  }
-  void setTargetShapeTracked( int type )
-  {
-    shape_type_tracked_ = static_cast<rviz::Shape::Type>( type );
+    shape_type_ = static_cast<rviz::Shape::Type>( type );
   }
   
   // Maximum number of target visuals:
@@ -112,8 +103,7 @@ public:
   
 private:
   // The objects implementing the radar target visuals
-  std::vector<TargetVisual> radar_target_visuals_raw_;
-  std::vector<TargetVisual> radar_target_visuals_tracked_;
+  std::vector<TargetVisual> radar_target_visuals_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.
@@ -128,8 +118,7 @@ private:
   float max_range_;
 
   // Shapes to use for rendering:
-  rviz::Shape::Type shape_type_raw_;
-  rviz::Shape::Type shape_type_tracked_;
+  rviz::Shape::Type shape_type_;
   
   // Determines whether speed arrows are rendered with zero length:
   bool show_speed_arrows_;
@@ -141,6 +130,6 @@ private:
   float info_text_height_;
 };
 
-} // end namespace rviz_radar_plugin
+} // end namespace ainstein_rviz_plugins
 
 #endif // RADAR_VISUAL_H
