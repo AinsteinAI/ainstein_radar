@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_CXX_STANDARD 11)
 
-project(ainstein_rviz_plugins)
+project(ainstein_radar_rviz_plugins)
 find_package(catkin REQUIRED COMPONENTS
   rviz
   ainstein_radar_msgs

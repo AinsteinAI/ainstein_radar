@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ainstein_rviz_plugins</name>
+  <name>ainstein_radar_rviz_plugins</name>
   <version>1.0.0</version>
   <description>Radar message type plugins for RViz.</description>
   

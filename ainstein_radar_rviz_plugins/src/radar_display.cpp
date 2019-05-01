@@ -40,7 +40,7 @@
 #include "radar_visual.h"
 #include "radar_display.h"
 
-namespace ainstein_rviz_plugins
+namespace ainstein_radar_rviz_plugins
 {
 
   // The constructor must have no arguments, so we can't give the
@@ -296,9 +296,9 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
 	v->setTargetShape( shape );
       }       
   }
-} // namespace ainstein_rviz_plugins
+} // namespace ainstein_radar_rviz_plugins
 
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(ainstein_rviz_plugins::RadarDisplay,rviz::Display )
+PLUGINLIB_EXPORT_CLASS(ainstein_radar_rviz_plugins::RadarDisplay,rviz::Display )

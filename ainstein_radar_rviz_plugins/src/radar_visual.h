@@ -14,7 +14,7 @@ namespace rviz
   class MovableText;
 }
 
-namespace ainstein_rviz_plugins
+namespace ainstein_radar_rviz_plugins
 {
 
   // Create an aggregate class for different types of basic visual elements
@@ -130,6 +130,6 @@ private:
   float info_text_height_;
 };
 
-} // end namespace ainstein_rviz_plugins
+} // end namespace ainstein_radar_rviz_plugins
 
 #endif // RADAR_VISUAL_H

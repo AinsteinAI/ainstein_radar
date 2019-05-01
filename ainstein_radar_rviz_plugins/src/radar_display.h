@@ -27,7 +27,7 @@ class BoolProperty;
 
 // All the source in this plugin is in its own namespace.  This is not
 // required but is good practice.
-namespace ainstein_rviz_plugins
+namespace ainstein_radar_rviz_plugins
 {
 
 class RadarVisual;
@@ -102,7 +102,7 @@ private:
   rviz::FloatProperty* info_text_height_property_;
 };
 
-} // end namespace ainstein_rviz_plugins
+} // end namespace ainstein_radar_rviz_plugins
 
 #endif // RADAR_DISPLAY_H_
 

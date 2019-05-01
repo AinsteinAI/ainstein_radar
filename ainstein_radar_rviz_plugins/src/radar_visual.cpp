@@ -35,7 +35,7 @@
 
 #include "radar_visual.h"
 
-namespace ainstein_rviz_plugins
+namespace ainstein_radar_rviz_plugins
 {
 
 const int RadarVisual::max_target_visuals = 1000;
@@ -235,5 +235,5 @@ void RadarVisual::setScale( float scale )
   }
 
 
-} // namespace ainstein_rviz_plugins
+} // namespace ainstein_radar_rviz_plugins
 
