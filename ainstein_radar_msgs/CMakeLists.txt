@@ -10,11 +10,12 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  RadarData.msg
-  RadarTarget.msg
-  RadarTargetRaw.msg
-  RadarTargetTracked.msg
   RadarAlarm.msg
+  RadarAlarmArray.msg
+  RadarAlarmStamped.msg
+  RadarTarget.msg
+  RadarTargetArray.msg
+  RadarTargetStamped.msg
   )
 
 generate_messages(

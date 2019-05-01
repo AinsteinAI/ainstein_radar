@@ -1,5 +1,7 @@
-# This message describes a tracked target (detection) from a RADAR sensor.  For now,
-# this is identical to the message for a raw target (detection).
+# This message describes a target (detection) from a RADAR sensor with a timestamp.
+
+std_msgs/Header header
+
 uint16 target_id    # ID of the target, as set by the sensor
 float64 snr         # Signal-to-noise ratio
 float64 range       # Distance from sensor to target along sensor x-axis

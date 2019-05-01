@@ -1,4 +1,5 @@
 # This message describes a target (detection) from a RADAR sensor.
+
 uint16 target_id    # ID of the target, as set by the sensor
 float64 snr         # Signal-to-noise ratio
 float64 range       # Distance from sensor to target along sensor x-axis
