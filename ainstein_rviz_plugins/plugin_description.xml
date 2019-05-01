@@ -1,5 +1,5 @@
 <library path="lib/libainstein_rviz_plugins">
-  <class name="ainstein_rviz_plugins/Radar"
+  <class name="ainstein_rviz_plugins/RadarTargetArray"
          type="ainstein_rviz_plugins::RadarDisplay"
          base_class_type="rviz::Display">
     <description>

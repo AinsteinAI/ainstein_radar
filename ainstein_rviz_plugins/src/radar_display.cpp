@@ -48,33 +48,23 @@ namespace ainstein_rviz_plugins
   RadarDisplay::RadarDisplay()
   {
     // Options for displaying targets:
-    show_targets_property_ = new rviz::BoolProperty( "Show Targets", true,
-						     "Toggles display of target markers.",
-						     this, SLOT( updateShowTargets() ) );
+    color_property_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+					       "Color to draw the target markers.",
+					       this, SLOT( updateColorAndAlpha() ) );
+    
+    alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
+					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
+					      this, SLOT( updateColorAndAlpha() ) );
 
-    list_targets_ = new rviz::Property( "Targets", QVariant(),
-					"Target display options.",
-					this, 0 );
-
-    list_targets_->addChild( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
-						  "Color to draw the target markers.",
-						  this, SLOT( updateColorAndAlpha() ) ) );
+    scale_property_ = new rviz::FloatProperty( "Scale", 0.2,
+					       "Marker scale, in meters.",
+					       this, SLOT( updateScale() ) );
   
-    list_targets_->addChild( new rviz::FloatProperty( "Alpha", 1.0,
-						      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-						      this, SLOT( updateColorAndAlpha() ) ) );
-
-    list_targets_->addChild( new rviz::FloatProperty( "Scale", 0.2,
-						      "Marker scale, in meters.",
-						      this, SLOT( updateScale() ) ) );
-    
-    list_targets_->addChild( new rviz::EnumProperty( "Shape", "Cube",
-						     "Target shape type.",
-						     this, SLOT( updateTargetShape() ) ) );
-    
-    rviz::EnumProperty* shape = static_cast<rviz::EnumProperty*>( list_targets_->subProp( "Shape" ) );
-    shape->addOptionStd( "Cube", 1 );
-    shape->addOptionStd( "Sphere", 3 );
+    shape_property_ = new rviz::EnumProperty( "Shape", "Cube",
+					      "Target shape type.",
+					      this, SLOT( updateTargetShape() ) );    
+    shape_property_->addOptionStd( "Cube", 1 );
+    shape_property_->addOptionStd( "Sphere", 3 );
 
     // Create the history length option:
     history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
@@ -150,13 +140,11 @@ void RadarDisplay::updateColorAndAlpha()
   Ogre::ColourValue color;
 
   // Set targets color and alpha:
-  if( show_targets_property_->getBool() )
+  alpha_property_->getFloat();
+  color_property_->getOgreColor();
+  for( const auto& v : visuals_ )
     {
-      alpha = static_cast<rviz::FloatProperty*>( list_targets_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_targets_->subProp( "Color" ) )->getOgreColor();      for( const auto& v : visuals_ )
-  	{
-  	  v->setColor( color.r, color.g, color.b, alpha );
-  	}
+      v->setColor( color.r, color.g, color.b, alpha );
     }
 }
   
@@ -166,13 +154,10 @@ void RadarDisplay::updateScale()
   float scale;
 
   // Set targets scale:
-  if( show_targets_property_->getBool() )
+  scale_property_->getFloat();
+  for( const auto& v : visuals_ )
     {
-      scale = static_cast<rviz::FloatProperty*>( list_targets_->subProp( "Scale" ) )->getFloat();
-      for( const auto& v : visuals_ )
-  	{
-  	  v->setScale( scale );
-  	}
+      v->setScale( scale );
     }
 }
 
@@ -208,45 +193,6 @@ void RadarDisplay::updateMaxRange()
       v->setMaxRange( max_range_property_->getFloat() );
       v->updateFilteredTargets();
     }   
-}
-
-// Set whether to display targets.
-void RadarDisplay::updateShowTargets()
-{
-  // Get the visual options settings:
-  show_targets_ = show_targets_property_->getBool();
-
-  // Visual options:
-  if( show_targets_ )
-    {
-      list_targets_->show();
-      list_targets_->expand();
-    }
-  else
-    {
-      list_targets_->hide();
-      visuals_.clear();
-    }
-
-  // General visual options:
-  if( show_targets_ )
-    {
-      history_length_property_->show();
-      min_range_property_->show();
-      max_range_property_->show();
-      show_speed_property_->show();
-      show_info_property_->show();
-      info_text_height_property_->show();
-    }
-  else
-    {
-      history_length_property_->hide();
-      min_range_property_->hide();
-      max_range_property_->hide();
-      show_speed_property_->hide();
-      show_info_property_->hide();
-      info_text_height_property_->hide();
-    }      
 }
 
 // This is our callback to handle an incoming message.
@@ -296,27 +242,20 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
   visual->setInfoTextHeight( info_text_height );
 
   // Set target data and visual options:
-  if( show_targets_property_->getBool() )
-    {
-      // First set target shapes:
-      shape = static_cast<rviz::EnumProperty*>( list_targets_->subProp( "Shape" ) )->getOptionInt();
-      visual->setTargetShape( shape );
-
-      // Then set the target data from message:
-      visual->setMessage( msg );
-
-      // Set the target visual options:
-      alpha = static_cast<rviz::FloatProperty*>( list_targets_->subProp( "Alpha" ) )->getFloat();
-      color = static_cast<rviz::ColorProperty*>( list_targets_->subProp( "Color" ) )->getOgreColor();
-      visual->setColor( color.r, color.g, color.b, alpha );
-      scale = static_cast<rviz::FloatProperty*>( list_targets_->subProp( "Scale" ) )->getFloat();
-      visual->setScale( scale );
-    }
-  else 
-    {
-      visual->clearMessage();
-    }
+  // First set target shapes:
+  shape_property_->getOptionInt();
+  visual->setTargetShape( shape );
   
+  // Then set the target data from message:
+  visual->setMessage( msg );
+
+  // Set the target visual options:
+  alpha_property_->getFloat();
+  color_property_->getOgreColor();
+  visual->setColor( color.r, color.g, color.b, alpha );
+  scale_property_->getFloat();
+  visual->setScale( scale );
+      
   visual->setFramePosition( position );
   visual->setFrameOrientation( orientation );
 
@@ -353,7 +292,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
     int shape;
     for( const auto& v : visuals_ )
       {
-	shape = static_cast<rviz::EnumProperty*>( list_targets_->subProp( "Shape" ) )->getOptionInt();
+	shape_property_->getOptionInt();
 	v->setTargetShape( shape );
       }       
   }

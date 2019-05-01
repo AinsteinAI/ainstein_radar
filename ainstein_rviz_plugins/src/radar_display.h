@@ -72,7 +72,6 @@ protected:
 private Q_SLOTS:
   void updateColorAndAlpha();
   void updateScale();
-  void updateShowTargets();
   void updateHistoryLength();
   void updateMinRange();
   void updateMaxRange();
@@ -87,15 +86,14 @@ private:
 
   // Storage for the list of visuals.  It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)
-  boost::circular_buffer<boost::shared_ptr<RadarVisual> > visuals_;
+  boost::circular_buffer<boost::shared_ptr<RadarVisual>> visuals_;
 
-  // Boolean to store whether to show targets:
-  bool show_targets_;
-  
   // User-editable property variables.
-  rviz::BoolProperty* show_targets_property_;
-  rviz::Property* list_targets_;
-
+  rviz::ColorProperty* color_property_;
+  rviz::FloatProperty* alpha_property_;
+  rviz::FloatProperty* scale_property_;
+  rviz::EnumProperty* shape_property_;
+  
   rviz::IntProperty* history_length_property_;
   rviz::FloatProperty* min_range_property_;
   rviz::FloatProperty* max_range_property_;
