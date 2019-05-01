@@ -89,17 +89,17 @@ private:
   boost::circular_buffer<boost::shared_ptr<RadarVisual>> visuals_;
 
   // User-editable property variables.
-  rviz::ColorProperty* color_property_;
-  rviz::FloatProperty* alpha_property_;
-  rviz::FloatProperty* scale_property_;
-  rviz::EnumProperty* shape_property_;
+  std::unique_ptr<rviz::ColorProperty> color_property_;
+  std::unique_ptr<rviz::FloatProperty> alpha_property_;
+  std::unique_ptr<rviz::FloatProperty> scale_property_;
+  std::unique_ptr<rviz::EnumProperty> shape_property_;
   
-  rviz::IntProperty* history_length_property_;
-  rviz::FloatProperty* min_range_property_;
-  rviz::FloatProperty* max_range_property_;
-  rviz::BoolProperty* show_speed_property_;
-  rviz::BoolProperty* show_info_property_;
-  rviz::FloatProperty* info_text_height_property_;
+  std::unique_ptr<rviz::IntProperty> history_length_property_;
+  std::unique_ptr<rviz::FloatProperty> min_range_property_;
+  std::unique_ptr<rviz::FloatProperty> max_range_property_;
+  std::unique_ptr<rviz::BoolProperty> show_speed_property_;
+  std::unique_ptr<rviz::BoolProperty> show_info_property_;
+  std::unique_ptr<rviz::FloatProperty> info_text_height_property_;
 };
 
 } // end namespace ainstein_radar_rviz_plugins

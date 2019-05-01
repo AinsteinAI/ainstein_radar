@@ -48,58 +48,58 @@ namespace ainstein_radar_rviz_plugins
   RadarDisplay::RadarDisplay()
   {
     // Options for displaying targets:
-    color_property_ = new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
+    color_property_.reset( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
 					       "Color to draw the target markers.",
-					       this, SLOT( updateColorAndAlpha() ) );
+					       this, SLOT( updateColorAndAlpha() ) ) );
     
-    alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
+    alpha_property_.reset( new rviz::FloatProperty( "Alpha", 1.0,
 					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
-					      this, SLOT( updateColorAndAlpha() ) );
+					      this, SLOT( updateColorAndAlpha() ) ) );
 
-    scale_property_ = new rviz::FloatProperty( "Scale", 0.2,
+    scale_property_.reset( new rviz::FloatProperty( "Scale", 0.2,
 					       "Marker scale, in meters.",
-					       this, SLOT( updateScale() ) );
+					       this, SLOT( updateScale() ) ) );
   
-    shape_property_ = new rviz::EnumProperty( "Shape", "Cube",
+    shape_property_.reset( new rviz::EnumProperty( "Shape", "Cube",
 					      "Target shape type.",
-					      this, SLOT( updateTargetShape() ) );    
+					      this, SLOT( updateTargetShape() ) ) );    
     shape_property_->addOptionStd( "Cube", 1 );
     shape_property_->addOptionStd( "Sphere", 3 );
 
     // Create the history length option:
-    history_length_property_ = new rviz::IntProperty( "Number of Scans", 1,
+    history_length_property_.reset( new rviz::IntProperty( "Number of Scans", 1,
 						      "Number of radar scans to display.",
-						      this, SLOT( updateHistoryLength() ));
+						      this, SLOT( updateHistoryLength() )) );
     history_length_property_->setMin( 1 );
     history_length_property_->setMax( 1000000 );
 
     // Create the minimum target range option:
-    min_range_property_ = new rviz::FloatProperty( "Min Range", 0.0,
+    min_range_property_.reset( new rviz::FloatProperty( "Min Range", 0.0,
 						   "Minimum distance of targets to be displayed.",
-						   this, SLOT( updateMinRange() ));
+						   this, SLOT( updateMinRange() )) );
     min_range_property_->setMin( 0.0 );
     min_range_property_->setMax( 100.0 );
 
     // Create the maximum target range option:
-    max_range_property_ = new rviz::FloatProperty( "Max Range", 100.0,
+    max_range_property_.reset( new rviz::FloatProperty( "Max Range", 100.0,
 						   "Maximum distance of targets to be displayed.",
-						   this, SLOT( updateMaxRange() ));
+						   this, SLOT( updateMaxRange() )) );
     max_range_property_->setMin( 0.0 );
     max_range_property_->setMax( 100.0 );
 
     // Determines whether to show the speed arrows:
-    show_speed_property_ = new rviz::BoolProperty( "Show Speed", false,
+    show_speed_property_.reset( new rviz::BoolProperty( "Show Speed", false,
 						   "Toggles display of arrows indicating target speed.",
-						   this, SLOT( updateShowSpeedArrows() ) );
+						   this, SLOT( updateShowSpeedArrows() ) ) );
 
     // Determines whether to show the speed arrows:
-    show_info_property_ = new rviz::BoolProperty( "Show Info", false,
+    show_info_property_.reset( new rviz::BoolProperty( "Show Info", false,
 						  "Toggles display of target info text.",
-						  this, SLOT( updateShowTargetInfo() ) );
+						  this, SLOT( updateShowTargetInfo() ) ) );
 
-    info_text_height_property_ = new rviz::FloatProperty( "Info Text Height", 0.05,
+    info_text_height_property_.reset( new rviz::FloatProperty( "Info Text Height", 0.05,
 							  "Target info text height.",
-							  this, SLOT( updateInfoTextHeight() ) );
+							  this, SLOT( updateInfoTextHeight() ) ) );
   }
 
   
