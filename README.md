@@ -16,9 +16,18 @@ INSTALL INSTRUCTIONS:
 
 Once the package has been built (as normal in the catkin workspace), copy the folder(s)
 inside the models/ directory to somewhere on your GAZEBO_MODEL_PATH, eg ~/.gazebo/models
+which can be added to your model path (if it isn't already) by adding this to your .bashrc:
+
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/.gazebo/models
+```
 
 Also, make sure that ~/catkin_ws/devel/lib/ is on your GAZEBO_PLUGIN_PATH as this is where
-the shared library will be built.
+the shared library will be built.  To do this, add the following to your .bashrc:
+
+```
+export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:~/catkin_ws/devel/lib
+```
 
 To test that the sensor is able to be loaded correctly in Gazebo (before adding it to another
 model), use the provided test.launch file to attempt to start Gazebo with the radar sensor. If
