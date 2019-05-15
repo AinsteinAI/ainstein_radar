@@ -34,7 +34,8 @@
       <visual name='visual'>
 	<geometry>
 	  <mesh>
-	    <uri>model://usharp3d/meshes/kanza79.stl</uri>
+	    <uri>model://usharp3d/meshes/usharp3d.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
 	  </mesh>
 	</geometry>
       </visual>
