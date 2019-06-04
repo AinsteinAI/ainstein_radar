@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+
+import serial
+import time
+import binascii
+
+import rospy
+from ainstein_radar_msgs.msg import RadarTargetArray
+from ainstein_radar_msgs.msg import RadarTarget
+
+USHARP3D_SINGLE_HEADER = 0x55AA
+USHARP3D_SINGLE_TAIL = 0x5AA5
+USHARP3D_PACKETSIZE = 15
+
+class USHARP3D_MULTIPLE_UART(object):
+    def __init__(self, uart):
+        self.uart = uart
+        rospy.init_node( 'usharp3d_node')
+        self.pub = rospy.Publisher( '~data', RadarTargetArray, queue_size=10 )
+        self.radar_data_msg_raw = RadarTargetArray()
+        self.radar_data_msg_raw.header.stamp = rospy.get_rostime()
+        self.radar_data_msg_raw.header.frame_id = "map"
+        
+    def data_receive_usharp3d_multiple(self):
+        while not rospy.is_shutdown():
+            whole_packet = [] # fixed packet length
+            Header_Bytes = [0, 0] # two Bytes in header
+            Tail_Bytes = [0, 0]
+            rx_checksum = 0
+            if ( True ):
+                # print ord(self.uart.read())
+                try:
+                    while True:
+                        Header_Bytes[0] = ord(self.uart.read())
+                        Header_Bytes[1] = ord(self.uart.read())
+                        if Header_Bytes[0] == (USHARP3D_SINGLE_HEADER>>8) & 0xff and Header_Bytes[1] == (USHARP3D_SINGLE_HEADER) & 0xff:
+                            while True:
+                                Tail_Bytes[0] = ord(self.uart.read())
+                                whole_packet.append(Tail_Bytes[0])
+                                # Tail_Bytes[1] = ord(self.uart.read())
+                                # whole_packet.append(Tail_Bytes[1])
+                                if Tail_Bytes[0] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                    Tail_Bytes[1] = ord(self.uart.read())
+                                    whole_packet.append(Tail_Bytes[1])
+                                    if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL) & 0xff:
+                                        break
+                                    else:
+                                        continue
+                                else:
+                                    Tail_Bytes[1] = ord(self.uart.read())
+                                    whole_packet.append(Tail_Bytes[1])
+                                    if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                        Tail_r = ord(self.uart.read())
+                                        whole_packet.append(Tail_r)
+                                        if Tail_r == USHARP3D_SINGLE_TAIL & 0xff:
+                                            break
+                                        else:
+                                            continue
+                                    else:
+                                        continue
+                                    continue
+                            break  ## find right header bytes, quit loop
+                        else:
+                            continue
+                            print "Header Missed!!!"
+
+                    whole_packet = Header_Bytes + whole_packet
+                    self.data_parse_usharp3d_multiple(whole_packet, self.radar_data_msg_raw)
+                    self.pub.publish( self.radar_data_msg_raw )
+
+                except Exception, e:
+
+                    print e.message
+            else:
+                return
+
+
+    def data_parse_usharp3d_multiple(self, frame, msg):
+            checksum = frame[len(frame) - 3]
+            sum_calc = 0
+            for i in range(2, len(frame) - 3):
+                sum_calc += (frame[i])
+
+            if (sum_calc & 0xFF) == checksum:
+                # targets = []
+                # device_code = (frame[2])
+                target_number = (frame[len(frame) - 4])
+                msg.targets = []
+                idx = 3
+
+                for i in range(0, target_number):
+                    target = RadarTarget()
+                    target.target_id = i
+                    target.snr = 0.0
+                    ## distance of object #i
+                    dis = (frame[idx]) * 256 + (frame[idx + 1])
+                    dis /= 100.0
+                    idx += 2
+                    target.range = dis
+                    ## velocity of object #i
+                    vel = (frame[idx])
+                    if vel > 127:
+                        vel = vel - 256
+                    vel /= 10.0
+                    idx += 1
+                    target.speed = vel
+                    ## azimuth angle of object #i
+                    agl_h = (frame[idx]) * 256 + (frame[idx + 3])
+                    if agl_h > 32767:
+                        agl_h = agl_h - 65536
+                    agl_h /= 10.0
+                    idx += 1
+                    target.azimuth = agl_h
+                    ## elevation angle of object #i
+                    agl_v = (frame[idx])
+                    if agl_v > 127:
+                        agl_v = agl_v - 256
+                    idx += 1
+                    target.elevation = agl_v
+                    ## serial port receiver flag of object #i
+                    serial_port_flag = (frame[idx])
+                    idx += 2
+                    ## ID of object #i
+                    id_number = (frame[idx])
+                    idx += 1
+                    
+                    self.radar_data_msg_raw.targets.append( target )
+            else:
+                print u'err frame: checksum err'
+
+
+if __name__ == "__main__":
+    try:
+        with serial.Serial( "/dev/ttyUSB0", 460800, timeout=1 ) as ser:
+            intf = USHARP3D_MULTIPLE_UART( ser )
+            intf.data_receive_usharp3d_multiple()
+    except rospy.ROSInterruptException:
+        pass
+
