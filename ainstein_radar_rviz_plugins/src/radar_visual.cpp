@@ -58,7 +58,7 @@ RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* pa
 
   // Set showing target info to false by default:
   show_target_info_ = false;
-
+  
   // Set the target visuals vector capacities:
   radar_target_visuals_.reserve( RadarVisual::max_target_visuals );
 }
@@ -84,15 +84,16 @@ void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::Const
 	  
 	  // Compute the target's Cartesian position:
 	  radar_target_visuals_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-								      sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
-								      sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
+	  							      sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
+	  							      sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
+
 	  // Set the target speed arrow length:
 	  if( show_speed_arrows_ )
 	    {
 	      radar_target_visuals_.back().speed.set( std::abs( target.speed ), // shaft length
-						      0.1, // shaft diameter
-						      0.2, // arrow head length
-						      0.2 ); // arrow head diameter
+	  					      0.1, // shaft diameter
+	  					      0.2, // arrow head length
+	  					      0.2 ); // arrow head diameter
 	    }
 	  else
 	    {
@@ -104,7 +105,7 @@ void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::Const
 	  
 	  // The target speed points toward the radar sensor:
 	  radar_target_visuals_.back().speed.setDirection( radar_target_visuals_.back().pos.getPosition() /
-							   std::copysign( target.range, target.speed ) );
+	  						   std::copysign( target.range, target.speed ) );
 
 	  // Set the info text:
 	  // Set the target speed arrow length:

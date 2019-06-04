@@ -136,12 +136,10 @@ void RadarDisplay::reset()
 // Set the current color and alpha values for each visual.
 void RadarDisplay::updateColorAndAlpha()
 {
-  float alpha;
-  Ogre::ColourValue color;
-
   // Set targets color and alpha:
-  alpha_property_->getFloat();
-  color_property_->getOgreColor();
+  float alpha = alpha_property_->getFloat();
+  Ogre::ColourValue color = color_property_->getOgreColor();
+ 
   for( const auto& v : visuals_ )
     {
       v->setColor( color.r, color.g, color.b, alpha );
@@ -151,10 +149,9 @@ void RadarDisplay::updateColorAndAlpha()
 // Set the current scale values for each visual.
 void RadarDisplay::updateScale()
 {
-  float scale;
-
   // Set targets scale:
-  scale_property_->getFloat();
+  float scale = scale_property_->getFloat();
+    
   for( const auto& v : visuals_ )
     {
       v->setScale( scale );
@@ -243,17 +240,17 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
 
   // Set target data and visual options:
   // First set target shapes:
-  shape_property_->getOptionInt();
+  shape = shape_property_->getOptionInt();
   visual->setTargetShape( shape );
   
   // Then set the target data from message:
   visual->setMessage( msg );
 
   // Set the target visual options:
-  alpha_property_->getFloat();
-  color_property_->getOgreColor();
+  alpha = alpha_property_->getFloat();
+  color = color_property_->getOgreColor();
   visual->setColor( color.r, color.g, color.b, alpha );
-  scale_property_->getFloat();
+  scale = scale_property_->getFloat();
   visual->setScale( scale );
       
   visual->setFramePosition( position );
@@ -292,7 +289,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
     int shape;
     for( const auto& v : visuals_ )
       {
-	shape_property_->getOptionInt();
+	shape = shape_property_->getOptionInt();
 	v->setTargetShape( shape );
       }       
   }
