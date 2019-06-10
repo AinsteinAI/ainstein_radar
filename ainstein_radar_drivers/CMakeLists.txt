@@ -47,7 +47,11 @@ add_executable(radardata_to_laserscan_node src/radardata_to_laserscan_node.cpp s
 add_dependencies(radardata_to_laserscan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radardata_to_laserscan_node ${catkin_LIBRARIES})
 
-install(TARGETS k79_node k79_nodelet t79_bsd_node t79_bsd_nodelet radardata_to_pointcloud_node radardata_to_pointcloud_nodelet radardata_to_laserscan_node
+add_executable(radardata_to_nearest_target_node src/radardata_to_nearest_target_node.cpp src/radardata_to_nearest_target.cpp)
+add_dependencies(radardata_to_nearest_target_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radardata_to_nearest_target_node ${catkin_LIBRARIES})
+
+install(TARGETS k79_node k79_nodelet t79_bsd_node t79_bsd_nodelet radardata_to_pointcloud_node radardata_to_pointcloud_nodelet radardata_to_laserscan_node radardata_to_nearest_target_node
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
