@@ -41,7 +41,7 @@ int main( int argc, char** argv )
     }
     
   // Create node to publish nearest target:
-  RadarDataToNearestTarget radardata_to_nearest_target( node_handle, node_handle_private );;
+  ainstein_radar_drivers::RadarDataToNearestTarget radardata_to_nearest_target( node_handle, node_handle_private );;
 
   ros::spin();
 

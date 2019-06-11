@@ -26,95 +26,99 @@
 
 #include "ainstein_radar_drivers/radardata_to_nearest_target.h"
 
-RadarDataToNearestTarget::RadarDataToNearestTarget( ros::NodeHandle node_handle,
-						    ros::NodeHandle node_handle_private ) :
-  nh_( node_handle ),
-  nh_private_( node_handle_private )
+namespace ainstein_radar_drivers
 {
-  sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
-				   &RadarDataToNearestTarget::radarDataCallback,
-				   this );
+  RadarDataToNearestTarget::RadarDataToNearestTarget( ros::NodeHandle node_handle,
+						      ros::NodeHandle node_handle_private ) :
+    nh_( node_handle ),
+    nh_private_( node_handle_private )
+  {
+    sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+				     &RadarDataToNearestTarget::radarDataCallback,
+				     this );
 
-  pub_nearest_target_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetStamped>( "target", 10 );
+    pub_nearest_target_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetStamped>( "target", 10 );
 
-  pub_nearest_target_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 10 );
+    pub_nearest_target_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 10 );
 
-  // Get parameters:  
-  nh_private_.param( "min_dist_thresh", min_dist_thresh_, 0.0 );
-  nh_private_.param( "max_dist_thresh", max_dist_thresh_, 100.0 );
+    // Get parameters:  
+    nh_private_.param( "min_dist_thresh", min_dist_thresh_, 0.0 );
+    nh_private_.param( "max_dist_thresh", max_dist_thresh_, 100.0 );
 
-  filter_data_ = false;
-  if( nh_private_.hasParam( "data_lpf_alpha" ) )
-    {
-      nh_private_.param( "data_lpf_alpha", data_lpf_alpha_, 0.1 );
-      filter_data_ = true;
-      is_filter_init_ = false;
-    }
+    filter_data_ = false;
+    if( nh_private_.hasParam( "data_lpf_alpha" ) )
+      {
+	nh_private_.param( "data_lpf_alpha", data_lpf_alpha_, 0.1 );
+	filter_data_ = true;
+	is_filter_init_ = false;
+      }
   
-  nh_private_.param( "data_lpf_timeout", data_lpf_timeout_, 3.0 );
-}
+    nh_private_.param( "data_lpf_timeout", data_lpf_timeout_, 3.0 );
+  }
 
-void RadarDataToNearestTarget::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg )
-{
-  nearest_target_array_msg_.targets.clear();
-  double nearest_range = 1000.0;
-  for( auto target : msg->targets )
-    {
-      // Filter first based on specified range limits:
-      if( ( target.range >= min_dist_thresh_ ) &&
-	  ( target.range <= max_dist_thresh_ ) )
-	{
-	  // Determine whether to re-initialize tracked target:
-	  if( ( ros::Time::now() - time_prev_ ).toSec() > data_lpf_timeout_ )
-	    {
-	      is_filter_init_ = false;
-	    }
+  void RadarDataToNearestTarget::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg )
+  {
+    nearest_target_array_msg_.targets.clear();
+    double nearest_range = 1000.0;
+    for( auto target : msg->targets )
+      {
+	// Filter first based on specified range limits:
+	if( ( target.range >= min_dist_thresh_ ) &&
+	    ( target.range <= max_dist_thresh_ ) )
+	  {
+	    // Determine whether to re-initialize tracked target:
+	    if( ( ros::Time::now() - time_prev_ ).toSec() > data_lpf_timeout_ )
+	      {
+		is_filter_init_ = false;
+	      }
 
-	  // Check if nearest so far:
-	  if( nearest_range > target.range )
-	    {
-	      // Low-pass filter data:
-	      if( filter_data_ )
-		{
-		  if( is_filter_init_ )
-		    {
-		      nearest_target_msg_.target.range = data_lpf_alpha_ * target.range
-			+ ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.range;
+	    // Check if nearest so far:
+	    if( nearest_range > target.range )
+	      {
+		// Low-pass filter data:
+		if( filter_data_ )
+		  {
+		    if( is_filter_init_ )
+		      {
+			nearest_target_msg_.target.range = data_lpf_alpha_ * target.range
+			  + ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.range;
 			  
-		      nearest_target_msg_.target.speed = data_lpf_alpha_ * target.speed
-			+ ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.speed;
+			nearest_target_msg_.target.speed = data_lpf_alpha_ * target.speed
+			  + ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.speed;
 
-		      nearest_target_msg_.target.azimuth = data_lpf_alpha_ * target.azimuth
-			+ ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.azimuth;
+			nearest_target_msg_.target.azimuth = data_lpf_alpha_ * target.azimuth
+			  + ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.azimuth;
 
-		      nearest_target_msg_.target.elevation = data_lpf_alpha_ * target.elevation
-			+ ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.elevation;
-		    }
-		  else
-		    {
-		      nearest_target_msg_.target = target;
-		      is_filter_init_ = true;
-		    }
-		}
-	      else
-		{
-		  nearest_target_msg_.target = target;
-		}
+			nearest_target_msg_.target.elevation = data_lpf_alpha_ * target.elevation
+			  + ( 1.0 - data_lpf_alpha_ ) * nearest_target_msg_.target.elevation;
+		      }
+		    else
+		      {
+			nearest_target_msg_.target = target;
+			is_filter_init_ = true;
+		      }
+		  }
+		else
+		  {
+		    nearest_target_msg_.target = target;
+		  }
 	      
-	      nearest_range = target.range;
-	    }
-	}
-    }
+		nearest_range = target.range;
+	      }
+	  }
+      }
   
-  if( nearest_target_msg_.target.range < 1000.0 )
-    {
-      nearest_target_msg_.header = msg->header;
-      pub_nearest_target_.publish( nearest_target_msg_ );
+    if( nearest_target_msg_.target.range < 1000.0 )
+      {
+	nearest_target_msg_.header = msg->header;
+	pub_nearest_target_.publish( nearest_target_msg_ );
 
-      nearest_target_array_msg_.header = msg->header;
-      nearest_target_array_msg_.targets.push_back( nearest_target_msg_.target );
-      pub_nearest_target_data_.publish( nearest_target_array_msg_ );
-    }
+	nearest_target_array_msg_.header = msg->header;
+	nearest_target_array_msg_.targets.push_back( nearest_target_msg_.target );
+	pub_nearest_target_data_.publish( nearest_target_array_msg_ );
+      }
 
-  time_prev_ = ros::Time::now();
-}
+    time_prev_ = ros::Time::now();
+  }
+
+} // namespace ainstein_radar_drivers
