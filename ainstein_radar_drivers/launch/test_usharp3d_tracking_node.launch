@@ -1,0 +1,12 @@
+<launch>
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ainstein_radar_drivers)/config/debug_rosconsole.conf"/> -->
+
+  <node name="usharp3d_node" pkg="ainstein_radar_drivers" type="usharp3d_node" />
+
+  <node name="tracked_node" pkg="ainstein_radar_drivers" type="radardata_to_tracked_targets_node" output="screen" >
+    <remap from="radardata_in" to="/usharp3d_node/data" />
+    <param name="filter_update_rate" value="20.0" />
+    <param name="filter_min_time" value="1.0" />
+    <param name="filter_timeout" value="0.5" />
+  </node>
+</launch>
