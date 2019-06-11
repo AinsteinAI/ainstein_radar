@@ -28,7 +28,7 @@ class USHARP3D_MULTIPLE_UART(object):
             Tail_Bytes = [0, 0]
             rx_checksum = 0
             if ( True ):
-                # print ord(self.uart.read())
+                # print(self.uart.read())
                 try:
                     while True:
                         Header_Bytes[0] = ord(self.uart.read())
@@ -66,7 +66,8 @@ class USHARP3D_MULTIPLE_UART(object):
 
                     whole_packet = Header_Bytes + whole_packet
                     self.data_parse_usharp3d_multiple(whole_packet, self.radar_data_msg_raw)
-                    self.pub.publish( self.radar_data_msg_raw )
+                    if( len( self.radar_data_msg_raw.targets ) > 0 ):
+                        self.pub.publish( self.radar_data_msg_raw )
 
                 except Exception, e:
 
