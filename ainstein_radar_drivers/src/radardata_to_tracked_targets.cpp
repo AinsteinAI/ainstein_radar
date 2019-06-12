@@ -115,7 +115,7 @@ namespace ainstein_radar_drivers
 	  }
 	// if( msg_tracked_.targets.size() > 0 )
 	//   {
-	    pub_radar_data_tracked_.publish( msg_tracked_ );
+	pub_radar_data_tracked_.publish( msg_tracked_ );
 	  // }
 	
 	// Store the current time and velocity:
@@ -144,29 +144,28 @@ namespace ainstein_radar_drivers
 	ROS_DEBUG_STREAM( kf );
 	for( int i = 0; i < msg->targets.size(); ++i )
 	  {
-	    // ROS_DEBUG_STREAM( "Target " << i << ": " << msg->targets.at( i ) );
-	    
-	    // Check whether the target should be used as measurement by this filter:
-	    ainstein_radar_msgs::RadarTarget t = msg->targets.at( i );
-	    Eigen::Vector4d z = kf.computePredMeas( kf.getState() );
-	    Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
-
-	    // ROS_DEBUG_STREAM( "Target " << i << " z: " << z.transpose() );
-	    // ROS_DEBUG_STREAM( "Target " << i << " y: " << y.transpose() );
-
-	    // ROS_DEBUG_STREAM( "Target " << i << " meas_cov: " << kf.computeMeasCov( kf.getState() ) );
-	    
-	    // Compute the normalized measurement error (squared):
-	    double meas_err = ( y - z ).transpose() * kf.computeMeasCov( kf.getState() ).inverse() * ( y - z );
-
-	    ROS_DEBUG_STREAM( "Target " << i << " meas_err: " << meas_err );
-	    ROS_DEBUG_STREAM( "Target " << i << ": " << std::endl << t );
-
-	    // Allow the measurement through the validation gate based on threshold:
-	    if( meas_err < filter_val_gate_thresh_ )
+	    // Only use this target if it hasn't already been used by a filter:
+	    if( meas_count_vec_.at( i ) == 0 )
 	      {
-		kf.update( t );
-		++meas_count_vec_.at( i );
+		// Check whether the target should be used as measurement by this filter:
+		ainstein_radar_msgs::RadarTarget t = msg->targets.at( i );
+		Eigen::Vector4d z = kf.computePredMeas( kf.getState() );
+		Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
+	    
+		// Compute the normalized measurement error (squared):
+		double meas_err = ( y - z ).transpose() * kf.computeMeasCov( kf.getState() ).inverse() * ( y - z );
+
+		ROS_DEBUG_STREAM( "Meas Cov Inv: " << kf.computeMeasCov( kf.getState() ).inverse() << std::endl );
+		
+		ROS_DEBUG_STREAM( "Target " << i << " meas_err: " << meas_err );
+		ROS_DEBUG_STREAM( "Target " << i << ": " << std::endl << t );
+		
+		// Allow the measurement through the validation gate based on threshold:
+		if( meas_err < filter_val_gate_thresh_ )
+		  {
+		    kf.update( t );
+		    ++meas_count_vec_.at( i );
+		  }
 	      }
 	  }
       }
@@ -188,6 +187,7 @@ namespace ainstein_radar_drivers
       {
     	if( meas_count_vec_.at( i ) == 0 )
     	  {
+	    ROS_DEBUG_STREAM( "Pushing back: " << msg->targets.at( i ) << std::endl );
     	    filters_.emplace_back( msg->targets.at( i ), nh_, nh_private_ );
     	  }
       }

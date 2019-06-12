@@ -1,12 +1,43 @@
 <launch>
-  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ainstein_radar_drivers)/config/debug_rosconsole.conf"/> -->
+  <!-- args to be optionally set by launch files including this one -->
+  <arg name="is_offline" default="false" />
 
-  <node name="usharp3d_node" pkg="ainstein_radar_drivers" type="usharp3d_node" />
+  <!-- Set rosconsole output level to DEBUG -->
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ainstein_radar_drivers)/config/debug_rosconsole.conf"/> -->
+  
+  <!-- Nodes to run only for ONLINE testing -->
+  <group unless="$(arg is_offline)" >
+    <node name="usharp3d_node" pkg="ainstein_radar_drivers" type="usharp3d_node" />
+  </group>
+  
+  <!-- Nodes to run only for OFFLINE testing -->
+  <group if="$(arg is_offline)" >
+    <!-- Set to use simulated time -->
+    <param name="use_sim_time" value="true" />
+    
+    <!-- Run the node to publish recorded bagfile -->
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--loop --clock /home/nrotella/bagfiles/uSharp3D/usharp3d_one_target.bag" />
+  </group>
+  
+  <node name="range_filter" pkg="ainstein_radar_drivers" type="radardata_range_filter_node" output="screen" >
+    <remap from="radardata_in" to="/usharp3d_node/data" />
+    <param name="min_range" value="0.5" />
+    <param name="max_range" value="10.0" />
+  </node>
 
   <node name="tracked_node" pkg="ainstein_radar_drivers" type="radardata_to_tracked_targets_node" output="screen" >
-    <remap from="radardata_in" to="/usharp3d_node/data" />
-    <param name="filter_update_rate" value="20.0" />
-    <param name="filter_min_time" value="1.0" />
-    <param name="filter_timeout" value="0.5" />
+    <remap from="radardata_in" to="/range_filter/radardata_out" />
+    <param name="filter/update_rate" value="20.0" />
+    <param name="filter/min_time" value="0.5" />
+    <param name="filter/timeout" value="0.5" />
+    <!-- <param name="filter/val_gate_thresh" value="0.207" /> --> <!-- 99.5 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="0.297" /> --> <!-- 99.0 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="0.484" /> --> <!-- 97.5 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="0.711" /> --> <!-- 95.0 percent confidence -->
+    <param name="filter/val_gate_thresh" value="1.064" /> <!-- 90.0 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="1.923" /> --> <!-- 75.0 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="5.385" /> --> <!-- 25.0 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="7.779" /> --> <!-- 10.0 percent confidence -->
+    <!-- <param name="filter/val_gate_thresh" value="9.488" /> --> <!-- 5.0 percent confidence -->
   </node>
 </launch>
