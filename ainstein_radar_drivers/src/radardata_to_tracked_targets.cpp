@@ -182,7 +182,7 @@ namespace ainstein_radar_drivers
       {
     	if( meas_count_vec_.at( i ) == 0 )
     	  {
-    	    filters_.emplace_back( msg->targets.at( i ) );
+    	    filters_.emplace_back( msg->targets.at( i ), nh_, nh_private_ );
     	  }
       }
   }

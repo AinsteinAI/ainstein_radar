@@ -52,10 +52,18 @@ namespace ainstein_radar_drivers
 					0.0, R_SPEED, 0.0, 0.0,
 					0.0, 0.0, R_AZIM, 0.0,
 					0.0, 0.0, 0.0, R_ELEV ).finished();
+
+  Eigen::Matrix4d RadarTargetKF::P_init_ = ( Eigen::Vector4d() <<
+					     std::pow( INIT_VAR_RANGE, 2.0 ),
+					     std::pow( INIT_VAR_SPEED, 2.0 ),
+					     std::pow( INIT_VAR_AZIM, 2.0 ),
+					     std::pow( INIT_VAR_ELEV, 2.0 ) ).finished().asDiagonal();
   
-  RadarTargetKF::RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target ) :
-    state_pre_( target ),
-    state_post_( target )
+  RadarTargetKF::RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
+				const ros::NodeHandle& node_handle,
+				const ros::NodeHandle& node_handle_private) :
+    state_pre_( target, P_init_ ),
+    state_post_( target, P_init_ )
   {
     time_first_update_ = ros::Time::now();
     time_last_update_ = time_first_update_;

@@ -13,8 +13,8 @@ namespace ainstein_radar_drivers
   class RadarDataToTrackedTargets
   {
   public:
-    RadarDataToTrackedTargets( ros::NodeHandle node_handle,
-			       ros::NodeHandle node_handle_private ) :
+    RadarDataToTrackedTargets( const ros::NodeHandle& node_handle,
+			       const ros::NodeHandle& node_handle_private ) :
     nh_( node_handle ),
     nh_private_( node_handle_private ) {}
 

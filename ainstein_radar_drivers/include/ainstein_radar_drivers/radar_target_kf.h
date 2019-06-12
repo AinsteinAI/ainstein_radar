@@ -27,18 +27,15 @@ namespace ainstein_radar_drivers
       class FilterState
       {
       public:
-	FilterState( const ainstein_radar_msgs::RadarTarget& target )
+	FilterState( const ainstein_radar_msgs::RadarTarget& target,
+		     const Eigen::Matrix4d& initial_covariance )
 	  {
 	    range = target.range;
 	    speed = target.speed;
 	    azimuth = target.azimuth;
 	    elevation = target.elevation;
 
-	    cov = ( Eigen::Vector4d() <<
-		    std::pow( INIT_VAR_RANGE, 2.0 ),
-		    std::pow( INIT_VAR_SPEED, 2.0 ),
-		    std::pow( INIT_VAR_AZIM, 2.0 ),
-		    std::pow( INIT_VAR_ELEV, 2.0 ) ).finished().asDiagonal();
+	    cov = initial_covariance;
 	  }
 	FilterState( const FilterState& state )
 	  {
@@ -95,7 +92,9 @@ namespace ainstein_radar_drivers
       };
 
   public:
-      RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target );
+      RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
+		     const ros::NodeHandle& node_handle,
+		     const ros::NodeHandle& node_handle_private );
       ~RadarTargetKF() {}
 
       friend std::ostream& operator<< ( std::ostream& out, const RadarTargetKF& kf )
@@ -146,6 +145,8 @@ namespace ainstein_radar_drivers
 
       static Eigen::Matrix3d Q_;
       static Eigen::Matrix4d R_;
+
+      static Eigen::Matrix4d P_init_;
   };
 
 } // namespace ainstein_radar_drivers
