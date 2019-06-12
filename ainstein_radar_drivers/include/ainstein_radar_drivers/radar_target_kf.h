@@ -6,19 +6,19 @@
 
 #include <ainstein_radar_msgs/RadarTarget.h>
 
-#define Q_SPEED 1.0
-#define Q_AZIM 30.0
-#define Q_ELEV 30.0
+#define Q_SPEED_STDEV 1.0
+#define Q_AZIM_STDEV 30.0
+#define Q_ELEV_STDEV 30.0
 
-#define R_RANGE 0.5
-#define R_SPEED 1.0
-#define R_AZIM 5.0
-#define R_ELEV 5.0
+#define R_RANGE_STDEV 0.5
+#define R_SPEED_STDEV 1.0
+#define R_AZIM_STDEV 5.0
+#define R_ELEV_STDEV 5.0
 
-#define INIT_VAR_RANGE 1.0
-#define INIT_VAR_SPEED 2.0
-#define INIT_VAR_AZIM 10.0
-#define INIT_VAR_ELEV 10.0
+#define INIT_RANGE_STDEV 1.0
+#define INIT_SPEED_STDEV 2.0
+#define INIT_AZIM_STDEV 10.0
+#define INIT_ELEV_STDEV 10.0
 
 namespace ainstein_radar_drivers
 {

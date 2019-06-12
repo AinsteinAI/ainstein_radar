@@ -33,9 +33,10 @@ namespace ainstein_radar_drivers
   void RadarDataToTrackedTargets::initialize( void )
   {
     // Get parameters:
-    nh_private_.param( "filter_update_rate", filter_update_rate_, 20.0 );
-    nh_private_.param( "filter_min_time", filter_min_time_, 2.0 );
-    nh_private_.param( "filter_timeout", filter_timeout_, 0.01 );
+    nh_private_.param( "filter/update_rate", filter_update_rate_, 20.0 );
+    nh_private_.param( "filter/min_time", filter_min_time_, 2.0 );
+    nh_private_.param( "filter/timeout", filter_timeout_, 0.01 );
+    nh_private_.param( "filter/val_gate_thresh", filter_val_gate_thresh_, 0.99 );
     
     // Set up raw radar data subscriber and tracked radar data publisher:
     sub_radar_data_raw_ = nh_.subscribe( "radardata_in", 10,
@@ -86,8 +87,7 @@ namespace ainstein_radar_drivers
 	  {
 	    filters_.erase( std::remove_if( filters_.begin(),
 	    				    filters_.end(),
-	    				    [&]( const RadarTargetKF& kf ){ return ( ( kf.getTimeSinceStart() > filter_min_time_ ) &&
-										    ( kf.getTimeSinceUpdate() > filter_timeout_ ) ); } ),
+	    				    [&]( const RadarTargetKF& kf ){ return ( kf.getTimeSinceUpdate() > filter_timeout_ ); } ),
 			    filters_.end() );
 	  }
 	ROS_DEBUG_STREAM( "Number of filters after pruning: " << filters_.size() << std::endl );
@@ -101,17 +101,22 @@ namespace ainstein_radar_drivers
 	// Add tracked targets for filters which have been running for specified time:
 	msg_tracked_.targets.clear();
 	msg_tracked_.header.stamp = ros::Time::now();
+	ainstein_radar_msgs::RadarTarget target;
+	int target_id = 0;
 	for( const auto& kf : filters_ )
 	  {
 	    if( kf.getTimeSinceStart() >= filter_min_time_ )
 	      {
-		msg_tracked_.targets.push_back( kf.getState().asMsg() );
+		target = kf.getState().asMsg();
+		target.target_id = target_id;
+		msg_tracked_.targets.push_back( target );
+		++target_id;
 	      }
 	  }
-	if( msg_tracked_.targets.size() > 0 )
-	  {
+	// if( msg_tracked_.targets.size() > 0 )
+	//   {
 	    pub_radar_data_tracked_.publish( msg_tracked_ );
-	  }
+	  // }
 	
 	// Store the current time and velocity:
 	time_prev = time_now;
@@ -154,10 +159,11 @@ namespace ainstein_radar_drivers
 	    // Compute the normalized measurement error (squared):
 	    double meas_err = ( y - z ).transpose() * kf.computeMeasCov( kf.getState() ).inverse() * ( y - z );
 
-	    // ROS_DEBUG_STREAM( "Target " << i << " meas_err: " << meas_err );
+	    ROS_DEBUG_STREAM( "Target " << i << " meas_err: " << meas_err );
+	    ROS_DEBUG_STREAM( "Target " << i << ": " << std::endl << t );
 
 	    // Allow the measurement through the validation gate based on threshold:
-	    if( meas_err < VAL_THRESH )
+	    if( meas_err < filter_val_gate_thresh_ )
 	      {
 		kf.update( t );
 		++meas_count_vec_.at( i );

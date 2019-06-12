@@ -42,22 +42,22 @@ namespace ainstein_radar_drivers
   
   Eigen::Matrix4d RadarTargetKF::H_ = Eigen::Matrix4d::Identity();
   
-  Eigen::Matrix3d RadarTargetKF::Q_ = ( Eigen::Matrix3d() <<
-					Q_SPEED, 0.0, 0.0,
-					0.0, Q_AZIM, 0.0,
-					0.0, 0.0, Q_ELEV ).finished();
+  Eigen::Matrix3d RadarTargetKF::Q_ = ( Eigen::Vector3d() <<
+					std::pow( Q_SPEED_STDEV, 2.0 ),
+					std::pow( Q_AZIM_STDEV, 2.0 ),
+					std::pow( Q_ELEV_STDEV, 2.0 ) ).finished().asDiagonal();
   
-  Eigen::Matrix4d RadarTargetKF::R_ = ( Eigen::Matrix4d() <<
-					R_RANGE, 0.0, 0.0, 0.0,
-					0.0, R_SPEED, 0.0, 0.0,
-					0.0, 0.0, R_AZIM, 0.0,
-					0.0, 0.0, 0.0, R_ELEV ).finished();
+  Eigen::Matrix4d RadarTargetKF::R_ = ( Eigen::Vector4d() <<
+					std::pow( R_RANGE_STDEV, 2.0 ),
+					std::pow( R_SPEED_STDEV, 2.0 ),
+					std::pow( R_AZIM_STDEV, 2.0 ),
+					std::pow( R_ELEV_STDEV, 2.0 ) ).finished().asDiagonal();
 
   Eigen::Matrix4d RadarTargetKF::P_init_ = ( Eigen::Vector4d() <<
-					     std::pow( INIT_VAR_RANGE, 2.0 ),
-					     std::pow( INIT_VAR_SPEED, 2.0 ),
-					     std::pow( INIT_VAR_AZIM, 2.0 ),
-					     std::pow( INIT_VAR_ELEV, 2.0 ) ).finished().asDiagonal();
+					     std::pow( INIT_RANGE_STDEV, 2.0 ),
+					     std::pow( INIT_SPEED_STDEV, 2.0 ),
+					     std::pow( INIT_AZIM_STDEV, 2.0 ),
+					     std::pow( INIT_ELEV_STDEV, 2.0 ) ).finished().asDiagonal();
   
   RadarTargetKF::RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
 				const ros::NodeHandle& node_handle,

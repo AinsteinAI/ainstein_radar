@@ -6,8 +6,6 @@
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_drivers/radar_target_kf.h>
 
-#define VAL_THRESH 0.99
-
 namespace ainstein_radar_drivers
 {
   class RadarDataToTrackedTargets
@@ -35,6 +33,7 @@ namespace ainstein_radar_drivers
     double filter_update_rate_;
     double filter_min_time_;
     double filter_timeout_;
+    double filter_val_gate_thresh_;
     
     ros::Subscriber sub_radar_data_raw_;
     ros::Publisher pub_radar_data_tracked_;
