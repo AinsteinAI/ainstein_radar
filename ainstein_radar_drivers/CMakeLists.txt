@@ -55,6 +55,13 @@ add_executable(radardata_to_tracked_targets_node src/radardata_to_tracked_target
 add_dependencies(radardata_to_tracked_targets_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radardata_to_tracked_targets_node ${catkin_LIBRARIES})
 
+add_executable(radardata_range_filter_node src/radardata_range_filter_node.cpp src/radardata_range_filter.cpp)
+add_dependencies(radardata_range_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radardata_range_filter_node ${catkin_LIBRARIES})
+
+add_library(radardata_range_filter_nodelet src/radardata_range_filter_nodelet.cpp src/radardata_range_filter.cpp)
+target_link_libraries(radardata_range_filter_nodelet ${catkin_LIBRARIES})
+
 install(TARGETS
   k79_node
   k79_nodelet
@@ -65,6 +72,8 @@ install(TARGETS
   radardata_to_laserscan_node
   radardata_to_nearest_target_node
   radardata_to_tracked_targets_node
+  radardata_range_filter_node
+  radardata_range_filter_nodelet
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
