@@ -13,13 +13,13 @@ USHARP3D_SINGLE_TAIL = 0x5AA5
 USHARP3D_PACKETSIZE = 15
 
 class USHARP3D_MULTIPLE_UART(object):
-    def __init__(self, uart):
+    def __init__(self, uart, frame_id):
         self.uart = uart
-        rospy.init_node( 'usharp3d_node')
         self.pub = rospy.Publisher( '~data', RadarTargetArray, queue_size=10 )
         self.radar_data_msg_raw = RadarTargetArray()
         self.radar_data_msg_raw.header.stamp = rospy.get_rostime()
-        self.radar_data_msg_raw.header.frame_id = "map"
+        rospy.init_node( 'usharp3d_node')
+        self.radar_data_msg_raw.header.frame_id = frame_id
         
     def data_receive_usharp3d_multiple(self):
         while not rospy.is_shutdown():
@@ -132,8 +132,12 @@ class USHARP3D_MULTIPLE_UART(object):
 
 if __name__ == "__main__":
     try:
-        with serial.Serial( "/dev/ttyUSB0", 460800, timeout=1 ) as ser:
-            intf = USHARP3D_MULTIPLE_UART( ser )
+        rospy.init_node( 'usharp3d_node')
+        frame_id = rospy.get_param( '~frame_id', 'map' )
+        device_id = rospy.get_param( '~device_id', '/dev/ttyUSB0' )
+        
+        with serial.Serial( device_id, 460800, timeout=1 ) as ser:
+            intf = USHARP3D_MULTIPLE_UART( ser, frame_id )
             intf.data_receive_usharp3d_multiple()
     except rospy.ROSInterruptException:
         pass
