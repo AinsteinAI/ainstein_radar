@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>gazebo_radar_sensor_plugin</name>
+  <name>ainstein_radar_gazebo_plugins</name>
   <version>0.0.0</version>
-  <description>The gazebo_radar_sensor_plugin package</description>
+  <description>The ainstein_radar_gazebo_plugins package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/gazebo_radar_sensor_plugin</url> -->
+  <!-- <url type="website">http://wiki.ros.org/ainstein_radar_gazebo_plugins</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -53,7 +53,7 @@
   <depend>gazebo_ros</depend>
   <depend>roscpp</depend>
 
-  <depend>radar_sensor_msgs</depend>
+  <depend>ainstein_radar_msgs</depend>
   
   <!-- The export tag contains other, unspecified, tags -->
   <export>

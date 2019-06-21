@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gazebo_radar_sensor_plugin)
+project(ainstein_radar_gazebo_plugins)
 
 find_package(catkin REQUIRED COMPONENTS
   gazebo_plugins
   gazebo_ros
   roscpp
-  radar_sensor_msgs
+  ainstein_radar_msgs
   )
 
 find_package (gazebo REQUIRED)
