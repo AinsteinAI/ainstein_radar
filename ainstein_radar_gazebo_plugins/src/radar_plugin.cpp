@@ -68,8 +68,8 @@ void RadarPlugin::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
 
     if( !this->sdf->HasElement( "frameName" ) )
     {
-        ROS_INFO_NAMED( "radar", "Radar plugin missing <frameName>, defaults to /world" );
-        this->frame_name_ = "/world";
+        ROS_INFO_NAMED( "radar", "Radar plugin missing <frameName>, defaults to /base_link" );
+        this->frame_name_ = "/base_link";
     }
     else
         this->frame_name_ = this->sdf->Get < std::string > ( "frameName" );
