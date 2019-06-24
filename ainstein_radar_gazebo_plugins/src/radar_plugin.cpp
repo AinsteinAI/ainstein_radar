@@ -1,4 +1,4 @@
-#include "gazebo_radar_sensor_plugin/radar_sensor_plugin.h"
+#include "ainstein_radar_gazebo_plugins/radar_plugin.h"
 #include "gazebo_plugins/gazebo_ros_utils.h"
 
 #include <algorithm>
@@ -17,20 +17,20 @@
 
 #include <tf/tf.h>
 
-namespace gazebo
+namespace ainstein_radar_gazebo_plugins
 {
 // Register this plugin with the simulator
-GZ_REGISTER_SENSOR_PLUGIN( GazeboRosRadar )
+GZ_REGISTER_SENSOR_PLUGIN( RadarPlugin )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-GazeboRosRadar::GazeboRosRadar()
+RadarPlugin::RadarPlugin()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-GazeboRosRadar::~GazeboRosRadar()
+RadarPlugin::~RadarPlugin()
 {
     this->radar_queue_.clear();
     this->radar_queue_.disable();
@@ -42,7 +42,7 @@ GazeboRosRadar::~GazeboRosRadar()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboRosRadar::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
+void RadarPlugin::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
 {
     // load plugin
     RayPlugin::Load( _parent, this->sdf );
@@ -60,7 +60,7 @@ void GazeboRosRadar::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
     this->parent_ray_sensor_ = dynamic_pointer_cast < sensors::RaySensor > ( this->parent_sensor_ );
 
     if( !this->parent_ray_sensor_ )
-        gzthrow( "GazeboRosRadar controller requires a Ray Sensor as its parent" );
+        gzthrow( "RadarPlugin controller requires a Ray Sensor as its parent" );
 
     this->robot_namespace_ = "";
     if( this->sdf->HasElement( "robotNamespace" ) )
@@ -127,7 +127,7 @@ void GazeboRosRadar::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
     {
         // ros callback queue for processing subscription
         this->deferred_load_thread_ = boost::thread(
-                boost::bind( &GazeboRosRadar::LoadThread, this ) );
+                boost::bind( &RadarPlugin::LoadThread, this ) );
     }
     else
     {
@@ -139,7 +139,7 @@ void GazeboRosRadar::Load( sensors::SensorPtr _parent, sdf::ElementPtr _sdf )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void GazeboRosRadar::LoadThread()
+void RadarPlugin::LoadThread()
 {
     this->rosnode_ = new ros::NodeHandle( this->robot_namespace_ );
 
@@ -151,9 +151,9 @@ void GazeboRosRadar::LoadThread()
     if( this->topic_name_ != "" )
     {
         ros::AdvertiseOptions ao =
-                ros::AdvertiseOptions::create<radar_sensor_msgs::RadarData>(
-                this->topic_name_, 1, boost::bind( &GazeboRosRadar::RadarConnect, this ),
-                boost::bind( &GazeboRosRadar::RadarDisconnect, this ), ros::VoidPtr(),
+                ros::AdvertiseOptions::create<ainstein_radar_msgs::RadarTargetArray>(
+                this->topic_name_, 1, boost::bind( &RadarPlugin::RadarConnect, this ),
+                boost::bind( &RadarPlugin::RadarDisconnect, this ), ros::VoidPtr(),
                 &this->radar_queue_ );
         this->pub_ = this->rosnode_->advertise( ao );
     }
@@ -164,19 +164,19 @@ void GazeboRosRadar::LoadThread()
     this->parent_ray_sensor_->SetActive( false );
     // start custom queue for radar
     this->callback_queue_thread_ = boost::thread(
-            boost::bind( &GazeboRosRadar::RadarQueueThread, this ) );
+            boost::bind( &RadarPlugin::RadarQueueThread, this ) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Increment count
-void GazeboRosRadar::RadarConnect()
+void RadarPlugin::RadarConnect()
 {
     this->radar_connect_count_++;
     this->parent_ray_sensor_->SetActive( true );
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Decrement count
-void GazeboRosRadar::RadarDisconnect()
+void RadarPlugin::RadarDisconnect()
 {
     this->radar_connect_count_--;
 
@@ -186,7 +186,7 @@ void GazeboRosRadar::RadarDisconnect()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the plugin
-void GazeboRosRadar::OnNewLaserScans()
+void RadarPlugin::OnNewLaserScans()
 {
     if( this->topic_name_ != "" )
     {
@@ -216,7 +216,7 @@ void GazeboRosRadar::OnNewLaserScans()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put radar data to the interface
-void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
+void RadarPlugin::PutRadarData( common::Time &_updateTime )
 {
     this->parent_ray_sensor_->SetActive( false );
 
@@ -237,10 +237,9 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
 //                * parent_ray_sensor_->LaserShape()->GetVerticalSampleCount();
         int num_rays = parent_ray_sensor_->RayCount();
 
-        // Add targets dynamically to raw and tracked target arrays (for now, raw=tracked):
-        this->radar_msg_.raw_targets.clear();
-        this->radar_msg_.tracked_targets.clear();
-        radar_sensor_msgs::RadarTarget target;
+        // Add targets dynamically to RadarTargetArray:
+        this->radar_msg_.targets.clear();
+        ainstein_radar_msgs::RadarTarget target;
         int target_id = 0;
         for( int i = 0; i < num_rays; ++i )
         {
@@ -258,8 +257,7 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
             if( target.range < this->parent_ray_sensor_->RangeMax() )
             {
                 target.target_id = target_id;
-                this->radar_msg_.raw_targets.push_back( target );
-		this->radar_msg_.tracked_targets.push_back( target );
+                this->radar_msg_.targets.push_back( target );
                 ++target_id;
             }
         }
@@ -274,7 +272,7 @@ void GazeboRosRadar::PutRadarData( common::Time &_updateTime )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put radar data to the interface
-void GazeboRosRadar::RadarQueueThread()
+void RadarPlugin::RadarQueueThread()
 {
     static const double timeout = 0.01;
 
@@ -283,4 +281,4 @@ void GazeboRosRadar::RadarQueueThread()
         this->radar_queue_.callAvailable( ros::WallDuration( timeout ) );
     }
 }
-}
+} // namespace ainstein_radar_gazebo_plugins

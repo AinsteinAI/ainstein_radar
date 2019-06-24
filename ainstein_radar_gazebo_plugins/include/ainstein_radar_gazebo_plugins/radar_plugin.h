@@ -1,5 +1,5 @@
-#ifndef GAZEBO_ROS_RADAR_H
-#define GAZEBO_ROS_RADAR_H
+#ifndef RADAR_PLUGIN_H
+#define RADAR_PLUGIN_H
 
 #include <string>
 
@@ -10,7 +10,7 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
-#include <radar_sensor_msgs/RadarData.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo/transport/TransportTypes.hh>
@@ -26,15 +26,17 @@
 namespace ainstein_radar_gazebo_plugins
 {
 
-class GazeboRosRadar: public RayPlugin
+  using namespace gazebo;
+  
+class RadarPlugin: public RayPlugin
 {
 
     /// \brief Constructor
 public:
-    GazeboRosRadar();
+    RadarPlugin();
 
     /// \brief Destructor
-    ~GazeboRosRadar();
+    ~RadarPlugin();
 
     /// \brief Load the plugin
     /// \param take in SDF root element
@@ -65,7 +67,7 @@ private:
     ros::Publisher pub_;
 
     /// \brief ros message
-    radar_sensor_msgs::RadarData radar_msg_;
+    ainstein_radar_msgs::RadarTargetArray radar_msg_;
 
     /// \brief topic name
     std::string topic_name_;
@@ -109,4 +111,4 @@ private:
     unsigned int seed;
 };
 }
-#endif // GAZEBO_ROS_RADAR_H
+#endif // RADAR_PLUGIN_H
