@@ -17,7 +17,7 @@ class USHARP3D_MULTIPLE_UART(object):
         self.uart = uart
         self.pub = rospy.Publisher( '~data', RadarTargetArray, queue_size=10 )
         self.radar_data_msg_raw = RadarTargetArray()
-        self.radar_data_msg_raw.header.stamp = rospy.get_rostime()
+        self.radar_data_msg_raw.header.stamp = rospy.Time(0)
         rospy.init_node( 'usharp3d_node')
         self.radar_data_msg_raw.header.frame_id = frame_id
         
