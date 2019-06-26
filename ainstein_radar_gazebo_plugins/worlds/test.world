@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    
+    <model name="box">
+      <link name="link">
+	<pose>2.0 0.0 0.0 0.0 0.0 0.0</pose>
+        <collision name="box_collision">
+	  <geometry>
+	    <box>
+	      <size>1 1 1</size>
+	    </box>
+	  </geometry>
+	</collision>
+        <visual name="visual">
+	  <geometry>
+	    <box>
+	      <size>1 1 1</size>
+	    </box>
+	  </geometry>
+	</visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://radar_sensor</uri>
+    </include>
+
+  </world>
+</sdf>
