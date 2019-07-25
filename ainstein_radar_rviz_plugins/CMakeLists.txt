@@ -37,8 +37,8 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 ## List of source files. The generated MOC files are included automatically as headers:
 set(SRC_FILES
-  src/radar_display.cpp
-  src/radar_visual.cpp
+  src/radar_target_array_display.cpp
+  src/radar_target_array_visual.cpp
 )
 
 add_library(${PROJECT_NAME} ${SRC_FILES})

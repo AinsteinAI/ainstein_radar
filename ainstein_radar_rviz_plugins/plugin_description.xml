@@ -1,6 +1,6 @@
 <library path="lib/libainstein_radar_rviz_plugins">
   <class name="ainstein_radar_rviz_plugins/RadarTargetArray"
-         type="ainstein_radar_rviz_plugins::RadarDisplay"
+         type="ainstein_radar_rviz_plugins::RadarTargetArrayDisplay"
          base_class_type="rviz::Display">
     <description>
       Displays ainstein_radar_msgs/RadarTargetArray messages.

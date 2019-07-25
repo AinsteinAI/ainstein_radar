@@ -33,23 +33,18 @@
 #include <ros/console.h>
 #include <geometry_msgs/Vector3.h>
 
-#include "radar_visual.h"
+#include "radar_target_array_visual.h"
 
 namespace ainstein_radar_rviz_plugins
 {
 
-const int RadarVisual::max_target_visuals = 1000;
+const int RadarTargetArrayVisual::max_target_visuals = 1000;
   
-RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
+RadarTargetArrayVisual::RadarTargetArrayVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
 {
   scene_manager_ = scene_manager;
 
-  // Ogre::SceneNode s form a tree, with each node storing the
-  // transform (position and orientation) of itself relative to its
-  // parent.  Ogre does the math of combining those transforms when it
-  // is time to render.
-  //
-  // Here we create a node to store the pose of the Radar's header frame
+  // Create a node to store the pose of the Radar's header frame
   // relative to the RViz fixed frame.
   frame_node_ = parent_node->createChildSceneNode();
 
@@ -60,20 +55,20 @@ RadarVisual::RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* pa
   show_target_info_ = false;
   
   // Set the target visuals vector capacities:
-  radar_target_visuals_.reserve( RadarVisual::max_target_visuals );
+  radar_target_visuals_.reserve( RadarTargetArrayVisual::max_target_visuals );
 }
 
-RadarVisual::~RadarVisual()
+RadarTargetArrayVisual::~RadarTargetArrayVisual()
 {
   // Destroy the frame node since we don't need it anymore.
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
-void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
+void RadarTargetArrayVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
 {
   // Resize the target shapes vector:
   radar_target_visuals_.clear();
-
+  
   // Fill the target shapes from RadarTargetArray message:
   for( const auto& target : msg->targets )
     {
@@ -108,7 +103,6 @@ void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::Const
 	  						   std::copysign( target.range, target.speed ) );
 
 	  // Set the info text:
-	  // Set the target speed arrow length:
 	  if( show_target_info_ )
 	    {
 	      radar_target_visuals_.back().info.setLocalTranslation( radar_target_visuals_.back().pos.getPosition() );
@@ -124,24 +118,25 @@ void RadarVisual::setMessage( const ainstein_radar_msgs::RadarTargetArray::Const
     }
 }
 
-void RadarVisual::clearMessage( void )
+void RadarTargetArrayVisual::clearMessage( void )
 {
   radar_target_visuals_.clear();
 }
   
-// Position and orientation are passed through to the SceneNode.
-void RadarVisual::setFramePosition( const Ogre::Vector3& position )
+// Position is passed through to the SceneNode.
+void RadarTargetArrayVisual::setFramePosition( const Ogre::Vector3& position )
 {
   frame_node_->setPosition( position );
 }
 
-void RadarVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
+// Orientation is passed through to the SceneNode.
+void RadarTargetArrayVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
 {
   frame_node_->setOrientation( orientation );
 }
   
 // Color is passed through to the Shape object.
-void RadarVisual::setColor( float r, float g, float b, float a )
+void RadarTargetArrayVisual::setColor( float r, float g, float b, float a )
 {
   for( auto& shape : radar_target_visuals_ )
     {
@@ -151,48 +146,25 @@ void RadarVisual::setColor( float r, float g, float b, float a )
 }
 
 // Scale is passed through to the Shape object.
-void RadarVisual::setScale( float scale )
+void RadarTargetArrayVisual::setScale( float scale )
 {
   for( auto& shape : radar_target_visuals_ )
     {
       shape.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
     }
 }
-  
-  void RadarVisual::updateFilteredTargets( void )
-  {
-    // // Remove raw targets based on updated range filters:
-    // radar_target_visuals_raw_.erase( std::remove_if( radar_target_visuals_raw_.begin(),
-    // 						     radar_target_visuals_raw_.end(),
-    // 						     [this]( TargetVisual s )
-    // 						     {
-    // 						       Ogre::Vector3 pos = s.pos.getPosition();
-    // 						       return ( pos.length() > max_range_ ||
-    // 								pos.length() < min_range_ );
-    // 						     }), radar_target_visuals_raw_.end() );
-    
-    // // Remove tracked targets based on updated range filters:
-    // radar_target_visuals_tracked_.erase( std::remove_if( radar_target_visuals_tracked_.begin(),
-    // 							 radar_target_visuals_tracked_.end(),
-    // 							 [this]( TargetVisual s )
-    // 							 {
-    // 							   Ogre::Vector3 pos = s.pos.getPosition();
-    // 							   return ( pos.length() > max_range_ ||
-    // 								    pos.length() < min_range_ );
-    // 							 }), radar_target_visuals_tracked_.end() );
-  }
- 
-  void RadarVisual::setMinRange( float min_range )
+
+  void RadarTargetArrayVisual::setMinRange( float min_range )
   {
     min_range_ = min_range;
   }
     
-  void RadarVisual::setMaxRange( float max_range )
+  void RadarTargetArrayVisual::setMaxRange( float max_range )
   {
     max_range_ = max_range;
   }
 
-  void RadarVisual::setShowSpeedArrows( bool show_speed_arrows )
+  void RadarTargetArrayVisual::setShowSpeedArrows( bool show_speed_arrows )
   {
     // Store the desired state:
     show_speed_arrows_ = show_speed_arrows;
@@ -208,7 +180,7 @@ void RadarVisual::setScale( float scale )
       }
   }
   
-  void RadarVisual::setShowTargetInfo( bool show_target_info )
+  void RadarTargetArrayVisual::setShowTargetInfo( bool show_target_info )
   {
     // Store the desired state:
     show_target_info_ = show_target_info;
@@ -223,7 +195,7 @@ void RadarVisual::setScale( float scale )
       }
   }
 
-  void RadarVisual::setInfoTextHeight( float info_text_height )
+  void RadarTargetArrayVisual::setInfoTextHeight( float info_text_height )
   {
     // Store the desired state:
     info_text_height_ = info_text_height;
@@ -234,7 +206,6 @@ void RadarVisual::setScale( float scale )
 	t.info.setCharacterHeight( info_text_height_ );
       }
   }
-
 
 } // namespace ainstein_radar_rviz_plugins
 

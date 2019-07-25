@@ -37,15 +37,13 @@
 #include <rviz/properties/enum_property.h>
 #include <rviz/frame_manager.h>
 
-#include "radar_visual.h"
-#include "radar_display.h"
+#include "radar_target_array_visual.h"
+#include "radar_target_array_display.h"
 
 namespace ainstein_radar_rviz_plugins
 {
 
-  // The constructor must have no arguments, so we can't give the
-  // constructor the parameters it needs to fully initialize.
-  RadarDisplay::RadarDisplay()
+  RadarTargetArrayDisplay::RadarTargetArrayDisplay()
   {
     // Options for displaying targets:
     color_property_.reset( new rviz::ColorProperty( "Color", QColor( 255, 0, 0 ),
@@ -103,21 +101,12 @@ namespace ainstein_radar_rviz_plugins
   }
 
   
-  RadarDisplay::~RadarDisplay()
+  RadarTargetArrayDisplay::~RadarTargetArrayDisplay()
   {
   }
 
-// After the top-level rviz::Display::initialize() does its own setup,
-// it calls the subclass's onInitialize() function.  This is where we
-// instantiate all the workings of the class.  We make sure to also
-// call our immediate super-class's onInitialize() function, since it
-// does important stuff setting up the message filter.
-//
-//  Note that "MFDClass" is a typedef of
-// ``MessageFilterDisplay<message type>``, to save typing that long
-// templated class name every time you need to refer to the
-// superclass.
-void RadarDisplay::onInitialize()
+// Set up class and call superclass onInitialize().
+void RadarTargetArrayDisplay::onInitialize()
 {
   MFDClass::onInitialize();
   updateHistoryLength();
@@ -127,14 +116,14 @@ void RadarDisplay::onInitialize()
 }
 
 // Clear the visuals by deleting their objects.
-void RadarDisplay::reset()
+void RadarTargetArrayDisplay::reset()
 {
   MFDClass::reset();
   visuals_.clear();
 }
 
 // Set the current color and alpha values for each visual.
-void RadarDisplay::updateColorAndAlpha()
+void RadarTargetArrayDisplay::updateColorAndAlpha()
 {
   // Set targets color and alpha:
   float alpha = alpha_property_->getFloat();
@@ -147,7 +136,7 @@ void RadarDisplay::updateColorAndAlpha()
 }
   
 // Set the current scale values for each visual.
-void RadarDisplay::updateScale()
+void RadarTargetArrayDisplay::updateScale()
 {
   // Set targets scale:
   float scale = scale_property_->getFloat();
@@ -159,13 +148,13 @@ void RadarDisplay::updateScale()
 }
 
 // Set the number of past visuals to show.
-void RadarDisplay::updateHistoryLength()
+void RadarTargetArrayDisplay::updateHistoryLength()
 {
   visuals_.rset_capacity(history_length_property_->getInt());
 }
 
 // Set the minimum range for displayed targets.
-void RadarDisplay::updateMinRange()
+void RadarTargetArrayDisplay::updateMinRange()
 {
   // Set the max range min to the min range:  
   max_range_property_->setMin( min_range_property_->getFloat() );
@@ -174,12 +163,11 @@ void RadarDisplay::updateMinRange()
   for( const auto& v : visuals_ )
     {
       v->setMinRange( min_range_property_->getFloat() );
-      v->updateFilteredTargets();
     }   
 }
 
 // Set the maximum range for displayed targets.
-void RadarDisplay::updateMaxRange()
+void RadarTargetArrayDisplay::updateMaxRange()
 {
   // Set the min range max to the max range:  
   min_range_property_->setMax( max_range_property_->getFloat() );
@@ -188,12 +176,11 @@ void RadarDisplay::updateMaxRange()
   for( const auto& v : visuals_ )
     {
       v->setMaxRange( max_range_property_->getFloat() );
-      v->updateFilteredTargets();
     }   
 }
 
 // This is our callback to handle an incoming message.
-void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
+void RadarTargetArrayDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
 {
   // Here we call the rviz::FrameManager to get the transform from the
   // fixed frame to the frame in the header of this Radar message.  If
@@ -210,15 +197,15 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
   }
 
   // We are keeping a circular buffer of visual pointers.  This gets
-  // the next one, or creates and stores it if the buffer is not full
-  boost::shared_ptr<RadarVisual> visual;
+  // the next one, or creates and stores it if the buffer is not full.
+  boost::shared_ptr<RadarTargetArrayVisual> visual;
   if( visuals_.full() )
   {
     visual = visuals_.front();
   }
   else
   {
-    visual.reset( new RadarVisual( context_->getSceneManager(), scene_node_ ) );
+    visual.reset( new RadarTargetArrayVisual( context_->getSceneManager(), scene_node_ ) );
   }
 
   // Now set or update the contents of the chosen visual.
@@ -260,7 +247,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
   visuals_.push_back( visual );
 }
 
-  void RadarDisplay::updateShowSpeedArrows( void )
+  void RadarTargetArrayDisplay::updateShowSpeedArrows( void )
   {
     for( const auto& v : visuals_ )
       {
@@ -268,7 +255,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
       }   
   }    
 
-  void RadarDisplay::updateShowTargetInfo( void )
+  void RadarTargetArrayDisplay::updateShowTargetInfo( void )
   {
     for( const auto& v : visuals_ )
       {
@@ -276,7 +263,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
       }   
   }    
 
-  void RadarDisplay::updateInfoTextHeight( void )
+  void RadarTargetArrayDisplay::updateInfoTextHeight( void )
   {
     for( const auto& v : visuals_ )
       {
@@ -284,7 +271,7 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
       }   
   }
 
-  void RadarDisplay::updateTargetShape( void )
+  void RadarTargetArrayDisplay::updateTargetShape( void )
   {
     int shape;
     for( const auto& v : visuals_ )
@@ -298,4 +285,4 @@ void RadarDisplay::processMessage( const ainstein_radar_msgs::RadarTargetArray::
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(ainstein_radar_rviz_plugins::RadarDisplay,rviz::Display )
+PLUGINLIB_EXPORT_CLASS( ainstein_radar_rviz_plugins::RadarTargetArrayDisplay, rviz::Display )

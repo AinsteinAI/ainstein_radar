@@ -1,87 +1,43 @@
-#ifndef RADAR_VISUAL_H
-#define RADAR_VISUAL_H
-
-#include <rviz/ogre_helpers/shape.h>
-#include <rviz/ogre_helpers/arrow.h>
-#include <rviz/ogre_helpers/movable_text.h>
+#ifndef RADAR_TARGET_ARRAY_VISUAL_H
+#define RADAR_TARGET_ARRAY_VISUAL_H
 
 #include <ainstein_radar_msgs/RadarTargetArray.h>
-
-namespace rviz
-{
-  class Shape;
-  class Arrow;
-  class MovableText;
-}
+#include "radar_target_visual.h"
 
 namespace ainstein_radar_rviz_plugins
 {
 
-  // Create an aggregate class for different types of basic visual elements
-  // to be used in visualizing radar data.
-  //
-  // Each TargetVisual contains a Shape for the target itself and an Arrow
-  // to visualize the target speed (velocity).
-  class TargetVisual
-  {
-  public:
-  TargetVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, rviz::Shape::Type type ) :
-    pos( type, scene_manager, parent_node ),
-      speed( scene_manager, parent_node ),
-      info( "test" )
-	{
-	  parent_node->attachObject( &info );
-	  info.setTextAlignment( rviz::MovableText::H_LEFT,
-				 rviz::MovableText::V_CENTER );
-	}      
-    ~TargetVisual() {};
-
-    rviz::Shape pos;
-    rviz::Arrow speed;
-    rviz::MovableText info;
-  };
-  
 // Declare the visual class for this display.
 //
-// Each instance of RadarVisual represents the visualization of a single
-// sensor_msgs::Radar message.  Currently it just shows an arrow with
-// the direction and magnitude of the acceleration vector, but could
-// easily be expanded to include more of the message data.
-class RadarVisual
+// Each instance of RadarTargetArrayVisual represents the visualization of
+// a single sensor_msgs::RadarTargetArray message.
+class RadarTargetArrayVisual
 {
 public:
-  // Constructor.  Creates the visual stuff and puts it into the
-  // scene, but in an unconfigured state.
-  RadarVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node );
+  RadarTargetArrayVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node );
+  virtual ~RadarTargetArrayVisual();
 
-  // Destructor.  Removes the visual stuff from the scene.
-  virtual ~RadarVisual();
-
-  // Configure the visual to show the data in the message.
   void setMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg );
   void clearMessage( void );
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
   // calls to FrameManager and error handling inside setMessage(),
-  // which doesn't seem as clean.  This way RadarVisual is only
-  // responsible for visualization.
+  // which doesn't seem as clean.  This way RadarTargetArrayVisual is
+  // only responsible for visualization.
   void setFramePosition( const Ogre::Vector3& position );
   void setFrameOrientation( const Ogre::Quaternion& orientation );
 
   // Set the color and alpha of the visual, which are user-editable
-  // parameters and therefore don't come from the Radar message.
+  // parameters and therefore don't come from the radar message.
   void setColor( float r, float g, float b, float a );
 
   // Set the scale of the visual, which are user-editable
-  // parameters and therefore don't come from the Radar message.
+  // parameters and therefore don't come from the radar message.
   void setScale( float scale );
 
-  // Update the targets based on new user-set parameters.
-  void updateFilteredTargets();
-  
   // Set the min and max range, which are user-editable
-  // parameters and therefore don't come from the Radar message.
+  // parameters and therefore don't come from the radar message.
   void setMinRange( float min_range );
   void setMaxRange( float max_range );
 
@@ -103,7 +59,7 @@ public:
   
 private:
   // The objects implementing the radar target visuals
-  std::vector<TargetVisual> radar_target_visuals_;
+  std::vector<RadarTargetVisual> radar_target_visuals_;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the Radar message header.
@@ -129,7 +85,7 @@ private:
   // Target info character (text) height:
   float info_text_height_;
 };
+ 
+} // namespace ainstein_radar_rviz_plugins
 
-} // end namespace ainstein_radar_rviz_plugins
-
-#endif // RADAR_VISUAL_H
+#endif // RADAR_TARGET_ARRAY_VISUAL_H
