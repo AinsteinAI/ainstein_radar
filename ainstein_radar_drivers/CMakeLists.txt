@@ -13,7 +13,13 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   ainstein_radar_msgs
+  dynamic_reconfigure
 )
+
+# Must be called after catkin_python_setup() and before catkin_package():
+generate_dynamic_reconfigure_options(
+  cfg/TrackingFilter.cfg
+  )
 
 catkin_package()
 
@@ -52,7 +58,7 @@ add_dependencies(radardata_to_nearest_target_node ${${PROJECT_NAME}_EXPORTED_TAR
 target_link_libraries(radardata_to_nearest_target_node ${catkin_LIBRARIES})
 
 add_executable(radardata_to_tracked_targets_node src/radardata_to_tracked_targets_node.cpp src/radardata_to_tracked_targets.cpp src/radar_target_kf.cpp)
-add_dependencies(radardata_to_tracked_targets_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(radardata_to_tracked_targets_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radardata_to_tracked_targets_node ${catkin_LIBRARIES})
 
 add_executable(radardata_range_filter_node src/radardata_range_filter_node.cpp src/radardata_range_filter.cpp)

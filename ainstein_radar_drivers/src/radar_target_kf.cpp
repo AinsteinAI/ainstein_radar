@@ -58,7 +58,27 @@ namespace ainstein_radar_drivers
 					     std::pow( INIT_SPEED_STDEV, 2.0 ),
 					     std::pow( INIT_AZIM_STDEV, 2.0 ),
 					     std::pow( INIT_ELEV_STDEV, 2.0 ) ).finished().asDiagonal();
+
+  void RadarTargetKF::setFilterParameters( const FilterParameters& params )
+  {
+    RadarTargetKF::Q_ = ( Eigen::Vector3d() <<
+			  std::pow( params.q_speed_stdev, 2.0 ),
+			  std::pow( params.q_azim_stdev, 2.0 ),
+			  std::pow( params.q_elev_stdev, 2.0 ) ).finished().asDiagonal();
   
+    RadarTargetKF::R_ = ( Eigen::Vector4d() <<
+			  std::pow( params.r_range_stdev, 2.0 ),
+			  std::pow( params.r_speed_stdev, 2.0 ),
+			  std::pow( params.r_azim_stdev, 2.0 ),
+			  std::pow( params.r_elev_stdev, 2.0 ) ).finished().asDiagonal();
+
+    RadarTargetKF::P_init_ = ( Eigen::Vector4d() <<
+			  std::pow( params.init_range_stdev, 2.0 ),
+			  std::pow( params.init_speed_stdev, 2.0 ),
+			  std::pow( params.init_azim_stdev, 2.0 ),
+			  std::pow( params.init_elev_stdev, 2.0 ) ).finished().asDiagonal();    
+  }
+      
   RadarTargetKF::RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
 				const ros::NodeHandle& node_handle,
 				const ros::NodeHandle& node_handle_private) :

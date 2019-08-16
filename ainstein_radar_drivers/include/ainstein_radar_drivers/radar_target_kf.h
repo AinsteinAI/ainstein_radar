@@ -23,8 +23,8 @@
 namespace ainstein_radar_drivers
 {
   class RadarTargetKF
-  {
-      class FilterState
+  {      
+    class FilterState
       {
       public:
 	FilterState( const ainstein_radar_msgs::RadarTarget& target,
@@ -92,10 +92,31 @@ namespace ainstein_radar_drivers
       };
 
   public:
-      RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
-		     const ros::NodeHandle& node_handle,
-		     const ros::NodeHandle& node_handle_private );
-      ~RadarTargetKF() {}
+    RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
+		   const ros::NodeHandle& node_handle,
+		   const ros::NodeHandle& node_handle_private );
+    ~RadarTargetKF() {}
+
+    class FilterParameters
+    {
+    public:
+      FilterParameters( void ) {}
+      ~FilterParameters( void )	{}
+      
+      double init_range_stdev;
+      double init_speed_stdev;
+      double init_azim_stdev;
+      double init_elev_stdev;
+
+      double q_speed_stdev;
+      double q_azim_stdev;
+      double q_elev_stdev;
+      
+      double r_range_stdev;
+      double r_speed_stdev;
+      double r_azim_stdev;
+      double r_elev_stdev;
+    };
 
       friend std::ostream& operator<< ( std::ostream& out, const RadarTargetKF& kf )
 	{
@@ -129,6 +150,8 @@ namespace ainstein_radar_drivers
       {
 	return ( ros::Time::now() - time_last_update_ ).toSec();
       }
+
+      static void setFilterParameters( const FilterParameters& params );
       
   private:
       FilterState state_pre_;

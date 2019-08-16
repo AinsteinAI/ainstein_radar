@@ -6,7 +6,7 @@
   <arg name="use_camera" value="true" />
 
   <!-- Set rosconsole output level to DEBUG -->
-  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ainstein_radar_drivers)/config/debug_rosconsole.conf"/> -->
+  <!-- <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ainstein_radar_drivers)/rosconsole/debug_rosconsole.conf"/> -->
   
   <!-- Nodes to run only for ONLINE testing -->
   <group unless="$(arg is_offline)" >
@@ -39,7 +39,7 @@
     <!-- <param name="filter/val_gate_thresh" value="0.297" /> --> <!-- 99.0 percent confidence -->
     <!-- <param name="filter/val_gate_thresh" value="0.484" /> --> <!-- 97.5 percent confidence -->
     <!-- <param name="filter/val_gate_thresh" value="0.711" /> --> <!-- 95.0 percent confidence -->
-    <param name="filter/val_gate_thresh" value="1.064" /> <!-- 90.0 percent confidence -->
+    <param name="filter/val_gate_thresh" value="1.064" /> <!-- 90.0 percent confidexnce -->
     <!-- <param name="filter/val_gate_thresh" value="1.923" /> --> <!-- 75.0 percent confidence -->
     <!-- <param name="filter/val_gate_thresh" value="5.385" /> --> <!-- 25.0 percent confidence -->
     <!-- <param name="filter/val_gate_thresh" value="7.779" /> --> <!-- 10.0 percent confidence -->

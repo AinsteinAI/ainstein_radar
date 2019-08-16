@@ -32,12 +32,6 @@ namespace ainstein_radar_drivers
 
   void RadarDataToTrackedTargets::initialize( void )
   {
-    // Get parameters:
-    nh_private_.param( "filter/update_rate", filter_update_rate_, 20.0 );
-    nh_private_.param( "filter/min_time", filter_min_time_, 2.0 );
-    nh_private_.param( "filter/timeout", filter_timeout_, 0.01 );
-    nh_private_.param( "filter/val_gate_thresh", filter_val_gate_thresh_, 0.99 );
-    
     // Set up raw radar data subscriber and tracked radar data publisher:
     sub_radar_data_raw_ = nh_.subscribe( "radardata_in", 10,
 					 &RadarDataToTrackedTargets::radarDataCallback,

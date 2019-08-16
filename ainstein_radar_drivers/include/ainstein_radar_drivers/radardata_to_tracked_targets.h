@@ -1,10 +1,13 @@
 #ifndef RADAR_DATA_TO_TRACKED_TARGETS_H_
 #define RADAR_DATA_TO_TRACKED_TARGETS_H_
 
-#include <thread>
+#include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
-#include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <thread>
+
 #include <ainstein_radar_drivers/radar_target_kf.h>
+#include <ainstein_radar_drivers/TrackingFilterConfig.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
 
 namespace ainstein_radar_drivers
 {
@@ -14,10 +17,43 @@ namespace ainstein_radar_drivers
     RadarDataToTrackedTargets( const ros::NodeHandle& node_handle,
 			       const ros::NodeHandle& node_handle_private ) :
     nh_( node_handle ),
-    nh_private_( node_handle_private ) {}
+    nh_private_( node_handle_private )
+    {
+      // Set up dynamic reconfigure:
+      dynamic_reconfigure::Server<ainstein_radar_drivers::TrackingFilterConfig>::CallbackType f;
+      f = boost::bind(&RadarDataToTrackedTargets::dynConfigCallback, this, _1, _2);
+      dyn_config_server_.setCallback(f);
+    }
 
     ~RadarDataToTrackedTargets() {}
 
+    void dynConfigCallback( const ainstein_radar_drivers::TrackingFilterConfig& config, uint32_t level )
+    {
+      // Copy the new parameter values:
+      filter_update_rate_ = config.filter_update_rate;
+      filter_min_time_ = config.filter_min_time;
+      filter_timeout_ = config.filter_timeout;
+      filter_val_gate_thresh_ = config.filter_val_gate_thresh;
+
+      // Set the parameters for the underlying target Kalman Filters:
+      RadarTargetKF::FilterParameters kf_params;
+      kf_params.init_range_stdev = config.kf_init_range_stdev;
+      kf_params.init_speed_stdev = config.kf_init_speed_stdev;
+      kf_params.init_azim_stdev = config.kf_init_azim_stdev;
+      kf_params.init_elev_stdev = config.kf_init_elev_stdev;
+
+      kf_params.q_speed_stdev = config.kf_q_speed_stdev;
+      kf_params.q_azim_stdev = config.kf_q_azim_stdev;
+      kf_params.q_elev_stdev = config.kf_q_elev_stdev;
+      
+      kf_params.r_range_stdev = config.kf_r_range_stdev;
+      kf_params.r_speed_stdev = config.kf_r_speed_stdev;
+      kf_params.r_azim_stdev = config.kf_r_azim_stdev;
+      kf_params.r_elev_stdev = config.kf_r_elev_stdev;
+
+      RadarTargetKF::setFilterParameters( kf_params );
+    }
+      
     void initialize( void );
     void updateFiltersLoop( double frequency );
     
@@ -30,6 +66,7 @@ namespace ainstein_radar_drivers
     ros::NodeHandle nh_private_;
 
     // Parameters:
+    dynamic_reconfigure::Server<ainstein_radar_drivers::TrackingFilterConfig> dyn_config_server_;
     double filter_update_rate_;
     double filter_min_time_;
     double filter_timeout_;
