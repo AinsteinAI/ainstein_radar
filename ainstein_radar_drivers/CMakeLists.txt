@@ -3,6 +3,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 project(ainstein_radar_drivers)
 
+find_package(PCL REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   nodelet
@@ -26,6 +28,7 @@ catkin_package()
 include_directories(
  include
  ${catkin_INCLUDE_DIRS}
+ ${PCL_INCLUDE_DIRS}
  )
 
 add_executable(k79_node src/k79_node.cpp src/radar_interface_k79.cpp)
@@ -67,6 +70,9 @@ target_link_libraries(radardata_range_filter_node ${catkin_LIBRARIES})
 
 add_library(radardata_range_filter_nodelet src/radardata_range_filter_nodelet.cpp src/radardata_range_filter.cpp)
 target_link_libraries(radardata_range_filter_nodelet ${catkin_LIBRARIES})
+
+add_executable(radar_target_array_to_point_cloud_node src/radar_target_array_to_point_cloud_node.cpp src/radar_target_array_to_point_cloud.cpp)
+target_link_libraries(radar_target_array_to_point_cloud_node ${catkin_LIBRARIES})
 
 install(TARGETS
   k79_node

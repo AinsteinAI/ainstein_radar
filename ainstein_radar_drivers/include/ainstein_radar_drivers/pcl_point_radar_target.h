@@ -7,8 +7,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 
-namespace ainstein_radar_drivers
-{
+/* namespace ainstein_radar_drivers */ // we cannot define a custom type within a namespace! see https://github.com/PointCloudLibrary/pcl/issues/1152
+/* { */
   struct PointRadarTarget
   {
     PCL_ADD_POINT4D;
@@ -17,7 +17,7 @@ namespace ainstein_radar_drivers
     float speed;        // Speed (meters per second)
     float azimuth;      // Azimuth angle (degrees)
     float elevation;    // Elevation angle (degrees)
-    PCL_MAKE_ALIGNED_OPERATOR_NEW    // make sure our new allocators are aligned
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW    // make sure our new allocators are aligned
   } EIGEN_ALIGN16;    // enforce SSE padding for correct memory alignment
 
   POINT_CLOUD_REGISTER_POINT_STRUCT( PointRadarTarget,        
@@ -30,6 +30,6 @@ namespace ainstein_radar_drivers
 				     ( float, azimuth, azimuth )
 				     ( float, elevation, elevation )
 				     )
-} // namespace ainstein_radar_drivers
+/* } // namespace ainstein_radar_drivers */
 
 #endif // PCL_POINT_RADAR_TARGET_H
