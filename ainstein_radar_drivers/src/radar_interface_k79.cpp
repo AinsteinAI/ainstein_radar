@@ -240,11 +240,11 @@ void RadarInterfaceK79::mainLoop(void)
 		  // Note that 65 is the highest speed moving towards, hence the manipulation below.
 		  if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
 		    {
-		      target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * -0.045; // 1 count = 0.045 m/s
+		      target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
 		    }
 		  else // MOVING TOWARDS RADAR
 		    {
-		      target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * -0.045; // 1 count = 0.045 m/s
+		      target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
 		    }
 	      
 		  target.elevation = 0.0; // K79 does not output elevation angle

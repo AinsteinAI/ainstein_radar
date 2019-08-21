@@ -143,6 +143,7 @@ namespace ainstein_radar_drivers
 	      {
 		// Check whether the target should be used as measurement by this filter:
 		ainstein_radar_msgs::RadarTarget t = msg->targets.at( i );
+		t.speed *= -1.0;
 		Eigen::Vector4d z = kf.computePredMeas( kf.getState() );
 		Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
 	    
