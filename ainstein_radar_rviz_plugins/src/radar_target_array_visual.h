@@ -30,7 +30,7 @@ public:
 
   // Set the color and alpha of the visual, which are user-editable
   // parameters and therefore don't come from the radar message.
-  void setColor( float r, float g, float b, float a );
+  void setColor( int color_method, float r, float g, float b, float a );
 
   // Set the scale of the visual, which are user-editable
   // parameters and therefore don't come from the radar message.

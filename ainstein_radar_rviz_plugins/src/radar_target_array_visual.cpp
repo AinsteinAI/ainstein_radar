@@ -34,6 +34,7 @@
 #include <geometry_msgs/Vector3.h>
 
 #include "radar_target_array_visual.h"
+#include "radar_target_array_display.h"
 
 namespace ainstein_radar_rviz_plugins
 {
@@ -76,19 +77,22 @@ void RadarTargetArrayVisual::setMessage( const ainstein_radar_msgs::RadarTargetA
 	{
 	  // Create the new target shape, fill it and push back:
 	  radar_target_visuals_.emplace_back( scene_manager_, frame_node_, shape_type_ );
+
+	  // Copy the target into the shape:
+	  radar_target_visuals_.back().t = target;
 	  
 	  // Compute the target's Cartesian position:
 	  radar_target_visuals_.back().pos.setPosition( Ogre::Vector3(cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 	  							      sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation ) * target.range,
 	  							      sin( ( M_PI / 180.0 ) * target.elevation ) * target.range ) );
-
-	  // Set the target speed arrow length:
+	  
+	  // set the target speed arrow length:
 	  if( show_speed_arrows_ )
 	    {
 	      radar_target_visuals_.back().speed.set( std::abs( target.speed ), // shaft length
-	  					      0.1, // shaft diameter
-	  					      0.2, // arrow head length
-	  					      0.2 ); // arrow head diameter
+	  					      0.05, // shaft diameter
+	  					      0.1, // arrow head length
+	  					      0.1 ); // arrow head diameter
 	    }
 	  else
 	    {
@@ -136,12 +140,61 @@ void RadarTargetArrayVisual::setFrameOrientation( const Ogre::Quaternion& orient
 }
   
 // Color is passed through to the Shape object.
-void RadarTargetArrayVisual::setColor( float r, float g, float b, float a )
+  void RadarTargetArrayVisual::setColor( int color_method, float r, float g, float b, float a )
 {
-  for( auto& shape : radar_target_visuals_ )
+  // Flat coloring:
+  if( color_method == RadarTargetArrayDisplay::COLOR_METHOD_FLAT )
     {
-      shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
-      shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
+      for( auto& shape : radar_target_visuals_ )
+	{
+	  shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
+	  shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
+	}
+    }
+  else if( color_method == RadarTargetArrayDisplay::COLOR_METHOD_COLLISION_TIME ) // Collision time-based coloring
+    {
+      // Compute the color based on time to collision:
+      Ogre::ColourValue red = Ogre::ColourValue( 1.0, 0.0, 0.0, 1.0 );
+      Ogre::ColourValue yellow = Ogre::ColourValue( 1.0, 1.0, 0.0, 1.0 );
+      Ogre::ColourValue green = Ogre::ColourValue( 0.0, 1.0, 0.0, 1.0 );
+      double min_time = 2.0;
+      double max_time = 10.0;
+      double total_time = max_time - min_time;
+
+      for( auto& shape : radar_target_visuals_ )
+	{
+	  double collision_time = shape.t.range / -shape.t.speed;
+
+	  // Objects moving away are at an infinite collision time:
+	  if( collision_time < 0.0 )
+	    {
+	      collision_time = max_time;
+	    }
+
+	  // Bound the collision time:
+	  collision_time = std::min( std::max( collision_time, min_time ), max_time );
+	  
+	  Ogre::ColourValue color;
+	  if( collision_time < min_time + 0.5 * total_time )
+	    {
+	      color.r = yellow.r + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.r - yellow.r );
+	      color.g = yellow.g + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.g - yellow.g );
+	      color.b = yellow.b + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.b - yellow.b );
+	    }
+	  else
+	    {
+	      color.r = green.r + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.r - green.r );
+	      color.g = green.g + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.g - green.g );
+	      color.b = green.b + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.b - green.b );
+	    }
+      
+	  shape.pos.setColor( color );
+	  shape.speed.setColor( color );
+	}
+    }
+  else
+    {
+      ROS_ERROR_STREAM( "Invalid color method passed to setColor." );
     }
 }
 

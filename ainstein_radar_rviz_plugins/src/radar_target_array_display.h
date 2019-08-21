@@ -26,8 +26,7 @@ namespace rviz
 }
 
 namespace ainstein_radar_rviz_plugins
-{
-  
+{  
   class RadarTargetArrayVisual;
   
   // Declare a new subclass of rviz::Display.
@@ -38,6 +37,10 @@ namespace ainstein_radar_rviz_plugins
     // Default constructor for the pluginlib::ClassLoader.
     RadarTargetArrayDisplay();
     virtual ~RadarTargetArrayDisplay();
+
+    // Color method "defines".
+    static const int COLOR_METHOD_FLAT = 0;
+    static const int COLOR_METHOD_COLLISION_TIME = 1;
 
   protected:
     // Initialize class members.
@@ -57,7 +60,7 @@ namespace ainstein_radar_rviz_plugins
       void updateShowTargetInfo();
       void updateInfoTextHeight();
       void updateTargetShape();
-  
+
       // Function to handle an incoming ROS message.
   private:
       void processMessage( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg );
@@ -68,6 +71,7 @@ namespace ainstein_radar_rviz_plugins
 
       // User-editable property variables.
       std::unique_ptr<rviz::ColorProperty> color_property_;
+      std::unique_ptr<rviz::EnumProperty> color_method_property_;
       std::unique_ptr<rviz::FloatProperty> alpha_property_;
       std::unique_ptr<rviz::FloatProperty> scale_property_;
       std::unique_ptr<rviz::EnumProperty> shape_property_;

@@ -1,6 +1,8 @@
 #ifndef RADAR_TARGET_VISUAL_H
 #define RADAR_TARGET_VISUAL_H
 
+#include <ainstein_radar_msgs/RadarTarget.h>
+
 #include <rviz/ogre_helpers/shape.h>
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/movable_text.h>
@@ -37,6 +39,8 @@ namespace ainstein_radar_rviz_plugins
     rviz::Shape pos;
     rviz::Arrow speed;
     rviz::MovableText info;
+
+    ainstein_radar_msgs::RadarTarget t;
   };
 
 } // namespace ainstein_radar_rviz_plugins

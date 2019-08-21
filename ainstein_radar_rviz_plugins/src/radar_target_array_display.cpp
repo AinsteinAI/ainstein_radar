@@ -50,6 +50,12 @@ namespace ainstein_radar_rviz_plugins
 					       "Color to draw the target markers.",
 					       this, SLOT( updateColorAndAlpha() ) ) );
     
+    color_method_property_.reset( new rviz::EnumProperty( "Color Method", "Flat",
+							  "Color display method.",
+							  this, SLOT( updateColorAndAlpha() ) ) );    
+    color_method_property_->addOptionStd( "Flat", RadarTargetArrayDisplay::COLOR_METHOD_FLAT );
+    color_method_property_->addOptionStd( "Collision Time", RadarTargetArrayDisplay::COLOR_METHOD_COLLISION_TIME );
+    
     alpha_property_.reset( new rviz::FloatProperty( "Alpha", 1.0,
 					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",
 					      this, SLOT( updateColorAndAlpha() ) ) );
@@ -128,10 +134,12 @@ void RadarTargetArrayDisplay::updateColorAndAlpha()
   // Set targets color and alpha:
   float alpha = alpha_property_->getFloat();
   Ogre::ColourValue color = color_property_->getOgreColor();
- 
+
+  int color_method = color_method_property_->getOptionInt();
+
   for( const auto& v : visuals_ )
     {
-      v->setColor( color.r, color.g, color.b, alpha );
+      v->setColor( color_method, color.r, color.g, color.b, alpha );
     }
 }
   
@@ -213,6 +221,7 @@ void RadarTargetArrayDisplay::processMessage( const ainstein_radar_msgs::RadarTa
   float alpha;
   float scale;
   Ogre::ColourValue color;
+  int color_method;
   float info_text_height;
 
   // Set min/max range filter:
@@ -236,7 +245,8 @@ void RadarTargetArrayDisplay::processMessage( const ainstein_radar_msgs::RadarTa
   // Set the target visual options:
   alpha = alpha_property_->getFloat();
   color = color_property_->getOgreColor();
-  visual->setColor( color.r, color.g, color.b, alpha );
+  color_method = color_method_property_->getOptionInt();
+  visual->setColor( color_method, color.r, color.g, color.b, alpha );
   scale = scale_property_->getFloat();
   visual->setScale( scale );
       
