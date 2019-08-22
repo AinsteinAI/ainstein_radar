@@ -28,7 +28,7 @@ public:
 
   static const std::string run_cmd_str;
 
-  #define RADAR_MSG_LEN  1000    // maximum length in bytes
+  #define RADAR_MSG_LEN  3000    // maximum length in bytes
   #define TARGET_MSG_LEN 8       // 8 bytes per target, first 4 are nonzero
 
   static const unsigned int radar_msg_len;

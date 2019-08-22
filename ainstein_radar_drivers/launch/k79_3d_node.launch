@@ -1,0 +1,8 @@
+<launch>
+  <node name="k79_3d_node" pkg="ainstein_radar_drivers" type="k79_3d_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1024" />
+    <param name="radar_ip" value="10.0.0.10" />
+    <param name="radar_port" value="7" />
+  </node>
+</launch>
