@@ -1,5 +1,5 @@
-#ifndef RADAR_INTERFACE_K79_H_
-#define RADAR_INTERFACE_K79_H_
+#ifndef RADAR_INTERFACE_K79_3D_H_
+#define RADAR_INTERFACE_K79_3D_H_
 
 #include <netinet/in.h>
 #include <string>
@@ -13,12 +13,12 @@
 namespace ainstein_radar_drivers
 {
 
-class RadarInterfaceK79 {
+class RadarInterfaceK793D {
 
 public:
-  RadarInterfaceK79( ros::NodeHandle node_Handle,
-		     ros::NodeHandle node_Handle_private );
-  ~RadarInterfaceK79();
+  RadarInterfaceK793D( ros::NodeHandle node_Handle,
+		       ros::NodeHandle node_Handle_private );
+  ~RadarInterfaceK793D();
 
   bool connect( void );
   void mainLoop( void );
@@ -62,4 +62,4 @@ private:
 
 } // namespace ainstein_radar_drivers
 
-#endif // RADAR_INTERFACE_K79_H_
+#endif // RADAR_INTERFACE_K79_3D_H_
