@@ -107,10 +107,9 @@ namespace ainstein_radar_drivers
 		++target_id;
 	      }
 	  }
-	// if( msg_tracked_.targets.size() > 0 )
-	//   {
+
+	// Publish the data:
 	pub_radar_data_tracked_.publish( msg_tracked_ );
-	  // }
 	
 	// Store the current time and velocity:
 	time_prev = time_now;
@@ -143,7 +142,6 @@ namespace ainstein_radar_drivers
 	      {
 		// Check whether the target should be used as measurement by this filter:
 		ainstein_radar_msgs::RadarTarget t = msg->targets.at( i );
-		t.speed *= -1.0;
 		Eigen::Vector4d z = kf.computePredMeas( kf.getState() );
 		Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
 	    
@@ -171,11 +169,6 @@ namespace ainstein_radar_drivers
 	ROS_DEBUG_STREAM( ind << " " );
       }
     ROS_DEBUG_STREAM( std::endl );
-
-    // if( filters_.size() == 0 && msg->targets.at( 0 ).range < 4.0 )
-    //   {
-    // 	filters_.push_back( msg->targets.at( 0 ) );
-    //   }
 
     // Iterate through targets and push back new KFs for unused measurements:
     for( int i = 0; i < meas_count_vec_.size(); ++i )
