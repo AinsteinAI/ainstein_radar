@@ -183,7 +183,7 @@ bool RadarInterfaceK793D::connect(void)
   mutex_.unlock();
 
   // Advertise the K-79 data using the ROS node handle:
-  pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "data/raw", 10 );
+  pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
   
   return true;
 }

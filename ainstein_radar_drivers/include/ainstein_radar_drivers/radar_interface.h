@@ -44,9 +44,9 @@ public:
 						       10 );
 
         // Set up the publishers for sending out processed radar data:
-        pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "raw_targets",
+        pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw",
 											10 );
-        pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked_targets",
+        pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked",
 												10 );
         pub_radar_data_alarms_ = nh_private_.advertise<ainstein_radar_msgs::RadarAlarmArray>( "alarms",
 											      10 );
