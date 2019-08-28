@@ -138,9 +138,9 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     {
         ROS_INFO( "received start frame from %s", name_.c_str() );
         // clear radar data message arrays here
-        radar_data_msg_ptr_raw_->header.stamp = ros::Time( 0.0 ); //ros::Time::now();
-        radar_data_msg_ptr_tracked_->header.stamp = ros::Time( 0.0 ); //ros::Time::now();
-        radar_data_msg_ptr_alarms_->header.stamp = ros::Time( 0.0 ); //ros::Time::now();
+        radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
+        radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+        radar_data_msg_ptr_alarms_->header.stamp = ros::Time::now();
 
         radar_data_msg_ptr_raw_->targets.clear();
         radar_data_msg_ptr_tracked_->targets.clear();

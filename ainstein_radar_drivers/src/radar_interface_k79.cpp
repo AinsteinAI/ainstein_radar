@@ -216,7 +216,7 @@ void RadarInterfaceK79::mainLoop(void)
 	  // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
       
 	  // Prepare the radar targets messages:
-	  radar_data_msg_ptr_raw_->header.stamp = ros::Time( 0.0 ); // ros::Time::now();
+	  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
 	  radar_data_msg_ptr_raw_->targets.clear();
 
 	  // Extract the target ID and data from the message:
