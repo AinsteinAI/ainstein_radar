@@ -39,6 +39,8 @@ add_definitions(-DQT_NO_KEYWORDS)
 set(SRC_FILES
   src/radar_target_array_display.cpp
   src/radar_target_array_visual.cpp
+  src/radar_info_display.cpp
+  src/radar_info_visual.cpp
 )
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
