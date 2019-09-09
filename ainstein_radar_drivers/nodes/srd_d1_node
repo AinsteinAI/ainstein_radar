@@ -8,20 +8,20 @@ import rospy
 from ainstein_radar_msgs.msg import RadarTargetArray
 from ainstein_radar_msgs.msg import RadarTarget
 
-USHARP3D_SINGLE_HEADER = 0x55AA
-USHARP3D_SINGLE_TAIL = 0x5AA5
-USHARP3D_PACKETSIZE = 15
+SRD_D1_SINGLE_HEADER = 0x55AA
+SRD_D1_SINGLE_TAIL = 0x5AA5
+SRD_D1_PACKETSIZE = 15
 
-class USHARP3D_MULTIPLE_UART(object):
+class SRD_D1_MULTIPLE_UART(object):
     def __init__(self, uart, frame_id):
         self.uart = uart
         self.pub = rospy.Publisher( '~data', RadarTargetArray, queue_size=10 )
         self.radar_data_msg_raw = RadarTargetArray()
         self.radar_data_msg_raw.header.stamp = rospy.Time(0)
-        rospy.init_node( 'usharp3d_node')
+        rospy.init_node( 'srd_d1_node')
         self.radar_data_msg_raw.header.frame_id = frame_id
         
-    def data_receive_usharp3d_multiple(self):
+    def data_receive_srd_d1_multiple(self):
         while not rospy.is_shutdown():
             whole_packet = [] # fixed packet length
             Header_Bytes = [0, 0] # two Bytes in header
@@ -33,26 +33,26 @@ class USHARP3D_MULTIPLE_UART(object):
                     while True:
                         Header_Bytes[0] = ord(self.uart.read())
                         Header_Bytes[1] = ord(self.uart.read())
-                        if Header_Bytes[0] == (USHARP3D_SINGLE_HEADER>>8) & 0xff and Header_Bytes[1] == (USHARP3D_SINGLE_HEADER) & 0xff:
+                        if Header_Bytes[0] == (SRD_D1_SINGLE_HEADER>>8) & 0xff and Header_Bytes[1] == (SRD_D1_SINGLE_HEADER) & 0xff:
                             while True:
                                 Tail_Bytes[0] = ord(self.uart.read())
                                 whole_packet.append(Tail_Bytes[0])
                                 # Tail_Bytes[1] = ord(self.uart.read())
                                 # whole_packet.append(Tail_Bytes[1])
-                                if Tail_Bytes[0] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                if Tail_Bytes[0] == (SRD_D1_SINGLE_TAIL>>8) & 0xff:
                                     Tail_Bytes[1] = ord(self.uart.read())
                                     whole_packet.append(Tail_Bytes[1])
-                                    if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL) & 0xff:
+                                    if Tail_Bytes[1] == (SRD_D1_SINGLE_TAIL) & 0xff:
                                         break
                                     else:
                                         continue
                                 else:
                                     Tail_Bytes[1] = ord(self.uart.read())
                                     whole_packet.append(Tail_Bytes[1])
-                                    if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                    if Tail_Bytes[1] == (SRD_D1_SINGLE_TAIL>>8) & 0xff:
                                         Tail_r = ord(self.uart.read())
                                         whole_packet.append(Tail_r)
-                                        if Tail_r == USHARP3D_SINGLE_TAIL & 0xff:
+                                        if Tail_r == SRD_D1_SINGLE_TAIL & 0xff:
                                             break
                                         else:
                                             continue
@@ -65,7 +65,7 @@ class USHARP3D_MULTIPLE_UART(object):
                             print "Header Missed!!!"
 
                     whole_packet = Header_Bytes + whole_packet
-                    self.data_parse_usharp3d_multiple(whole_packet, self.radar_data_msg_raw)
+                    self.data_parse_srd_d1_multiple(whole_packet, self.radar_data_msg_raw)
                     if( len( self.radar_data_msg_raw.targets ) > 0 ):
                         self.pub.publish( self.radar_data_msg_raw )
 
@@ -76,7 +76,7 @@ class USHARP3D_MULTIPLE_UART(object):
                 return
 
 
-    def data_parse_usharp3d_multiple(self, frame, msg):
+    def data_parse_srd_d1_multiple(self, frame, msg):
             checksum = frame[len(frame) - 3]
             sum_calc = 0
             for i in range(2, len(frame) - 3):
@@ -129,7 +129,7 @@ class USHARP3D_MULTIPLE_UART(object):
             else:
                 print u'err frame: checksum err'
 
-    def data_receive_usharp3d_us_launch(self):
+    def data_receive_srd_d1_us_launch(self):
         while not rospy.is_shutdown():
             whole_packet = [] # fixed packet length
             Header_Bytes = [0, 0] # two Bytes in header
@@ -140,26 +140,26 @@ class USHARP3D_MULTIPLE_UART(object):
                 try:
                     while True:
                         Header_Bytes[0] = ord(self.uart.read())
-                        if Header_Bytes[0] == (USHARP3D_SINGLE_HEADER>>8) & 0xff:
+                        if Header_Bytes[0] == (SRD_D1_SINGLE_HEADER>>8) & 0xff:
                             Header_Bytes[1] = ord(self.uart.read())
-                            if Header_Bytes[1] == (USHARP3D_SINGLE_HEADER) & 0xff:
+                            if Header_Bytes[1] == (SRD_D1_SINGLE_HEADER) & 0xff:
                                 while True:
                                     Tail_Bytes[0] = ord(self.uart.read())
                                     whole_packet.append(Tail_Bytes[0])
-                                    if Tail_Bytes[0] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                    if Tail_Bytes[0] == (SRD_D1_SINGLE_TAIL>>8) & 0xff:
                                         Tail_Bytes[1] = ord(self.uart.read())
                                         whole_packet.append(Tail_Bytes[1])
-                                        if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL) & 0xff:
+                                        if Tail_Bytes[1] == (SRD_D1_SINGLE_TAIL) & 0xff:
                                             break    
                                         else:
                                             continue
                                     else:
                                         Tail_Bytes[1] = ord(self.uart.read())
                                         whole_packet.append(Tail_Bytes[1])
-                                        if Tail_Bytes[1] == (USHARP3D_SINGLE_TAIL>>8) & 0xff:
+                                        if Tail_Bytes[1] == (SRD_D1_SINGLE_TAIL>>8) & 0xff:
                                             Tail_r = ord(self.uart.read())
                                             whole_packet.append(Tail_r)
-                                            if Tail_r == USHARP3D_SINGLE_TAIL & 0xff:
+                                            if Tail_r == SRD_D1_SINGLE_TAIL & 0xff:
                                                 break
                                             else:
                                                 continue
@@ -171,7 +171,7 @@ class USHARP3D_MULTIPLE_UART(object):
                             continue
 
                     whole_packet = Header_Bytes + whole_packet
-                    self.data_parse_usharp3d_us_launch(whole_packet, self.radar_data_msg_raw)
+                    self.data_parse_srd_d1_us_launch(whole_packet, self.radar_data_msg_raw)
                     if( len( self.radar_data_msg_raw.targets ) > 0 ):
                         self.pub.publish( self.radar_data_msg_raw )
 
@@ -180,7 +180,7 @@ class USHARP3D_MULTIPLE_UART(object):
             else:
                 return
 
-    def data_parse_usharp3d_us_launch(self, frame, msg):
+    def data_parse_srd_d1_us_launch(self, frame, msg):
             ## Checksum Byte in transmitter data packet
             checksum = frame[len(frame) - 3]
             ## Calculate checksum Byte in receiver data packet
@@ -234,19 +234,19 @@ class USHARP3D_MULTIPLE_UART(object):
 
 if __name__ == "__main__":
     try:
-        rospy.init_node( 'usharp3d_node')
+        rospy.init_node( 'srd_d1_node')
         frame_id = rospy.get_param( '~frame_id', 'map' )
         device_id = rospy.get_param( '~device_id', '/dev/ttyUSB0' )
         firmware_version = rospy.get_param( '~firmware_version', 'old' )
         
         if firmware_version == 'old':
             with serial.Serial( device_id, 460800, timeout=1 ) as ser:
-                intf = USHARP3D_MULTIPLE_UART( ser, frame_id )
-                intf.data_receive_usharp3d_multiple()
+                intf = SRD_D1_MULTIPLE_UART( ser, frame_id )
+                intf.data_receive_srd_d1_multiple()
         elif firmware_version == 'new':
             with serial.Serial( device_id, 115200, timeout=1 ) as ser:
-                intf = USHARP3D_MULTIPLE_UART( ser, frame_id )
-                intf.data_receive_usharp3d_us_launch()
+                intf = SRD_D1_MULTIPLE_UART( ser, frame_id )
+                intf.data_receive_srd_d1_us_launch()
         else:
             rospy.logerr( 'Invalid firmware_version parameter.' )
 

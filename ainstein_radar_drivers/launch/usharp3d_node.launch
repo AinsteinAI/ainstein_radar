@@ -1,5 +1,0 @@
-<launch>
-  <node name="usharp3d_node" pkg="ainstein_radar_drivers" type="usharp3d_node" >
-    <param name="firmware_version" value="new" />
-  </node>
-</launch>

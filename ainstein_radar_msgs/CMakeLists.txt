@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  RadarInfo.msg
   RadarAlarm.msg
   RadarAlarmArray.msg
   RadarAlarmStamped.msg
