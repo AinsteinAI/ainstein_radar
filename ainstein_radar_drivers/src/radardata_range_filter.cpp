@@ -37,10 +37,6 @@ namespace ainstein_radar_drivers
     sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
 				     &RadarDataRangeFilter::radarDataCallback,
 				     this );
-
-    // Get parameters:
-    nh_private_.param( "min_range", min_range_, 0.0 );
-    nh_private_.param( "max_range", max_range_, 100.0 );
   }
 
   void RadarDataRangeFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray& msg )
@@ -53,8 +49,8 @@ namespace ainstein_radar_drivers
     for( const auto& target : msg.targets )
       {
 	// Filter based on specified range limits:
-	if( target.range >= min_range_ &&
-	    target.range <= max_range_)
+	if( target.range >= config_.min_range &&
+	    target.range <= config_.max_range)
 	  {
 	    target_filtered = target;
 	    target_filtered.target_id = target_id;
