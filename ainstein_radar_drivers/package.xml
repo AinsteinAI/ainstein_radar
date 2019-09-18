@@ -37,6 +37,7 @@
     <nodelet plugin="${prefix}/nodelet_k79.xml" />
     <nodelet plugin="${prefix}/nodelet_t79_bsd.xml" />
     <nodelet plugin="${prefix}/nodelet_radardata_to_pointcloud.xml" />
+    <nodelet plugin="${prefix}/nodelet_radardata_range_filter.xml" />
   </export>
 
 </package>
