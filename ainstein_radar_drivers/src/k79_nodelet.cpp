@@ -39,7 +39,6 @@ public:
     // Create the K79 interface and launch the data thread:
     NODELET_DEBUG("Initializing K79 interface nodelet");
     intf_ptr_.reset( new ainstein_radar_drivers::RadarInterfaceK79( getNodeHandle(), getPrivateNodeHandle() ) );
-    intf_ptr_-> connect();
   }
 
 private:

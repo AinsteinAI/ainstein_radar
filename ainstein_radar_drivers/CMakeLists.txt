@@ -32,11 +32,11 @@ include_directories(
  ${PCL_INCLUDE_DIRS}
  )
 
-add_executable(k79_node src/k79_node.cpp src/radar_interface_k79.cpp)
+add_executable(k79_node src/k79_node.cpp src/radar_interface_k79.cpp src/radar_driver_k79.cpp)
 add_dependencies(k79_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(k79_node ${catkin_LIBRARIES})
 
-add_library(k79_nodelet src/k79_nodelet.cpp src/radar_interface_k79.cpp)
+add_library(k79_nodelet src/k79_nodelet.cpp src/radar_interface_k79.cpp src/radar_driver_k79.cpp)
 target_link_libraries(k79_nodelet ${catkin_LIBRARIES})
 
 add_executable(k79_3d_node src/k79_3d_node.cpp src/radar_interface_k79_3d.cpp)
@@ -96,8 +96,6 @@ install(TARGETS
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
-
-install(DIRECTORY meshes DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 ## Install project namespaced headers
 install(DIRECTORY include/

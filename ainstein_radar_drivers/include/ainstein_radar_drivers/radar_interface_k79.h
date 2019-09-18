@@ -9,6 +9,7 @@
 
 #include <ros/ros.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_drivers/radar_driver_k79.h>
 
 namespace ainstein_radar_drivers
 {
@@ -20,34 +21,24 @@ public:
 		     ros::NodeHandle node_Handle_private );
   ~RadarInterfaceK79();
 
-  bool connect( void );
   void mainLoop( void );
-  
-  static const std::string connect_cmd_str;
-  static const unsigned int connect_res_len;
+  ainstein_radar_msgs::RadarTarget targetToROSMsg( const ainstein_radar_drivers::RadarTarget &t )
+  {
+    ainstein_radar_msgs::RadarTarget target;
+    target.target_id = t.id;
+    target.range = t.range;
+    target.speed = t.speed;
+    target.azimuth = t.azimuth;
+    target.elevation = t.elevation;
+    target.snr = t.snr;
 
-  static const std::string run_cmd_str;
-
-  #define RADAR_MSG_LEN  3000    // maximum length in bytes
-  #define TARGET_MSG_LEN 8       // 8 bytes per target, first 4 are nonzero
-
-  static const unsigned int radar_msg_len;
-  static const unsigned int target_msg_len;
+    return target;
+  }
   
 private:
-  std::string host_ip_addr_;
-  int host_port_;
-
-  std::string radar_name_;
-  std::string radar_ip_addr_;
-  int radar_port_;
   std::string frame_id_;
 
-  int sockfd_; // socket file descriptor
-  struct sockaddr_in sockaddr_;
-  char buffer_[RADAR_MSG_LEN];
-
-  struct sockaddr_in destaddr_;
+  std::unique_ptr<ainstein_radar_drivers::RadarDriverK79> driver_;
   
   bool is_running_;
   std::unique_ptr<std::thread> thread_;
