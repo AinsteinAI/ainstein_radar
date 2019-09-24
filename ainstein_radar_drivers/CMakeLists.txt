@@ -74,9 +74,11 @@ add_dependencies(radardata_range_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
 target_link_libraries(radardata_range_filter_node ${catkin_LIBRARIES})
 
 add_library(radardata_range_filter_nodelet src/radardata_range_filter_nodelet.cpp src/radardata_range_filter.cpp)
+add_dependencies(radardata_range_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radardata_range_filter_nodelet ${catkin_LIBRARIES})
 
 add_executable(radar_target_array_to_point_cloud_node src/radar_target_array_to_point_cloud_node.cpp src/radar_target_array_to_point_cloud.cpp)
+add_dependencies(radar_target_array_to_point_cloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_point_cloud_node ${catkin_LIBRARIES})
 
 install(TARGETS
