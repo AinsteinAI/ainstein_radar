@@ -1,0 +1,7 @@
+<library path="libradardata_range_filter_nodelet">
+  <class name="ainstein_radar_filters/radardata_range_filter_nodelet" type="NodeletRadarDataRangeFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      RadarTargetArray range filter nodelet.
+    </description>
+  </class>
+</library>

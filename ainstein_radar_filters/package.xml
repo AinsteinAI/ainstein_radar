@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ainstein_radar_drivers</name>
+  <name>ainstein_radar_filters</name>
   <version>1.0.0</version>
-  <description>ROS drivers (interfaces) and nodes for Ainstein radars.</description>
+  <description>Filtering and data transformation utilities for radar data.</description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
   <author>Nick Rotella</author>
   <license>BSD</license>
@@ -13,15 +13,13 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
-  <depend>can_msgs</depend>
-  <depend>socketcan_bridge</depend>
   <depend>ainstein_radar_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>nodelet</depend>
-  
+
   <export>
-    <nodelet plugin="${prefix}/plugins/nodelet_k79.xml" />
-    <nodelet plugin="${prefix}/plugins/nodelet_t79_bsd.xml" />
+    <nodelet plugin="${prefix}/plugins/nodelet_radardata_to_pointcloud.xml" />
+    <nodelet plugin="${prefix}/plugins/nodelet_radardata_range_filter.xml" />
   </export>
 
 </package>
