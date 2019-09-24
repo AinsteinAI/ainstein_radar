@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2019-09-24)
+------------------
 * Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar
 * Minor fix to SDF and change default radar frame
   Updated the SDF file to use the correct dynamic library (was using old

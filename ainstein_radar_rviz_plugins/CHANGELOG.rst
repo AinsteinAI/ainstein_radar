@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2019-09-24)
+------------------
 * Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar
 * Add RadarInfo RViz message filter display, compiles
   Added a message filter display for RadarInfo messages in RViz. It

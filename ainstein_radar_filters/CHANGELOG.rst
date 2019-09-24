@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2019-09-24)
+------------------
 * Refactor filters into separate subpkg, fix bug
   Created subpackage ainstein_radar_filters for radar filters and
   conversions, moved all filters from ainstein_radar_drivers into this

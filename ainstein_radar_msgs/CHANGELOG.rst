@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2019-09-24)
+------------------
 * Minor, remove unnecessary install target for radar_msgs
 * Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar
 * Add ainstein_radar_msgs/RadarInfo msg definition
