@@ -1,0 +1,15 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package ainstein_radar_gazebo_plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar
+* Minor fix to SDF and change default radar frame
+  Updated the SDF file to use the correct dynamic library (was using old
+  package) and changed the default radar sensor frame to base_link.
+* Refactor Gazebo plugins subpkg as part of metapkg
+* Migrate old gazebo_radar_sensor_plugin to new ainstein_radar_gazebo_plugins subpkg
+  Currently will not compile, requires modifcation to use new
+  ainstein_radar package.
+* Contributors: Nick Rotella
