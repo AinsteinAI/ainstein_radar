@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.2 (2019-09-25)
+------------------
 * Remove unused includes causing dependency issues
 * Contributors: Nick Rotella
 

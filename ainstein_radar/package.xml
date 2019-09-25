@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ainstein_radar</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>ROS support for Ainstein radar sensors.</description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
   <author>Nick Rotella</author>
