@@ -2,6 +2,11 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove unused includes causing dependency issues
+* Contributors: Nick Rotella
+
 1.0.1 (2019-09-24)
 ------------------
 * Refactor filters into separate subpkg, fix bug

@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.1 (2019-09-24)
 ------------------
 * Minor, remove unnecessary install target for radar_msgs
