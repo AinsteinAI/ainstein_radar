@@ -3,8 +3,6 @@
 
 #include <ros/ros.h>
 #include <can_msgs/Frame.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_msgs/RadarAlarmArray.h>
 
