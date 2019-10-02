@@ -130,7 +130,7 @@ namespace ainstein_radar_filters
     ROS_DEBUG_STREAM( "State post-update: " << state_post_ );
     
     // Update the state covariance:
-    state_post_.cov = ( Eigen::Matrix4d::Identity() - K_ * H_ ) * state_pre_.cov.transpose();
+    state_post_.cov = ( Eigen::Matrix4d::Identity() - K_ * H_ ) * state_pre_.cov;
 
     // Copy state post to state pre for next update:
     state_pre_ = state_post_;
