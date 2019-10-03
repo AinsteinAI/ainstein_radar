@@ -2,6 +2,14 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor bug fix in tracking filter update
+  Fixed a small bug in the Kalman Filter state covariance update equation
+  which had an extra transpose in it. This likely didn't affect filter
+  performance noticeably because it only affected off-diagonal elements.
+* Contributors: Nick Rotella
+
 1.0.2 (2019-09-25)
 ------------------
 
