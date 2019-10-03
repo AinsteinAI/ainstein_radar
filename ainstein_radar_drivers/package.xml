@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ainstein_radar_drivers</name>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <description>ROS drivers (interfaces) and nodes for Ainstein radars.</description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
   <author>Nick Rotella</author>
