@@ -109,6 +109,11 @@ namespace ainstein_radar_rviz_plugins
   
   RadarTargetArrayDisplay::~RadarTargetArrayDisplay()
   {
+    // Clear the content of the visuals:
+    for( auto& v : visuals_ )
+      {
+	v->clearMessage();
+      }
   }
 
 // Set up class and call superclass onInitialize().
