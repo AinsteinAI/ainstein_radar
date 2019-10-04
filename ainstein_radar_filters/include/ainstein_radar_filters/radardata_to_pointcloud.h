@@ -5,7 +5,7 @@
 #include <geometry_msgs/Twist.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
-
+#include <ainstein_radar_filters/pcl_point_radar_target.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 
 namespace ainstein_radar_filters
@@ -18,7 +18,7 @@ public:
 			 ros::NodeHandle node_handle_private );
   ~RadarDataToPointCloud(){}
 
-  pcl::PointXYZ radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target );
+  PointRadarTarget radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target );
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     
   void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
@@ -26,7 +26,7 @@ public:
   double solveForAngle( double x, double y, double z );
   
 private:
-  pcl::PointCloud<pcl::PointXYZ> pcl_;
+  pcl::PointCloud<PointRadarTarget> pcl_;
   sensor_msgs::PointCloud2 cloud_msg_;
     
   ros::NodeHandle nh_;

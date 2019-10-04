@@ -220,15 +220,24 @@ void RadarDataToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarT
   pub_pcl_.publish( cloud_msg_ );
 } 
 
-pcl::PointXYZ RadarDataToPointCloud::radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target )
+PointRadarTarget RadarDataToPointCloud::radarDataToPclPoint( const ainstein_radar_msgs::RadarTarget &target )
 {
-  pcl::PointXYZ p;
+  PointRadarTarget p;
+
+  // Fill in the Cartesian position as for a normal cloud:
   p.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
     * target.range;
   p.y = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
     * target.range;
   p.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
 
+  // Fill in the radar data:
+  p.snr = target.snr;
+  p.range = target.range;
+  p.speed = target.speed;
+  p.azimuth = target.azimuth;
+  p.elevation = target.elevation;
+  
   return p;
 }
 

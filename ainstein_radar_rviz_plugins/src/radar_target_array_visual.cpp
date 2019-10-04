@@ -64,8 +64,6 @@ RadarTargetArrayVisual::~RadarTargetArrayVisual()
   // Clear the visual:
   radar_target_visuals_.clear();
 
-  ROS_INFO("GOT HERE VISUAL DESTRUCTOR\n");
-  
   // Destroy the frame node since we don't need it anymore.
   scene_manager_->destroySceneNode( frame_node_ );
 }
