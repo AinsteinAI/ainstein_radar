@@ -27,21 +27,21 @@
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 
-#include "ainstein_radar_filters/radardata_to_pointcloud.h"
+#include "ainstein_radar_filters/radar_target_array_speed_filter.h"
 
-class NodeletRadarToPcl : public nodelet::Nodelet
+class NodeletRadarTargetArraySpeedFilter : public nodelet::Nodelet
 {
 public:
-  NodeletRadarToPcl( void ) {}
-  ~NodeletRadarToPcl( void ) {}
+  NodeletRadarTargetArraySpeedFilter( void ) {}
+  ~NodeletRadarTargetArraySpeedFilter( void ) {}
   
   virtual void onInit( void )
   {
-    radar_to_pcl_ptr_.reset( new ainstein_radar_filters::RadarDataToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
+    radar_speed_filter_ptr_.reset( new ainstein_radar_filters::RadarTargetArraySpeedFilter( getNodeHandle(), getPrivateNodeHandle() ) );
   }
 
 private:
-  std::unique_ptr<ainstein_radar_filters::RadarDataToPointCloud> radar_to_pcl_ptr_;
+  std::unique_ptr<ainstein_radar_filters::RadarTargetArraySpeedFilter> radar_speed_filter_ptr_;
 };
 
-PLUGINLIB_EXPORT_CLASS( NodeletRadarToPcl, nodelet::Nodelet )
+PLUGINLIB_EXPORT_CLASS( NodeletRadarTargetArraySpeedFilter, nodelet::Nodelet )
