@@ -39,16 +39,17 @@ namespace ainstein_radar_filters
     sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
 					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
 					     this );
+    nh_private_.param( "fixed_frame", fixed_frame_, std::string( "map" ) );  
   }
 
   void RadarTargetArrayToPointCloud::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
   {
     // Get the data frame ID and look up the corresponding tf transform:
     Eigen::Affine3d tf_sensor_to_world;
-    if( buffer_tf_.canTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) )
+    if( buffer_tf_.canTransform( fixed_frame_, msg.header.frame_id, ros::Time( 0 ) ) )
       {
 	tf_sensor_to_world =
-	  tf2::transformToEigen(buffer_tf_.lookupTransform( "map", msg.header.frame_id, ros::Time( 0 ) ) );
+	  tf2::transformToEigen(buffer_tf_.lookupTransform( fixed_frame_, msg.header.frame_id, ros::Time( 0 ) ) );
       }
     else
       {
