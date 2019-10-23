@@ -2,7 +2,7 @@
   <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
     <param name="can_device" value="can0" />
   </node>
-  <node name="t79_node" pkg="ainstein_radar_drivers" type="t79_node" required="true" >
-    <param name="can_id" value="0" />
+  <node name="t79_bsd_node" pkg="ainstein_radar_drivers" type="t79_bsd_node" required="true" >
+    <param name="radar_type" value="0" />
   </node>
 </launch>

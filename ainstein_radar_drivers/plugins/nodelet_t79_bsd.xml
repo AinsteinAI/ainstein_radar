@@ -1,7 +1,0 @@
-<library path="libt79_bsd_nodelet">
-  <class name="ainstein_radar_drivers/t79_bsd_nodelet" type="NodeletT79BSD" base_class_type="nodelet::Nodelet">
-    <description>
-      T79 BSD interface nodelet.
-    </description>
-  </class>
-</library>

@@ -21,7 +21,6 @@
   
   <export>
     <nodelet plugin="${prefix}/plugins/nodelet_k79.xml" />
-    <nodelet plugin="${prefix}/plugins/nodelet_t79_bsd.xml" />
   </export>
 
 </package>

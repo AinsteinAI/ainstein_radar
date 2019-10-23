@@ -1,7 +1,7 @@
 /*
   Copyright <2018-2019> <Ainstein, Inc.>
 
-  Redistribution and use in source and binary forms, with or without modification, are permitted
+  Rrosedistribution and use in source and binary forms, with or without modification, are permitted
   provided that the following conditions are met:
 
   1. Redistributions of source code must retain the above copyright notice, this list of
@@ -74,7 +74,7 @@ void RadarInterfaceT79BSD::startRadar( void )
     can_frame.data[6] = ConfigT79BSD::RESERVED;
     can_frame.data[7] = ConfigT79BSD::RESERVED;
 
-    ROS_INFO( "starting data streaming for %s", name_.c_str() );
+    ROS_DEBUG( "starting data streaming for %s", name_.c_str() );
     pub_radar_cmd_.publish( can_frame );
 }
 
@@ -97,7 +97,7 @@ void RadarInterfaceT79BSD::stopRadar( void )
     can_frame.data[6] = ConfigT79BSD::RESERVED;
     can_frame.data[7] = ConfigT79BSD::RESERVED;
 
-    ROS_INFO( "stopping data streaming for %s", name_.c_str() );
+    ROS_DEBUG( "stopping data streaming for %s", name_.c_str() );
     pub_radar_cmd_.publish( can_frame );
 }
 
@@ -106,12 +106,12 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out heartbeat frame 1 messages:
     if( msg.id == ConfigT79BSD::heartbeat_1.at( type_ ) )
     {
-      ROS_INFO( "received hearbeat frame 1 from %s", name_.c_str() );
+      ROS_DEBUG( "received hearbeat frame 1 from %s", name_.c_str() );
     }
     // Parse out heartbeat frame 2 messages:
     if( msg.id == ConfigT79BSD::heartbeat_2.at( type_ ) )
     {
-      ROS_INFO( "received hearbeat frame 2 from %s", name_.c_str() );
+      ROS_DEBUG( "received hearbeat frame 2 from %s", name_.c_str() );
     }
     // Parse out start radar response messages:
     if( msg.id == ConfigT79BSD::start_stop_ret.at( type_ ) )
@@ -121,11 +121,11 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
         switch( start_stop_byte )
         {
         case ConfigT79BSD::RADAR_START:
-            ROS_INFO( "received radar start from %s", name_.c_str() );
+            ROS_DEBUG( "received radar start from %s", name_.c_str() );
             break;
 
         case ConfigT79BSD::RADAR_STOP:
-            ROS_INFO( "received radar stop from %s", name_.c_str() );
+            ROS_DEBUG( "received radar stop from %s", name_.c_str() );
             break;
 
         default:
@@ -136,7 +136,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out start of frame messages (KANZA comes first in BSD firmware):
     else if( msg.id == ConfigT79BSD::start_frame.at( type_ ) )
     {
-        ROS_INFO( "received start frame from %s", name_.c_str() );
+        ROS_DEBUG( "received start frame from %s", name_.c_str() );
         // clear radar data message arrays here
         radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
         radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
@@ -149,7 +149,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out end of frame messages:
     else if( msg.id == ConfigT79BSD::stop_frame.at( type_ ) )
     {
-        ROS_INFO( "received stop frame from %s", name_.c_str() );
+        ROS_DEBUG( "received stop frame from %s", name_.c_str() );
         pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
         pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
         pub_radar_data_alarms_.publish( radar_data_msg_ptr_alarms_ );
@@ -157,7 +157,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out raw target data messages:
     else if( msg.id == ConfigT79BSD::raw_id.at( type_ ) )
     {
-        ROS_INFO( "received raw target from %s", name_.c_str() );
+        ROS_DEBUG( "received raw target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
         ainstein_radar_msgs::RadarTarget target;
@@ -181,7 +181,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out tracked target data messages:
     else if( msg.id == ConfigT79BSD::tracked_id.at( type_ ) )
     {
-        ROS_INFO( "received tracked target from %s", name_.c_str() );
+        ROS_DEBUG( "received tracked target from %s", name_.c_str() );
 
         // Extract the target ID and data from the message:
         ainstein_radar_msgs::RadarTarget target;
@@ -197,7 +197,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     // Parse out BSD data messages:
     else if( msg.id == ConfigT79BSD::bsd_id.at( type_ ) )
     {
-        ROS_INFO( "received BSD from %s", name_.c_str() );
+        ROS_DEBUG( "received BSD from %s", name_.c_str() );
 
         // Extract alarm data from the message:
         ainstein_radar_msgs::RadarAlarm alarms;
@@ -209,7 +209,7 @@ void RadarInterfaceT79BSD::dataMsgCallback( const can_msgs::Frame &msg )
     }
     else
     {
-        //ROS_ERROR( "received message with unknown id: %02x", msg.id );
+      ROS_DEBUG( "received message with unknown id: %02x", msg.id );
     }
 }
 

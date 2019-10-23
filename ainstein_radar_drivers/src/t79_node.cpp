@@ -24,24 +24,26 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <nodelet/nodelet.h>
-#include <pluginlib/class_list_macros.h>
-#include "ainstein_radar_drivers/radar_interface_t79_bsd.h"
+#include "ainstein_radar_drivers/radar_interface_t79.h"
 
-class NodeletT79BSD : public nodelet::Nodelet
+int main( int argc, char** argv )
 {
-public:
-  NodeletT79BSD( void ) {}
-  ~NodeletT79BSD( void ) {}
+  // Initialize ROS and the default node name:
+  ros::init( argc, argv, "t79_node" );
+  ros::NodeHandle node_handle;
+  ros::NodeHandle node_handle_private( "~" );
+  
+  // Parse the command line arguments for radar parameters:
+  if( argc < 1 )
+    {
+      std::cerr << "Usage: rosrun ainstein_radar_drivers t79_node [_can_id:=CAN_ID] [_frame_id:=RADAR_FRAME_ID]" << std::endl;
+      return -1;
+    }
 
-  virtual void onInit( void )
-  {
-    NODELET_DEBUG("Initializing T79 BSD interface nodelet");
-    intf_ptr_.reset( new ainstein_radar_drivers::RadarInterfaceT79BSD( getNodeHandle(), getPrivateNodeHandle() ) );
-  }
+  // Create the K79 interface and launch the data thread:
+  ainstein_radar_drivers::RadarInterfaceT79 t79_intf( node_handle, node_handle_private );
+  
+  ros::spin();
 
-  private:
-  std::unique_ptr<ainstein_radar_drivers::RadarInterfaceT79BSD> intf_ptr_;
-};
-
-PLUGINLIB_EXPORT_CLASS( NodeletT79BSD, nodelet::Nodelet )
+  return 0;
+}
