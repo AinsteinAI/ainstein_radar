@@ -1,0 +1,9 @@
+<library path="lib/libk79_3d_nodelet">
+  <class name="ainstein_radar_drivers/k79_3d_nodelet"
+	 type="NodeletK793D"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      K79-3D interface nodelet.
+    </description>
+  </class>
+</library>

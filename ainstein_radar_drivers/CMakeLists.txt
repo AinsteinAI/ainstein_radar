@@ -42,6 +42,9 @@ add_executable(k79_3d_node src/k79_3d_node.cpp src/radar_interface_k79_3d.cpp)
 add_dependencies(k79_3d_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(k79_3d_node ${catkin_LIBRARIES})
 
+add_library(k79_3d_nodelet src/k79_3d_nodelet.cpp src/radar_interface_k79_3d.cpp)
+target_link_libraries(k79_3d_nodelet ${catkin_LIBRARIES})
+
 add_executable(t79_node src/t79_node.cpp src/radar_interface_t79.cpp)
 add_dependencies(t79_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(t79_node ${catkin_LIBRARIES})
@@ -54,6 +57,7 @@ install(TARGETS
   k79_node
   k79_nodelet
   k79_3d_node
+  k79_3d_nodelet
   t79_node
   t79_bsd_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
