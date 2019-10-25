@@ -22,7 +22,7 @@ generate_dynamic_reconfigure_options(
   cfg/RangeFilter.cfg
   )
 
-catkin_package()
+catkin_package(INCLUDE_DIRS include)
 
 include_directories(
  include
@@ -76,7 +76,7 @@ install(TARGETS
   )
 
 ## Install project namespaced headers
-install(DIRECTORY include/
+install(DIRECTORY include
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
     PATTERN ".svn" EXCLUDE)

@@ -78,20 +78,4 @@ namespace ainstein_radar_filters
     pub_cloud_.publish( cloud_msg_ );
   } 
   
-  void RadarTargetArrayToPointCloud::radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget &target,
-							    PointRadarTarget& pcl_point )
-  {
-    pcl_point.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
-      * target.range;
-    pcl_point.y = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
-      * target.range;
-    pcl_point.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
-
-    pcl_point.snr = target.snr;
-    pcl_point.range = target.range;
-    pcl_point.speed = target.speed;
-    pcl_point.azimuth = target.azimuth;
-    pcl_point.elevation = target.elevation;
-  }
-
 } // namespace ainstein_radar_filters

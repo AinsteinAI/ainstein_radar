@@ -19,8 +19,23 @@ public:
 				ros::NodeHandle node_handle_private );
   ~RadarTargetArrayToPointCloud(){}
 
-  void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget &target,
-			      PointRadarTarget& pcl_point );
+  // Made the static to expose radar data to 3d point conversion, however this should
+  // probably be moved to a utilities class with other such simple conversions.
+  static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget &target,
+				     PointRadarTarget& pcl_point )
+  {
+    pcl_point.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
+      * target.range;
+    pcl_point.y = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
+      * target.range;
+    pcl_point.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
+
+    pcl_point.snr = target.snr;
+    pcl_point.range = target.range;
+    pcl_point.speed = target.speed;
+    pcl_point.azimuth = target.azimuth;
+    pcl_point.elevation = target.elevation;
+  }
   
   void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
   
