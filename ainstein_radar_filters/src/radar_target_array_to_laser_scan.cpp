@@ -49,7 +49,7 @@ namespace ainstein_radar_filters
 							 laser_scan_msg_.angle_min ) /
 						       laser_scan_msg_.angle_increment ) ) + 1;
     laser_scan_msg_.ranges.resize( laser_scan_length_, std::numeric_limits<float>::infinity() );
-    laser_scan_msg_.intensities.clear(); // do not fill intensities
+    laser_scan_msg_.intensities.resize( laser_scan_length_, 0.0 );
 
     // Subscribe to radar data and radar velocity topics:
     sub_radar_data_ = nh_.subscribe( "radar_in", 10,
@@ -78,6 +78,7 @@ namespace ainstein_radar_filters
 	    if( t.range < laser_scan_msg_.ranges.at( beam_ind ) )
 	      {
 		laser_scan_msg_.ranges.at( beam_ind ) = static_cast<float>( t.range );
+		laser_scan_msg_.intensities.at( beam_ind ) = static_cast<float>( t.snr );
 	      }
 	  }
       }
