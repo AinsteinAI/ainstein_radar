@@ -24,22 +24,22 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "ainstein_radar_filters/radardata_to_laserscan.h"
+#include "ainstein_radar_filters/radar_target_array_to_laser_scan.h"
 
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "radardata_to_laserscan_node" );
+  ros::init( argc, argv, "radar_target_array_to_laser_scan" );
 
   // Usage:
   if( argc < 1 )
     {
-      std::cerr << "Usage: rosrun ainstein_radar_filters radardata_to_laserscan_node" << std::endl;
+      std::cerr << "Usage: rosrun ainstein_radar_filters radar_target_array_to_laser_scan_node" << std::endl;
       return -1;
     }
     
   // Create node to publish target laser scan:
-  ainstein_radar_filters::RadarDataToLaserScan radardata_to_laserscan;
+  ainstein_radar_filters::RadarTargetArrayToLaserScan radar_target_array_to_laser_scan;
 
   ros::spin();
 

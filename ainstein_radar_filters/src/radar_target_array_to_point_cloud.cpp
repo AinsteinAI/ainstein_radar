@@ -35,7 +35,7 @@ namespace ainstein_radar_filters
     nh_private_( node_handle_private ),
     listen_tf_( buffer_tf_ )
   {
-    pub_cloud_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud", 10 );
+    pub_cloud_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud_out", 10 );
     sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
 					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
 					     this );
