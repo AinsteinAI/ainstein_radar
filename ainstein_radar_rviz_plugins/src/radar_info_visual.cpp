@@ -58,9 +58,9 @@ namespace ainstein_radar_rviz_plugins
 
 void RadarInfoVisual::setMessage( const ainstein_radar_msgs::RadarInfo::ConstPtr& msg )
 {
-  fov_cone_azimuth.setScale( Ogre::Vector3( 0.5 * msg->fov_azimuth,
-					    0.5 * msg->fov_azimuth,
-					    0.5 * msg->fov_azimuth ) );
+  fov_cone_azimuth.setScale( Ogre::Vector3( 0.5 * ( msg->azimuth_max - msg->azimuth_min ),
+					    0.5 * ( msg->azimuth_max - msg->azimuth_min ),
+					    0.5 * ( msg->azimuth_max - msg->azimuth_min ) ) );
 
   // Rotate the cone to the proper alignment:
   Ogre::Matrix3 rot_mat;
