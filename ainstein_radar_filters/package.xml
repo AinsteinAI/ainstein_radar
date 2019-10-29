@@ -2,13 +2,15 @@
 <package format="2">
   <name>ainstein_radar_filters</name>
   <version>1.0.3</version>
-  <description>Filtering and data transformation utilities for radar data.</description>
+  <description>
+    Filtering and data conversion utilities for radar data.
+  </description>
   <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
   <author>Nick Rotella</author>
   <license>BSD</license>
-
-  <url type="website">https://ainstein.ai/</url>
+  <url type="website">https://wiki.ros.org/ainstein_radar_filters</url>
   <url type="repository">https://github.com/AinsteinAI/ainstein_radar</url>
+  <url type="bugtracker">https://github.com/AinsteinAI/ainstein_radar/issues</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
