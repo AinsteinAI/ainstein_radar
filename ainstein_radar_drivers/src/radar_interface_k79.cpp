@@ -45,7 +45,8 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 				      ros::NodeHandle node_handle_private ) :
   nh_( node_handle ),
   nh_private_( node_handle_private ),
-  radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray )
+  radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
   std::string host_ip_addr;
@@ -77,8 +78,45 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
   is_running_ = true;
   mutex_.unlock();
 
-  // Advertise the K-79 data using the ROS node handle:
+  // Advertise the K79 raw targets data:
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
+
+  // Advertise the K79 sensor info (LATCHED):
+  pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
+
+  // Form the RadarInfo message which is fixed for a given sensor:
+  radar_info_msg_ptr_->header.stamp = ros::Time::now();
+  radar_info_msg_ptr_->header.frame_id = frame_id_;
+
+  radar_info_msg_ptr_->update_rate = 10.0;
+  radar_info_msg_ptr_->max_num_targets = 1000;
+  
+  radar_info_msg_ptr_->range_min = 0.0;
+  radar_info_msg_ptr_->range_max = 40.0;
+  
+  radar_info_msg_ptr_->speed_min = 0.0;
+  radar_info_msg_ptr_->speed_max = 0.0;
+
+  radar_info_msg_ptr_->azimuth_min = -40.0;
+  radar_info_msg_ptr_->azimuth_max = 40.0;
+
+  radar_info_msg_ptr_->elevation_min = -4.0;
+  radar_info_msg_ptr_->elevation_max = 4.0;
+
+  radar_info_msg_ptr_->range_resolution = 0.0;
+  radar_info_msg_ptr_->range_accuracy = 40.0;
+  
+  radar_info_msg_ptr_->speed_resolution = 0.0;
+  radar_info_msg_ptr_->speed_accuracy = 0.1;
+
+  radar_info_msg_ptr_->azimuth_resolution = 0.0;
+  radar_info_msg_ptr_->azimuth_accuracy = 1.0;
+
+  radar_info_msg_ptr_->elevation_resolution = 0.0;
+  radar_info_msg_ptr_->elevation_accuracy = 0.0;
+  
+  // Publish the RadarInfo message once since it's latched:
+  pub_radar_info_.publish( radar_info_msg_ptr_ );
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)

@@ -7,9 +7,10 @@
 #include <memory>
 #include <thread>
 
-#include <ros/ros.h>
+#include <ainstein_radar_msgs/RadarInfo.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_drivers/radar_driver_k79.h>
+#include <ros/ros.h>
 
 namespace ainstein_radar_drivers
 {
@@ -47,8 +48,10 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_raw_;
+  ros::Publisher pub_radar_info_;
 
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
+  boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;      
 };
 
 } // namespace ainstein_radar_drivers
