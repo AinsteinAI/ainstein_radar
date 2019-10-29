@@ -2,6 +2,26 @@
 Changelog for package ainstein_radar_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor fixes to package XML formatting
+  Fixed the package XML file formatting and added missing content to
+  conform to the suggested style guidelines.
+* Use custom PCL radar point for data converter class
+  Switched from using the normal pcl::PointXYZ type to the custom radar
+  specific ainstein_radar_filters::PointRadarTarget type in the radar to
+  point cloud conversion class. Tested on radar data and verified that it
+  allows coloring clouds according to additional radar-specific fields eg
+  range, speed, etc. This permits using existing point cloud-based filter
+  node/lets to filter based on radar parameters, deprecating eg the range
+  filter class in this repo.
+  Also removed a debug printout from the rviz plugin class.
+* Ensure RadarTargetArray visual cleared on hide
+  Fixed bug so that the RadarTargetDisplay visuals get cleared when the
+  display for them is hidden. Still fails to work sometimes, maybe there
+  is a race condition - return to this later.
+* Contributors: Nick Rotella
+
 1.0.3 (2019-10-03)
 ------------------
 

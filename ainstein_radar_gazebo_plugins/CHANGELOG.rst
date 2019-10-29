@@ -2,6 +2,13 @@
 Changelog for package ainstein_radar_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor fixes to package XML formatting
+  Fixed the package XML file formatting and added missing content to
+  conform to the suggested style guidelines.
+* Contributors: Nick Rotella
+
 1.0.3 (2019-10-03)
 ------------------
 

@@ -2,6 +2,36 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor fixes to package XML formatting
+  Fixed the package XML file formatting and added missing content to
+  conform to the suggested style guidelines.
+* Add simple T79 (ZOI) configuration GUI
+  Added a simple Tk-based configuration GUI for the non-BSD T79 firmware
+  (ZOI or Zone Of Interest firmware).  This GUI allows setting the
+  "Nonvolatile Radar Parameters Command" which includes CAN ID, baudrate,
+  and self start behavior.
+* Add K79-3D nodelet
+  Added a nodelet for K79-3D to enable zero-copy message passing within
+  the same nodelet manager.  Also added a launch file for testing this
+  nodelet. Tested on hardware and working.
+* Add non-BSD T79 node for ZOI firmware/deprecate BSD
+  Added a new interface and node for the new ZOI (Zone of Interest) T79
+  firmware and deprecated the old T79 BSD interface and node by moving
+  them as needed. Both tested and working, however nodelets are not yet
+  available due to runtime issues involving the virtual base class.
+  The new T79 node allows setting the zone of interest (min/max range,
+  min/max azimuth angle) via ROS dynamic reconfigure GUI. The new node
+  also supports up to 10 radars at once, specifying the CAN ID of each
+  as a fixed node parameter. To set the CAN ID for a radar, currently
+  this must be done outside ROS. A service call may implement this soon.
+* Bug fix in K79-3D interface, working in parking lot
+  Fixed a few bugs in the parsing of K79-3D data packets which caused the
+  data to be interpreted incorrectly resulting in nonphysical range and
+  angles. Tested in the parking lot and seems to be working properly.
+* Contributors: Nick Rotella
+
 1.0.3 (2019-10-03)
 ------------------
 
