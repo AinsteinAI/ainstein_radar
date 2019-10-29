@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2019-10-29)
+------------------
 * Minor fixes to package XML formatting
   Fixed the package XML file formatting and added missing content to
   conform to the suggested style guidelines.

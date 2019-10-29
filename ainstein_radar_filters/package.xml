@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ainstein_radar_filters</name>
-  <version>1.0.3</version>
+  <version>1.1.0</version>
   <description>
     Filtering and data conversion utilities for radar data.
   </description>

@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2019-10-29)
+------------------
 * Minor, add radar SNR as laserscan intensities
 * Refactor pointcloud and laserscan converters
   Refactored the radar to pointcloud and laserscan conversion class and
