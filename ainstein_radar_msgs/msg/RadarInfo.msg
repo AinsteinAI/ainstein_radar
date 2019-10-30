@@ -34,7 +34,7 @@ Header header    # Header timestamp should be acquisition time of data
 float64 update_rate
 
 # The maximum number of detections (targets) the sensors can report.
-float64 max_num_targets
+uint16 max_num_targets
 
 #######################################################################
 #                    Physical sensing limits                          #

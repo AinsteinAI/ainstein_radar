@@ -35,7 +35,8 @@ namespace ainstein_radar_drivers
 				     node_handle_private,
 				     ros::this_node::getName(),
 				     "received_messages",
-				     "sent_messages" )
+				     "sent_messages" ),
+    radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
   {
     // Store the radar CAN ID:
     nh_private_.param( "can_id", can_id_, 0 );
@@ -47,6 +48,9 @@ namespace ainstein_radar_drivers
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
 
+    // Publish the RadarInfo message:
+    publishRadarInfo();
+    
     // Set up the CAN frame message:
     can_frame_msg_.header.frame_id = "0";
     can_frame_msg_.is_rtr = false;
@@ -214,6 +218,46 @@ namespace ainstein_radar_drivers
       {
         ROS_DEBUG( "received message with unknown id: %02x", msg.id );
       }
+  }
+
+  void RadarInterfaceT79::publishRadarInfo( void )
+  {    
+    // Advertise the T79 sensor info (LATCHED):
+    pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
+
+    // Form the RadarInfo message which is fixed for a given sensor:
+    radar_info_msg_ptr_->header.stamp = ros::Time::now();
+    radar_info_msg_ptr_->header.frame_id = frame_id_;
+
+    radar_info_msg_ptr_->update_rate = UPDATE_RATE;
+    radar_info_msg_ptr_->max_num_targets = MAX_NUM_TARGETS;
+  
+    radar_info_msg_ptr_->range_min = RANGE_MIN;
+    radar_info_msg_ptr_->range_max = RANGE_MAX;
+  
+    radar_info_msg_ptr_->speed_min = SPEED_MIN;
+    radar_info_msg_ptr_->speed_max = SPEED_MAX;
+
+    radar_info_msg_ptr_->azimuth_min = AZIMUTH_MIN;
+    radar_info_msg_ptr_->azimuth_max = AZIMUTH_MAX;
+
+    radar_info_msg_ptr_->elevation_min = ELEVATION_MIN;
+    radar_info_msg_ptr_->elevation_max = ELEVATION_MAX;
+
+    radar_info_msg_ptr_->range_resolution = RANGE_RES;
+    radar_info_msg_ptr_->range_accuracy = RANGE_ACC;
+  
+    radar_info_msg_ptr_->speed_resolution = SPEED_RES;
+    radar_info_msg_ptr_->speed_accuracy = SPEED_ACC;
+
+    radar_info_msg_ptr_->azimuth_resolution = AZIMUTH_RES;
+    radar_info_msg_ptr_->azimuth_accuracy = AZIMUTH_ACC;
+
+    radar_info_msg_ptr_->elevation_resolution = ELEVATION_RES;
+    radar_info_msg_ptr_->elevation_accuracy = ELEVATION_ACC;
+  
+    // Publish the RadarInfo message once since it's latched:
+    pub_radar_info_.publish( radar_info_msg_ptr_ );
   }
 
 } // namespace ainstein_drivers

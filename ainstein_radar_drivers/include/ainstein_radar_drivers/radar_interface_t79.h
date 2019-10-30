@@ -6,6 +6,7 @@
 
 #include "ainstein_radar_drivers/radar_interface.h"
 #include "ainstein_radar_drivers/ZoneOfInterestT79Config.h"
+#include <ainstein_radar_msgs/RadarInfo.h>
 
 namespace ainstein_radar_drivers
 {
@@ -48,7 +49,38 @@ namespace ainstein_radar_drivers
     // Misc. message IDs
     static const uint16_t RESERVED = 0xff; 
 
+    
+    // Radar specifications:
+    static constexpr double UPDATE_RATE = 20.0;
+    static constexpr int MAX_NUM_TARGETS = 64;
+    
+    static constexpr double RANGE_MIN = 0.5;
+    static constexpr double RANGE_MAX = 80.0;
+    
+    static constexpr double SPEED_MIN = -55.56;
+    static constexpr double SPEED_MAX = 55.56;
+    
+    static constexpr double AZIMUTH_MIN = -60.0;
+    static constexpr double AZIMUTH_MAX = 60.0;
+    
+    static constexpr double ELEVATION_MIN = -4.0;
+    static constexpr double ELEVATION_MAX = 4.0;
+    
+    static constexpr double RANGE_RES = 0.65;
+    static constexpr double RANGE_ACC = 0.3;
+    
+    static constexpr double SPEED_RES = 0.4;
+    static constexpr double SPEED_ACC = 0.13;
+    
+    static constexpr double AZIMUTH_RES = 0.0;
+    static constexpr double AZIMUTH_ACC = 0.4;
+    
+    static constexpr double ELEVATION_RES = 0.0;
+    static constexpr double ELEVATION_ACC = 0.0;
+
   private:
+    void publishRadarInfo( void );
+    
     void dataMsgCallback( const can_msgs::Frame &msg );
   
     can_msgs::Frame can_frame_msg_;
@@ -58,7 +90,10 @@ namespace ainstein_radar_drivers
   
     dynamic_reconfigure::Server<ainstein_radar_drivers::ZoneOfInterestT79Config> dyn_config_server_;
     ainstein_radar_drivers::ZoneOfInterestT79Config config_;
-  };
+
+    ros::Publisher pub_radar_info_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;      
+};
   
 } // namespace ainstein_drivers
 

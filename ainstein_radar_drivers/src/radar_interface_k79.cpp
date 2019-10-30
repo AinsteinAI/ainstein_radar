@@ -68,6 +68,9 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
 
+  // Publish the RadarInfo message:
+  publishRadarInfo();
+  
   // Create the radar driver object:
   driver_.reset( new RadarDriverK79( host_ip_addr, host_port,
 				     radar_ip_addr, radar_port ) );
@@ -80,43 +83,6 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 
   // Advertise the K79 raw targets data:
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
-
-  // Advertise the K79 sensor info (LATCHED):
-  pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
-
-  // Form the RadarInfo message which is fixed for a given sensor:
-  radar_info_msg_ptr_->header.stamp = ros::Time::now();
-  radar_info_msg_ptr_->header.frame_id = frame_id_;
-
-  radar_info_msg_ptr_->update_rate = 10.0;
-  radar_info_msg_ptr_->max_num_targets = 1000;
-  
-  radar_info_msg_ptr_->range_min = 0.0;
-  radar_info_msg_ptr_->range_max = 40.0;
-  
-  radar_info_msg_ptr_->speed_min = 0.0;
-  radar_info_msg_ptr_->speed_max = 0.0;
-
-  radar_info_msg_ptr_->azimuth_min = -40.0;
-  radar_info_msg_ptr_->azimuth_max = 40.0;
-
-  radar_info_msg_ptr_->elevation_min = -4.0;
-  radar_info_msg_ptr_->elevation_max = 4.0;
-
-  radar_info_msg_ptr_->range_resolution = 0.0;
-  radar_info_msg_ptr_->range_accuracy = 40.0;
-  
-  radar_info_msg_ptr_->speed_resolution = 0.0;
-  radar_info_msg_ptr_->speed_accuracy = 0.1;
-
-  radar_info_msg_ptr_->azimuth_resolution = 0.0;
-  radar_info_msg_ptr_->azimuth_accuracy = 1.0;
-
-  radar_info_msg_ptr_->elevation_resolution = 0.0;
-  radar_info_msg_ptr_->elevation_accuracy = 0.0;
-  
-  // Publish the RadarInfo message once since it's latched:
-  pub_radar_info_.publish( radar_info_msg_ptr_ );
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)
@@ -163,4 +129,44 @@ void RadarInterfaceK79::mainLoop(void)
     }
 }
 
+  void RadarInterfaceK79::publishRadarInfo( void )
+  {    
+    // Advertise the K79 sensor info (LATCHED):
+    pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
+
+    // Form the RadarInfo message which is fixed for a given sensor:
+    radar_info_msg_ptr_->header.stamp = ros::Time::now();
+    radar_info_msg_ptr_->header.frame_id = frame_id_;
+
+    radar_info_msg_ptr_->update_rate = UPDATE_RATE;
+    radar_info_msg_ptr_->max_num_targets = MAX_NUM_TARGETS;
+  
+    radar_info_msg_ptr_->range_min = RANGE_MIN;
+    radar_info_msg_ptr_->range_max = RANGE_MAX;
+  
+    radar_info_msg_ptr_->speed_min = SPEED_MIN;
+    radar_info_msg_ptr_->speed_max = SPEED_MAX;
+
+    radar_info_msg_ptr_->azimuth_min = AZIMUTH_MIN;
+    radar_info_msg_ptr_->azimuth_max = AZIMUTH_MAX;
+
+    radar_info_msg_ptr_->elevation_min = ELEVATION_MIN;
+    radar_info_msg_ptr_->elevation_max = ELEVATION_MAX;
+
+    radar_info_msg_ptr_->range_resolution = RANGE_RES;
+    radar_info_msg_ptr_->range_accuracy = RANGE_ACC;
+  
+    radar_info_msg_ptr_->speed_resolution = SPEED_RES;
+    radar_info_msg_ptr_->speed_accuracy = SPEED_ACC;
+
+    radar_info_msg_ptr_->azimuth_resolution = AZIMUTH_RES;
+    radar_info_msg_ptr_->azimuth_accuracy = AZIMUTH_ACC;
+
+    radar_info_msg_ptr_->elevation_resolution = ELEVATION_RES;
+    radar_info_msg_ptr_->elevation_accuracy = ELEVATION_ACC;
+  
+    // Publish the RadarInfo message once since it's latched:
+    pub_radar_info_.publish( radar_info_msg_ptr_ );
+  }
+  
 } // namespace ainstein_radar_drivers
