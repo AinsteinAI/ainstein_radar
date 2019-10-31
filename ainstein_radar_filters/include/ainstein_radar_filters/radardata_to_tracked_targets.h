@@ -1,13 +1,15 @@
 #ifndef RADAR_DATA_TO_TRACKED_TARGETS_H_
 #define RADAR_DATA_TO_TRACKED_TARGETS_H_
 
-#include <dynamic_reconfigure/server.h>
-#include <ros/ros.h>
 #include <thread>
 
 #include <ainstein_radar_filters/radar_target_kf.h>
 #include <ainstein_radar_filters/TrackingFilterConfig.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <dynamic_reconfigure/server.h>
+#include <jsk_recognition_msgs/BoundingBoxArray.h>
+#include <ros/ros.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 namespace ainstein_radar_filters
 {
@@ -59,6 +61,20 @@ namespace ainstein_radar_filters
     
     void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
 
+    jsk_recognition_msgs::BoundingBox getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets );
+
+    Eigen::Vector3d radarTargetToPoint( const ainstein_radar_msgs::RadarTarget& target )
+    {
+      Eigen::Vector3d point;
+      point.x() = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
+	* target.range;
+      point.y() = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
+	* target.range;
+      point.z() = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
+
+      return point;
+    }
+    
     static const int max_tracked_targets;
     
   private:
@@ -74,11 +90,16 @@ namespace ainstein_radar_filters
     
     ros::Subscriber sub_radar_data_raw_;
     ros::Publisher pub_radar_data_tracked_;
-    ainstein_radar_msgs::RadarTargetArray msg_tracked_;
+    ros::Publisher pub_bounding_boxes_;
     
+    ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
+    jsk_recognition_msgs::BoundingBoxArray msg_tracked_boxes_;
+
     std::unique_ptr<std::thread> filter_update_thread_;
     
     std::vector<ainstein_radar_filters::RadarTargetKF> filters_;
+    std::vector<ainstein_radar_msgs::RadarTargetArray> filter_targets_;
     std::vector<int> meas_count_vec_;
   };
 
