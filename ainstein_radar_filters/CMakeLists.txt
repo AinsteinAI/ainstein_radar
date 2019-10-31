@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   ainstein_radar_msgs
   dynamic_reconfigure
-  jsk_visualization
+  jsk_recognition_msgs
 )
 
 # Must be called after catkin_python_setup() and before catkin_package():

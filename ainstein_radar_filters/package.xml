@@ -18,7 +18,7 @@
   <depend>ainstein_radar_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>nodelet</depend>
-  <depend>jsk_visualization</depend>
+  <depend>jsk_recognition_msgs</depend>
 
   <export>
     <nodelet plugin="${prefix}/plugins/nodelet_radardata_to_pointcloud.xml" />
