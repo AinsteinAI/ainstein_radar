@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ainstein_radar_tools</name>
+  <version>1.0.3</version>
+  <description>Tools for monitoring and validating radar data.</description>
+  <maintainer email="nick.rotella@ainstein.ai">Nick Rotella</maintainer>
+  <author>Nick Rotella</author>
+  <license>BSD</license>
+
+  <url type="website">https://ainstein.ai/</url>
+  <url type="repository">https://github.com/AinsteinAI/ainstein_radar</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>pcl_ros</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>image_geometry</depend>
+  <depend>ainstein_radar_msgs</depend>
+  <depend>ainstein_radar_filters</depend>
+
+</package>

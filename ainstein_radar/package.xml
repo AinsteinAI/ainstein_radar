@@ -19,6 +19,7 @@
   <exec_depend>ainstein_radar_gazebo_plugins</exec_depend>
   <exec_depend>ainstein_radar_msgs</exec_depend>
   <exec_depend>ainstein_radar_rviz_plugins</exec_depend>
+  <exec_depend>ainstein_radar_tools</exec_depend>
 
   <export>
     <metapackage/>
