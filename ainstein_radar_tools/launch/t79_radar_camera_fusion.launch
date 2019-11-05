@@ -1,0 +1,40 @@
+<launch>
+  
+  <!-- Run the radar -->
+  <!-- <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" > -->
+  <!--   <param name="can_device" value="can0" /> -->
+  <!-- </node> -->
+  <!-- <node name="t79_node" pkg="ainstein_radar_drivers" type="t79_node" required="true" > -->
+  <!--   <param name="can_id" value="1" /> -->
+  <!-- </node> -->
+
+  <!-- Run the camera -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" />
+  
+  <!-- Run static TF broadcasters in place of URDF model -->
+  <node name="radar_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 map radar_frame 100" />
+  <node name="radar_to_camera_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 radar_frame camera_color_frame 100" />
+
+  <!-- Run the TensorFlow object detector node -->
+  <node pkg= "tensorflow_object_detector" name="detect_ros" type="detect_ros.py"  output="screen"> 
+    <remap from='image' to='/camera/color/image_raw'/>
+  </node>
+
+  <!-- Run the radar camera fusion node -->
+  <node name="radar_camera_fusion" pkg="ainstein_radar_tools" type="radar_camera_fusion_node" output="screen" >
+    <remap from="radar_topic" to="/t79_node/targets/raw" />
+    <remap from="objects_topic" to="/objects" />
+    <remap from="camera_topic" to="/camera/color/image_raw" />
+  </node>
+
+  <!-- Open an image viewer for the processed image -->
+  <node name="image_view" pkg="image_view" type="image_view" >
+    <remap from="image" to="/radar_camera_test/image_out" />
+  </node>
+
+    <!-- Open an image viewer for the processed image -->
+  <node name="image_view_tensorflow" pkg="image_view" type="image_view" >
+    <remap from="image" to="/debug_image" />
+  </node>
+
+</launch>
