@@ -119,6 +119,9 @@ namespace ainstein_radar_tools
 	  image_in.copyTo( marker_overlay );
 	  cv::rectangle( marker_overlay, uv_top_left, uv_bot_right, CV_RGB( 255, 0, 0 ), RECT_THICKNESS );
 
+	  // Add text:
+	  // cv::putText( marker_overlay, "test", uv_top_left, cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0,0,255,255) );
+	  
 	  // Add the marker overlay to the original image with transparency
 	  cv::addWeighted( marker_overlay, rect_alpha, image_out, 1.0 - rect_alpha, 0, image_out ); 
 	}

@@ -5,7 +5,7 @@
     <param name="can_device" value="can0" />
   </node>
   <node name="t79_node" pkg="ainstein_radar_drivers" type="t79_node" required="true" >
-    <param name="can_id" value="0" />
+    <param name="can_id" value="1" />
   </node>
 
   <!-- Run the camera -->

@@ -14,6 +14,7 @@ image_transport
 image_geometry 
 ainstein_radar_msgs
 ainstein_radar_filters
+vision_msgs
 )
 
 catkin_package()
@@ -27,7 +28,7 @@ add_executable(radar_camera_test_node src/radar_camera_test_node.cpp)
 add_dependencies(radar_camera_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_camera_test_node ${catkin_LIBRARIES})
 
-add_executable(radar_camera_fusion_node src/radar_camera_fusion_node.cpp)
+add_executable(radar_camera_fusion_node src/radar_camera_fusion_node.cpp src/radar_camera_fusion.cpp)
 add_dependencies(radar_camera_fusion_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_camera_fusion_node ${catkin_LIBRARIES})
 
