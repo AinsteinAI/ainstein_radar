@@ -87,10 +87,16 @@ namespace ainstein_radar_tools
   listen_tf_( buffer_tf_ )
   {
     sub_radar_ = nh_.subscribe( "radar_topic", 1, &RadarCameraFusion::radarCallback, this );
+    sub_radar_bbox_ = nh_.subscribe( "radar_bbox_topic", 1, &RadarCameraFusion::radarBboxCallback, this );
     sub_objects_ = nh_.subscribe( "objects_topic", 1, &RadarCameraFusion::objectsCallback, this );
     sub_image_ = it_.subscribeCamera( "camera_topic", 1, &RadarCameraFusion::imageCallback, this );
-    pub_image_ = it_.advertise( "/radar_camera_test/image_out", 1 );
 
+    pub_image_ = it_.advertise( "/radar_camera_test/image_out", 1 );
+    pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
+
+    has_radar_boxes_ = false;
+    nh_private_.param( "use_object_width_for_bbox", use_object_width_for_bbox_, false );
+    
     // Wait for the detection node to be ready
     ros::service::waitForService( "object_detector_is_ready", ros::Duration( 5 ) );
       
@@ -102,20 +108,28 @@ namespace ainstein_radar_tools
   }
 
   void RadarCameraFusion::radarCallback( const ainstein_radar_msgs::RadarTargetArray& targets )
-    {
-      // Store the target array for processing in the next image callback
-      targets_msg_ = targets;
-    }
-    
-    void RadarCameraFusion::objectsCallback( const vision_msgs::Detection2DArray& objects )
-    {
-      // Store the detected objects for processing in the next image callback
-      objects_msg_ = objects;
-    }
+  {
+    // Store the target array for processing in the next image callback
+    targets_msg_ = targets;
+  }
+  
+  void RadarCameraFusion::radarBboxCallback( const jsk_recognition_msgs::BoundingBoxArray& bboxes )
+  {
+    // Store the radar bounding box array for processing in the next image callback
+    radar_boxes_msg_ = bboxes;
 
+    // Enables optional processing when boxes are available
+    has_radar_boxes_ = true;
+  }
+  
+  void RadarCameraFusion::objectsCallback( const vision_msgs::Detection2DArray& objects )
+  {
+    // Store the detected objects for processing in the next image callback
+    objects_msg_ = objects;
+  }
+  
   void RadarCameraFusion::imageCallback( const sensor_msgs::ImageConstPtr& image_msg,
-					 const sensor_msgs::CameraInfoConstPtr& info_msg )
-    
+					 const sensor_msgs::CameraInfoConstPtr& info_msg ) 
   {
     // Get the input image and convert to OpenCV
     cv::Mat image_in;
@@ -146,6 +160,18 @@ namespace ainstein_radar_tools
 	ROS_WARN_STREAM( "Timeout while waiting for transform." );
       }
 
+    // Get the transform from camera to world frame 
+    Eigen::Affine3d tf_camera_to_world;
+    if( buffer_tf_.canTransform( "map", "camera_color_optical_frame", ros::Time( 0 ) ) )
+      {
+	tf_camera_to_world =
+	  tf2::transformToEigen( buffer_tf_.lookupTransform( "map", "camera_color_optical_frame", ros::Time( 0 ) ) );
+      }
+    else
+      {
+	ROS_WARN_STREAM( "Timeout while waiting for transform." );
+      }
+
     // Transform targets to Cartesian coordinates and project to camera frame
     uv_targets_.clear();
 
@@ -162,7 +188,14 @@ namespace ainstein_radar_tools
 	// Project the 3d point to 2d pixel coordinates
 	uv_targets_.push_back( cam_model_.project3dToPixel( cv::Point3d( target_point_camera_frame.x(), target_point_camera_frame.y(), target_point_camera_frame.z() ) ) );
       }
-      
+
+    // Clear the output bounding box message if applicable
+    if( has_radar_boxes_ )
+      {
+	boxes_msg_.boxes.clear();
+	boxes_msg_.header = radar_boxes_msg_.header;
+      }
+	
     // Check projected targets against each detected object bounding box.
     // In the case that multiple 3d points alias to be within the same 2d
     // bounding box (bbox), only use the nearest one. If radar and camera
@@ -194,7 +227,7 @@ namespace ainstein_radar_tools
 		  }
 	      }
 	  }
-
+	
 	// If we have a valid radar-camera association, render it
 	if( std::isfinite( min_range ) && ind_min_range >= 0 )
 	  {
@@ -207,6 +240,40 @@ namespace ainstein_radar_tools
 	    cv::Point2d uv_bbox_bot_right = uv_bbox_center +
 	      cv::Point2d( 0.5 * object.bbox.size_x, 0.5 * object.bbox.size_y );
 
+	    // Set the 3d bounding box geometry
+	    if( has_radar_boxes_ )
+	      {
+		jsk_recognition_msgs::BoundingBox box_3d = radar_boxes_msg_.boxes.at( ind_min_range );
+		
+		// Project the image coordinates bbox corners to 3d rays in camera frame
+		cv::Point3d cam_bbox_top_left = cam_model_.projectPixelTo3dRay( uv_bbox_top_left );
+		cv::Point3d cam_bbox_bot_right = cam_model_.projectPixelTo3dRay( uv_bbox_bot_right );
+
+		// Convert 3d rays to unit Eigen vectors
+		Eigen::Vector3d unit_bbox_top_left = Eigen::Vector3d( cam_bbox_top_left.x,
+								      cam_bbox_top_left.y,
+								      cam_bbox_top_left.z );
+		unit_bbox_top_left *= ( 1.0 / unit_bbox_top_left.norm() );
+		
+		Eigen::Vector3d unit_bbox_bot_right = Eigen::Vector3d( cam_bbox_bot_right.x,
+								       cam_bbox_bot_right.y,
+								       cam_bbox_bot_right.z );
+		unit_bbox_bot_right *= ( 1.0 / unit_bbox_bot_right.norm() );
+
+		// Set the bounding box width from the detected object width
+		if( use_object_width_for_bbox_ )
+		  {
+		    box_3d.dimensions.y = ( targets_msg_.targets.at( ind_min_range ).range *
+					    tf_camera_to_world.linear() * ( unit_bbox_top_left - unit_bbox_bot_right ) ).y();
+		  }
+
+		// Set the bounding box height from the detected object height
+		box_3d.dimensions.z = ( targets_msg_.targets.at( ind_min_range ).range *
+					tf_camera_to_world.linear() * ( unit_bbox_top_left - unit_bbox_bot_right ) ).z();
+
+		boxes_msg_.boxes.push_back( box_3d );
+	      }
+	    
 	    // Get the detected object's class ID
 	    int object_id = object.results.at( 0 ).id;
 	  
@@ -296,10 +363,13 @@ namespace ainstein_radar_tools
 	    // Add the annotated overlay to the original image with transparency
 	    cv::addWeighted( marker_overlay, object_alpha, image_in, 1.0 - object_alpha, 0, image_in ); 
 	  }
-      }
+      }    
       
     // Publish the modified image
     pub_image_.publish( cv_ptr->toImageMsg() );
+
+    // Publish the 3d bounding boxes
+    pub_bounding_boxes_.publish( boxes_msg_ );
   }
 
 

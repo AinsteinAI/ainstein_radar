@@ -1,0 +1,62 @@
+<launch>
+  
+  <!-- Run the radar -->
+  <node name="k79_node" pkg="ainstein_radar_drivers" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1024" />
+    <param name="radar_ip" value="10.0.0.10" />
+    <param name="radar_port" value="7" />
+  </node>
+
+   <!-- Filter for min/max range -->
+  <node name="range_filter" pkg="ainstein_radar_filters" type="radardata_range_filter_node" output="screen" >
+    <param name="min_range" value="2.0" />
+    <param name="max_range" value="20.0" />
+    <remap from="radardata_in" to="/k79_node/targets/raw" />
+  </node>
+ 
+  <!-- Filter for tracking targets based on raw targets -->
+  <node name="tracking_filter" pkg="ainstein_radar_filters" type="radardata_to_tracked_targets_node" output="screen" >
+    <remap from="radardata_in" to="/range_filter/radardata_out" />
+    <param name="filter/update_rate" value="20.0" />
+  </node>
+
+  <!-- Load the tracking filter parameters -->
+  <node name="tracking_dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /tracking_filter $(find ainstein_radar_filters)/params/k79_people_tracking_filter.yaml" />
+
+  <!-- Run the camera -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+    <arg name="enable_infra1" value="false"/>
+    <arg name="enable_infra2" value="false"/>
+  </include>
+  
+  <!-- Run static TF broadcasters in place of URDF model -->
+  <node name="radar_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 map radar_frame 100" />
+  <node name="radar_to_camera_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 radar_frame camera_color_frame 100" />
+
+  <!-- Run the TensorFlow object detector node -->
+  <node pkg= "tensorflow_object_detector" name="detect_ros" type="detect_ros.py"  output="screen"> 
+    <remap from='image' to='/camera/color/image_raw'/>
+  </node>
+
+  <!-- Run the radar camera fusion node -->
+  <node name="radar_camera_fusion" pkg="ainstein_radar_tools" type="radar_camera_fusion_node" output="screen" >
+    <remap from="radar_topic" to="/tracking_filter/tracked" />
+    <remap from="radar_bbox_topic" to="/tracking_filter/boxes" />
+    <remap from="objects_topic" to="/detect_ros/objects" />
+    <remap from="camera_topic" to="/camera/color/image_raw" />
+    <remap from="object_labels" to="/detect_ros/labels" />
+    <remap from="object_detector_is_ready" to="tensorflow_object_detector/check_is_ready" />
+  </node>
+
+  <!-- Open an image viewer for the processed image -->
+  <node name="image_view" pkg="image_view" type="image_view" >
+    <remap from="image" to="/radar_camera_test/image_out" />
+  </node>
+
+    <!-- Open an image viewer for the processed image -->
+  <node name="image_view_tensorflow" pkg="image_view" type="image_view" >
+    <remap from="image" to="/debug_image" />
+  </node>
+
+</launch>
