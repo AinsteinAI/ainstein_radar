@@ -1,0 +1,21 @@
+<launch>
+  <node name="k79_node" pkg="ainstein_radar_drivers" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1024" />
+    <param name="radar_ip" value="10.0.0.10" />
+    <param name="radar_port" value="7" />
+  </node>
+
+  <!-- Filter for tracking targets based on raw targets -->
+  <node name="tracking_filter" pkg="ainstein_radar_filters" type="radardata_to_tracked_targets_node" output="screen" >
+    <remap from="radardata_in" to="/k79_node/targets/raw" />
+    <param name="filter/update_rate" value="20.0" />
+  </node>
+
+  <!-- Load the tracking filter parameters -->
+  <node name="tracking_dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /tracking_filter $(find ainstein_radar_filters)/params/k79_people_tracking_filter.yaml" />
+
+  <!-- Run RViz -->
+  <node name="rviz" pkg="rviz" type="rviz" />
+
+</launch>
