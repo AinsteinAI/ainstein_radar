@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.0 (2019-11-12)
 ------------------
 * Add new ainstein_radar_tools subpkg

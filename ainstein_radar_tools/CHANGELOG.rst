@@ -2,6 +2,11 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add vision_msgs as ainstein_radar_tools dependency
+* Contributors: Nick Rotella
+
 2.0.0 (2019-11-12)
 ------------------
 * Add changelog for new subpkg ainstein_radar_tools
