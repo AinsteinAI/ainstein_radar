@@ -2,6 +2,20 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update RadarInfo msg, refactor for K79 and add T79
+  Updated the RadarInfo message slightly. Also refactored the K79
+  interface class to publish the RadarInfo message.
+  Added publishing the RadarInfo message for T79 as well, needs testing.
+* Add latched publishing of RadarInfo msg for K79
+  Added a latched publication of RadarInfo message for K79 in the K79
+  interface class. This message is published once and stored for all
+  future subscribers since the radar specifications never change (as of
+  now).  The specifications used come from the preliminary datasheet
+  and are likely to change. Any unknown specifications are left at zero.
+* Contributors: Nick Rotella
+
 1.1.0 (2019-10-29)
 ------------------
 * Minor fixes to package XML formatting

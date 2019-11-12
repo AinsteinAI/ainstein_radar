@@ -2,6 +2,20 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add K79 people tracking filter launch and params
+* Add tf2_eigen dependency to build
+* Minor, fix jsk messages dependency
+* Add bounding box output from radar tracking filter
+  Added publication of bounding boxes for the tracked targets of the
+  radar target tracking filter, computed to bound all targets used for
+  a Kalman Filter update at each step.  This is a sort of "model-based
+  clustering" of radar data since the KF itself tracks with the aid of
+  a simple motion model.
+  Next, plan to add Cartesian pose+covariance output.
+* Contributors: Nick Rotella
+
 1.1.0 (2019-10-29)
 ------------------
 * Minor, add radar SNR as laserscan intensities

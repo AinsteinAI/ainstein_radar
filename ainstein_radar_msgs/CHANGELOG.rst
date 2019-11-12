@@ -2,6 +2,19 @@
 Changelog for package ainstein_radar_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update RadarInfo msg, refactor for K79 and add T79
+  Updated the RadarInfo message slightly. Also refactored the K79
+  interface class to publish the RadarInfo message.
+  Added publishing the RadarInfo message for T79 as well, needs testing.
+* Update RadarInfo message and fix dependencies
+  Updated the RadarInfo message with new fields fully describing the data
+  and added comments to explain them.
+  Also fixed a small dependency in the RViz plugins package for display
+  of the RadarInfo messages, however this plugin is not complete anyway.
+* Contributors: Nick Rotella
+
 1.1.0 (2019-10-29)
 ------------------
 * Minor fixes to package XML formatting

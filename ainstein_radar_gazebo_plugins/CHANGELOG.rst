@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.1.0 (2019-10-29)
 ------------------
 * Minor fixes to package XML formatting
