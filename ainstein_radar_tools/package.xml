@@ -21,5 +21,6 @@
   <depend>image_geometry</depend>
   <depend>ainstein_radar_msgs</depend>
   <depend>ainstein_radar_filters</depend>
+  <depend>vision_msgs</depend>
 
 </package>
