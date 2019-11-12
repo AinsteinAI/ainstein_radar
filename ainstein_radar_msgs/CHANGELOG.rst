@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2019-11-12)
+------------------
 * Update RadarInfo msg, refactor for K79 and add T79
   Updated the RadarInfo message slightly. Also refactored the K79
   interface class to publish the RadarInfo message.

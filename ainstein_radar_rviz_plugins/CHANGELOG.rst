@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2019-11-12)
+------------------
 * Update RadarInfo message and fix dependencies
   Updated the RadarInfo message with new fields fully describing the data
   and added comments to explain them.

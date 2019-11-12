@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2019-11-12)
+------------------
 * Add changelog for new subpkg ainstein_radar_tools
 * Add 3d bounding box output from radar camera fusion
   Added 3d bounding box publishing from the radar camera fusion class

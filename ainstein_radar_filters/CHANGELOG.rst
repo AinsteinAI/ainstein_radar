@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2019-11-12)
+------------------
 * Add K79 people tracking filter launch and params
 * Add tf2_eigen dependency to build
 * Minor, fix jsk messages dependency
