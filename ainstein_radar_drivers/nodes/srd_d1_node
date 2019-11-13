@@ -15,7 +15,7 @@ SRD_D1_PACKETSIZE = 15
 class SRD_D1_MULTIPLE_UART(object):
     def __init__(self, uart, frame_id):
         self.uart = uart
-        self.pub = rospy.Publisher( '~data', RadarTargetArray, queue_size=10 )
+        self.pub = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
         self.radar_data_msg_raw = RadarTargetArray()
         self.radar_data_msg_raw.header.stamp = rospy.Time(0)
         rospy.init_node( 'srd_d1_node')
