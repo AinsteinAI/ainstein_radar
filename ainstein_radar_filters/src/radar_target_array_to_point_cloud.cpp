@@ -32,31 +32,16 @@ namespace ainstein_radar_filters
   RadarTargetArrayToPointCloud::RadarTargetArrayToPointCloud( ros::NodeHandle node_handle,
 							      ros::NodeHandle node_handle_private ) :
     nh_( node_handle ),
-    nh_private_( node_handle_private ),
-    listen_tf_( buffer_tf_ )
+    nh_private_( node_handle_private )
   {
     pub_cloud_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud_out", 10 );
     sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
 					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
 					     this );
-    nh_private_.param( "fixed_frame", fixed_frame_, std::string( "map" ) );  
   }
 
   void RadarTargetArrayToPointCloud::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
   {
-    // Get the data frame ID and look up the corresponding tf transform:
-    Eigen::Affine3d tf_sensor_to_world;
-    if( buffer_tf_.canTransform( fixed_frame_, msg.header.frame_id, ros::Time( 0 ) ) )
-      {
-	tf_sensor_to_world =
-	  tf2::transformToEigen(buffer_tf_.lookupTransform( fixed_frame_, msg.header.frame_id, ros::Time( 0 ) ) );
-      }
-    else
-      {
-	std::cout << "Timeout while waiting for transform to frame " << msg.header.frame_id << std::endl;
-	return;
-      }
-  
     // Clear the point cloud point vector:
     pcl_cloud_.clear();
 

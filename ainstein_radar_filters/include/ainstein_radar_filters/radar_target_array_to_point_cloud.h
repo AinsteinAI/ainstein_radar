@@ -47,11 +47,6 @@ private:
   ros::NodeHandle nh_private_;
   ros::Subscriber sub_radar_target_array_;
   ros::Publisher pub_cloud_;
-
-  std::string fixed_frame_;
-  
-  tf2_ros::TransformListener listen_tf_;
-  tf2_ros::Buffer buffer_tf_;
 };
 
 } // namespace ainstein_radar_filters
