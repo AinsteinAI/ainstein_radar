@@ -8,7 +8,7 @@
 
   <!-- Filter for tracking targets based on raw targets -->
   <node name="tracking_filter" pkg="ainstein_radar_filters" type="radardata_to_tracked_targets_node" output="screen" >
-    <remap from="radardata_in" to="/k79_node/targets/raw" />
+    <remap from="radar_in" to="/k79_node/targets/raw" />
     <param name="filter/update_rate" value="20.0" />
   </node>
 

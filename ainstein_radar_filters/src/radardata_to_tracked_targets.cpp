@@ -33,7 +33,7 @@ namespace ainstein_radar_filters
   void RadarDataToTrackedTargets::initialize( void )
   {
     // Set up raw radar data subscriber and tracked radar data publisher:
-    sub_radar_data_raw_ = nh_.subscribe( "radardata_in", 1,
+    sub_radar_data_raw_ = nh_.subscribe( "radar_in", 1,
 					 &RadarDataToTrackedTargets::radarDataCallback,
 					 this );
 

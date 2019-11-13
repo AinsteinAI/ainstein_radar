@@ -33,13 +33,13 @@ namespace ainstein_radar_filters
     nh_( node_handle ),
     nh_private_( node_handle_private )
   {
-    sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+    sub_radar_data_ = nh_.subscribe( "radar_in", 10,
 				     &RadarDataToNearestTarget::radarDataCallback,
 				     this );
 
-    pub_nearest_target_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetStamped>( "target", 10 );
+    pub_nearest_target_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetStamped>( "nearest_target", 10 );
 
-    pub_nearest_target_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 10 );
+    pub_nearest_target_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "nearest_target_array", 10 );
 
     // Get parameters:  
     nh_private_.param( "min_dist_thresh", min_dist_thresh_, 0.0 );

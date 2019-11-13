@@ -35,14 +35,14 @@ RadarTargetArraySpeedFilter::RadarTargetArraySpeedFilter( ros::NodeHandle node_h
   nh_private_( node_handle_private ),
   listen_tf_( buffer_tf_ )
 {
-  sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+  sub_radar_data_ = nh_.subscribe( "radar_in", 10,
 				   &RadarTargetArraySpeedFilter::radarDataCallback,
 				   this );
   sub_radar_vel_ = nh_.subscribe( "radar_vel", 10,
 				  &RadarTargetArraySpeedFilter::radarVelCallback,
 				  this );
   
-  pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radardata_out", 10 );
+  pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radar_out", 10 );
 
   // Get parameters:
   if( nh_private_.hasParam( "min_speed_thresh" ) )

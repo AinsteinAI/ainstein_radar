@@ -33,8 +33,8 @@ namespace ainstein_radar_filters
     nh_( node_handle ),
     nh_private_( node_handle_private )
   {
-    pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radardata_out", 10 );
-    sub_radar_data_ = nh_.subscribe( "radardata_in", 10,
+    pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radar_out", 10 );
+    sub_radar_data_ = nh_.subscribe( "radar_in", 10,
 				     &RadarDataRangeFilter::radarDataCallback,
 				     this );
     
