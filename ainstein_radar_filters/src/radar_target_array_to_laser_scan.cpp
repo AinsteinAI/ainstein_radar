@@ -30,8 +30,7 @@ namespace ainstein_radar_filters
 {
   
   RadarTargetArrayToLaserScan::RadarTargetArrayToLaserScan( void ) :
-    nh_private_( "~" ),
-    listen_tf_( buffer_tf_ )
+    nh_private_( "~" )
   {
     // Get parameters:
     nh_private_.param( "angle_min", laser_scan_msg_.angle_min, static_cast<float>( -0.5 * M_PI ) );
@@ -41,8 +40,8 @@ namespace ainstein_radar_filters
     nh_private_.param( "time_increment", laser_scan_msg_.time_increment, static_cast<float>( 0.0 ) );
     nh_private_.param( "scan_time", laser_scan_msg_.scan_time, static_cast<float>( 0.1 ) );
 
-    nh_private_.param( "range_min", laser_scan_msg_.range_min, static_cast<float>( 1.0 ) );
-    nh_private_.param( "range_max", laser_scan_msg_.range_max, static_cast<float>( 20.0 ) );
+    nh_private_.param( "range_min", laser_scan_msg_.range_min, static_cast<float>( 0.0 ) );
+    nh_private_.param( "range_max", laser_scan_msg_.range_max, static_cast<float>( 100.0 ) );
   
     // Set the laser scan message array lengths:
     laser_scan_length_ = static_cast<int>( std::floor( ( laser_scan_msg_.angle_max -

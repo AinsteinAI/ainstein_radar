@@ -41,10 +41,6 @@ namespace ainstein_radar_filters
     double rel_speed_thresh_;
     double min_dist_thresh_;
     double max_dist_thresh_;
-  
-    tf2_ros::TransformListener listen_tf_;
-    tf2_ros::Buffer buffer_tf_;
-
   };
  
 } // namespace ainstein_radar_filters
