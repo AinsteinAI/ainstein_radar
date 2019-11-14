@@ -16,14 +16,14 @@
   <node name="radar_to_camera_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 radar_frame camera_color_frame 100" />
 
   <!-- Run the radar camera fusion node -->
-  <node name="radar_camera_test" pkg="ainstein_radar_tools" type="radar_camera_test_node" output="screen" >
+  <node name="radar_camera_validation" pkg="ainstein_radar_tools" type="radar_camera_validation_node" output="screen" >
     <remap from="radar_topic" to="/t79_node/targets/raw" />
     <remap from="camera_topic" to="/camera/color/image_raw" />
   </node>
 
   <!-- Open an image viewer for the processed image -->
   <node name="image_view" pkg="image_view" type="image_view" >
-    <remap from="image" to="/radar_camera_test/image_out" />
+    <remap from="image" to="/radar_camera_validation/image_out" />
   </node>
 
 </launch>

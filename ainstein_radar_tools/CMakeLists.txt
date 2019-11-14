@@ -24,16 +24,16 @@ include_directories(
  ${catkin_INCLUDE_DIRS}
  )
 
-add_executable(radar_camera_test_node src/radar_camera_test_node.cpp)
-add_dependencies(radar_camera_test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radar_camera_test_node ${catkin_LIBRARIES})
+add_executable(radar_camera_validation_node src/radar_camera_validation_node.cpp)
+add_dependencies(radar_camera_validation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radar_camera_validation_node ${catkin_LIBRARIES})
 
 add_executable(radar_camera_fusion_node src/radar_camera_fusion_node.cpp src/radar_camera_fusion.cpp)
 add_dependencies(radar_camera_fusion_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_camera_fusion_node ${catkin_LIBRARIES})
 
 install(TARGETS
-  radar_camera_test_node radar_camera_fusion_node
+  radar_camera_validation_node radar_camera_fusion_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

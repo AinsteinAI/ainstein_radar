@@ -19,21 +19,24 @@ namespace ainstein_radar_tools
   #define RANGE_ACC 0.3
   #define AZIM_ACC ( M_PI / 180.0 ) * 1.5
   
-  class RadarCameraTest
+  class RadarCameraValidation
   {
   public:
-    RadarCameraTest(  ros::NodeHandle node_handle,
-		      ros::NodeHandle node_handle_private ) :
+    RadarCameraValidation(  ros::NodeHandle node_handle,
+			    ros::NodeHandle node_handle_private ) :
       nh_( node_handle ),
       nh_private_( node_handle_private ),
       it_( nh_ ),
+      it_private_( nh_private_ ), 
       listen_tf_( buffer_tf_ )
     {
-      sub_radar_ = nh_.subscribe( "radar_topic", 1, &RadarCameraTest::radarCallback, this );
-      sub_image_ = it_.subscribeCamera( "camera_topic", 1, &RadarCameraTest::imageCallback, this );
-      pub_image_ = it_.advertise( "/radar_camera_test/image_out", 1 );
+      sub_radar_ = nh_.subscribe( "radar_topic", 1, &RadarCameraValidation::radarCallback, this );
+      sub_image_ = it_.subscribeCamera( "camera_topic", 1, &RadarCameraValidation::imageCallback, this );
+      pub_image_ = it_private_.advertise( "image_out", 1 );
+
+      nh_private_.param( "use_snr_alpha", use_snr_alpha_, false );
     }
-    ~RadarCameraTest( void ){}
+    ~RadarCameraValidation( void ){}
 
     void radarCallback( const ainstein_radar_msgs::RadarTargetArray& targets )
     {
@@ -113,7 +116,11 @@ namespace ainstein_radar_tools
 	  uv_bot_right = uv + cv::Point2d( rect_size, rect_size );
 
 	  // Scale the transparency of the rectangle based on SNR:
-	  double rect_alpha = std::max( 0.0, std::min( 1.0, 1.0 - ( ( SNR_MAX - pcl_point.snr ) / ( SNR_MAX - SNR_MIN ) ) ) );
+	  double rect_alpha = 1.0;
+	  if( use_snr_alpha_ )
+	    {
+	      rect_alpha = std::max( 0.0, std::min( 1.0, 1.0 - ( ( SNR_MAX - pcl_point.snr ) / ( SNR_MAX - SNR_MIN ) ) ) );
+	    }
 	  
 	  // Render the projected point to the marker overlay
 	  image_in.copyTo( marker_overlay );
@@ -135,10 +142,12 @@ namespace ainstein_radar_tools
 
     ros::Subscriber sub_radar_;
     ainstein_radar_msgs::RadarTargetArray targets_msg_;
-    
-    image_transport::ImageTransport it_;
+
+    image_transport::ImageTransport it_, it_private_;
     image_transport::CameraSubscriber sub_image_;
     image_transport::Publisher pub_image_;
+
+    bool use_snr_alpha_;
     
     image_geometry::PinholeCameraModel cam_model_;
 
@@ -150,7 +159,7 @@ namespace ainstein_radar_tools
 
 int main( int argc, char** argv )
 {
-  ros::init( argc, argv, "radar_camera_test" );
-  ainstein_radar_tools::RadarCameraTest cam_test( ros::NodeHandle(), ros::NodeHandle( "~" ) );
+  ros::init( argc, argv, "radar_camera_validation" );
+  ainstein_radar_tools::RadarCameraValidation radar_cam_val( ros::NodeHandle(), ros::NodeHandle( "~" ) );
   ros::spin();
 }
