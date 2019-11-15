@@ -5,6 +5,10 @@
 namespace ainstein_radar_tools
 {
 
+  const double RadarCameraValidation::SNR_MIN = 0.0;
+  const double RadarCameraValidation::SNR_MAX = 200.0;
+  const int RadarCameraValidation::RECT_THICKNESS = 4;
+  
   void RadarCameraValidation::imageCallback( const sensor_msgs::ImageConstPtr& image_msg,
 					     const sensor_msgs::CameraInfoConstPtr& info_msg )
   {
@@ -57,7 +61,7 @@ namespace ainstein_radar_tools
 										     Eigen::Vector3d::UnitY() ).toRotationMatrix();
 	  
 	// Compute corners of the box in 3d camera frame based on radar specs
-	double box_size = pcl_point.range * tan( AZIM_ACC ); 
+	double box_size = pcl_point.range * tan( info_msg_.azimuth_accuracy ); 
 	Eigen::Vector3d rect_top_left = target_point_camera_frame +
 	  rot_mat_camera_to_camera_target_aligned.transpose() * Eigen::Vector3d( -box_size, -box_size, 0.0 );
 	Eigen::Vector3d rect_bot_right = target_point_camera_frame +
@@ -80,12 +84,12 @@ namespace ainstein_radar_tools
 	double rect_alpha = 1.0;
 	if( use_snr_alpha_ )
 	  {
-	    rect_alpha = std::max( 0.0, std::min( 1.0, 1.0 - ( ( SNR_MAX - pcl_point.snr ) / ( SNR_MAX - SNR_MIN ) ) ) );
+	    rect_alpha = std::max( 0.0, std::min( 1.0, 1.0 - ( ( RadarCameraValidation::SNR_MAX - pcl_point.snr ) / ( RadarCameraValidation::SNR_MAX - RadarCameraValidation::SNR_MIN ) ) ) );
 	  }
 	  
 	// Render the projected point to the marker overlay
 	image_in.copyTo( marker_overlay );
-	cv::rectangle( marker_overlay, uv_top_left, uv_bot_right, CV_RGB( 255, 0, 0 ), RECT_THICKNESS );
+	cv::rectangle( marker_overlay, uv_top_left, uv_bot_right, CV_RGB( 255, 0, 0 ), RadarCameraValidation::RECT_THICKNESS );
 
 	// Add text:
 	// cv::putText( marker_overlay, "test", uv_top_left, cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0,0,255,255) );
