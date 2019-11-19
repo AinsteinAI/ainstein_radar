@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.2 (2019-11-19)
+------------------
 * Minor, fix header exports breaking bloom build
 * Rename input/output radar topics
   Renamed all instances of radardata_in and radardata_out to radar_in and

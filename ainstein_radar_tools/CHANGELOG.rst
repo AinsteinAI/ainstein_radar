@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.2 (2019-11-19)
+------------------
 * Use RadarInfo for sizing validation 2d bounding box
   Changed the radar-camera validation node, which draws 2d bounding boxes
   on the input image corresponding to the radar sensor's specifications,
