@@ -41,7 +41,7 @@ namespace ainstein_radar_tools
     void radarInfoCallback( const ainstein_radar_msgs::RadarInfo& info )
     {
       // Store the radar info for use in the next image callback
-      info_msg_ = info;
+      radar_info_msg_ = info;
     }
 
     void imageCallback( const sensor_msgs::ImageConstPtr& image_msg,
@@ -57,12 +57,12 @@ namespace ainstein_radar_tools
     ros::Subscriber sub_radar_;
     ros::Subscriber sub_radar_info_;
     ainstein_radar_msgs::RadarTargetArray targets_msg_;
-    ainstein_radar_msgs::RadarInfo info_msg_;
+    ainstein_radar_msgs::RadarInfo radar_info_msg_;
 
     image_transport::ImageTransport it_, it_private_;
     image_transport::CameraSubscriber sub_image_;
     image_transport::Publisher pub_image_;
-
+    
     bool use_snr_alpha_;
     
     image_geometry::PinholeCameraModel cam_model_;
