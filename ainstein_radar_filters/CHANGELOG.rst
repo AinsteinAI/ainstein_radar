@@ -2,6 +2,24 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor, fix header exports breaking bloom build
+* Rename input/output radar topics
+  Renamed all instances of radardata_in and radardata_out to radar_in and
+  radar_out to conform with other packages.
+* Fix laser scan converter params, remove deprecated
+  Fixed the min/max range for the laserscan converted to be 0.0 and 100.0
+  respectively by default so that the filtering by range doesn't affect
+  most radars by default. These paremeters are required by the laserscan
+  message and should instead be set from the RadarInfo message, to be
+  done soon. Also removed some deprecated code.
+* Remove deprecated file and code from pcl converter
+  Removed an old file for testing the pointcloud (pcl) converter class
+  and removed old code from the pointcloud converted class which was
+  previously used to filter targets based on relative speed.
+* Contributors: Nick Rotella
+
 2.0.1 (2019-11-12)
 ------------------
 

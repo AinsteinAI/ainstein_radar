@@ -2,6 +2,12 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Minor, remove temporary file
+* Minor, fix SRD-D1 output data topic name
+* Contributors: Nick Rotella
+
 2.0.1 (2019-11-12)
 ------------------
 

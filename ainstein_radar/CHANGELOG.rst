@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.1 (2019-11-12)
 ------------------
 

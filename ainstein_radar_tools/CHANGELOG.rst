@@ -2,6 +2,22 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use RadarInfo for sizing validation 2d bounding box
+  Changed the radar-camera validation node, which draws 2d bounding boxes
+  on the input image corresponding to the radar sensor's specifications,
+  to use the actual RadarInfo message assumed to be published by any
+  radar which publishes data. Needs testing on hardware.
+* Separate radar camera validation class from node
+* Rename radar camera test node, update launch files
+  Renamed the radar camera "test" node to rdara camera "validation" and
+  updated launch files for T79 and added one for K79. Testing again with
+  K79 to verify this still works and get screenshots for wiki tutorials.
+  In the future, should separate radar camera validation class from the
+  node for portability, same as radar camera fusion class/node setup.
+* Contributors: Nick Rotella
+
 2.0.1 (2019-11-12)
 ------------------
 * Add vision_msgs as ainstein_radar_tools dependency
