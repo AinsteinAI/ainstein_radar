@@ -52,13 +52,13 @@ public:
   static constexpr double ELEVATION_MIN = -4.0;
   static constexpr double ELEVATION_MAX = 4.0;
 
-  static constexpr double RANGE_RES = 0.0;
+  static constexpr double RANGE_RES = 0.1;
   static constexpr double RANGE_ACC = 0.1;
 
-  static constexpr double SPEED_RES = 0.0;
+  static constexpr double SPEED_RES = 0.16;
   static constexpr double SPEED_ACC = 0.1;
 
-  static constexpr double AZIMUTH_RES = 0.0;
+  static constexpr double AZIMUTH_RES = 2.5;
   static constexpr double AZIMUTH_ACC = 1.0;
 
   static constexpr double ELEVATION_RES = 0.0;
