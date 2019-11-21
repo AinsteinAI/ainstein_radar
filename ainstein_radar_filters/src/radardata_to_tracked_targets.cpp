@@ -219,7 +219,7 @@ namespace ainstein_radar_filters
     // Find the bounding box dimensions:
     Eigen::Vector3d min_point = Eigen::Vector3d( std::numeric_limits<double>::infinity(),
 						 std::numeric_limits<double>::infinity(),
-						     std::numeric_limits<double>::infinity() );
+						 std::numeric_limits<double>::infinity() );
     Eigen::Vector3d max_point = Eigen::Vector3d( -std::numeric_limits<double>::infinity(),
 						 -std::numeric_limits<double>::infinity(),
 						 -std::numeric_limits<double>::infinity() );    

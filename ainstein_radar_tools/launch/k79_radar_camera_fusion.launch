@@ -12,12 +12,12 @@
   <node name="range_filter" pkg="ainstein_radar_filters" type="radardata_range_filter_node" output="screen" >
     <param name="min_range" value="2.0" />
     <param name="max_range" value="20.0" />
-    <remap from="radardata_in" to="/k79_node/targets/raw" />
+    <remap from="radar_in" to="/k79_node/targets/raw" />
   </node>
  
   <!-- Filter for tracking targets based on raw targets -->
   <node name="tracking_filter" pkg="ainstein_radar_filters" type="radardata_to_tracked_targets_node" output="screen" >
-    <remap from="radardata_in" to="/range_filter/radardata_out" />
+    <remap from="radar_in" to="/range_filter/radar_out" />
     <param name="filter/update_rate" value="20.0" />
   </node>
 
@@ -47,6 +47,7 @@
     <remap from="camera_topic" to="/camera/color/image_raw" />
     <remap from="object_labels" to="/detect_ros/labels" />
     <remap from="object_detector_is_ready" to="tensorflow_object_detector/check_is_ready" />
+    <param name="use_object_width_for_bbox" value="true" />
   </node>
 
   <!-- Open an image viewer for the processed image -->
