@@ -60,8 +60,13 @@ namespace ainstein_radar_tools
 	Eigen::Matrix3d rot_mat_camera_to_camera_target_aligned = Eigen::AngleAxisd( ( M_PI / 180.0 ) * pcl_point.azimuth,
 										     Eigen::Vector3d::UnitY() ).toRotationMatrix();
 	  
-	// Compute corners of the box in 3d camera frame based on radar specs
-	double box_size = pcl_point.range * tan( radar_info_msg_.azimuth_accuracy ); 
+	// Compute corners of the box in 3d camera frame based on radar specs (NOT USED)
+	// double box_size = pcl_point.range * tan( radar_info_msg_.azimuth_accuracy ); 
+
+	// Compute corners of the box in 3d camera frame based on image size
+	double box_size = std::min( image_info_msg->width, image_info_msg->height ) *
+	  ( 1.0 - ( pcl_point.range - radar_info_msg_.range_min ) / ( radar_info_msg_.range_max - radar_info_msg_.range_min ) );
+	ROS_INFO_STREAM( box_size );
 	Eigen::Vector3d rect_top_left = target_point_camera_frame +
 	  rot_mat_camera_to_camera_target_aligned.transpose() * Eigen::Vector3d( -box_size, -box_size, 0.0 );
 	Eigen::Vector3d rect_bot_right = target_point_camera_frame +
