@@ -41,7 +41,7 @@ public:
   static constexpr int MAX_NUM_TARGETS = 1000;
 
   static constexpr double RANGE_MIN = 0.0;
-  static constexpr double RANGE_MAX = 40.0;
+  static constexpr double RANGE_MAX = 120.0;
 
   static constexpr double SPEED_MIN = 0.0;
   static constexpr double SPEED_MAX = 0.0;
