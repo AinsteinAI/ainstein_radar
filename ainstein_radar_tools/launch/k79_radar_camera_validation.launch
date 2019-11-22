@@ -21,6 +21,7 @@
   <!-- Run the radar camera fusion node -->
   <node name="radar_camera_validation" pkg="ainstein_radar_tools" type="radar_camera_validation_node" output="screen" >
     <remap from="radar_topic" to="/k79_node/targets/raw" />
+    <remap from="radar_info_topic" to="/k79_node/radar_info" />
     <remap from="camera_topic" to="/camera/color/image_raw" />
     <param name="use_snr_alpha" value="false" />
   </node>
