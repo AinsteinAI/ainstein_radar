@@ -34,7 +34,7 @@
 
   <!-- Open an image viewer for the processed image -->
   <node name="image_view" pkg="image_view" type="image_view" >
-    <remap from="image" to="/radar_camera_test/image_out" />
+    <remap from="image" to="/radar_camera_fusion/image_out" />
   </node>
 
     <!-- Open an image viewer for the processed image -->

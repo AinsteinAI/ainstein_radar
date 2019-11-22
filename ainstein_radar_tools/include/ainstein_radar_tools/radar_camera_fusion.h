@@ -58,7 +58,7 @@ namespace ainstein_radar_tools
     vision_msgs::Detection2DArray objects_msg_;
     std::map<std::string,std::string> object_labels_;
     
-    image_transport::ImageTransport it_;
+    image_transport::ImageTransport it_, it_private_;
     image_transport::CameraSubscriber sub_image_;
     image_transport::Publisher pub_image_;
 

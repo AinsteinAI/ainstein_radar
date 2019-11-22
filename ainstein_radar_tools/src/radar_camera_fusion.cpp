@@ -84,6 +84,7 @@ namespace ainstein_radar_tools
   nh_( node_handle ),
   nh_private_( node_handle_private ),
   it_( nh_ ),
+  it_private_( nh_private_ ),
   listen_tf_( buffer_tf_ )
   {
     sub_radar_ = nh_.subscribe( "radar_topic", 1, &RadarCameraFusion::radarCallback, this );
@@ -91,7 +92,7 @@ namespace ainstein_radar_tools
     sub_objects_ = nh_.subscribe( "objects_topic", 1, &RadarCameraFusion::objectsCallback, this );
     sub_image_ = it_.subscribeCamera( "camera_topic", 1, &RadarCameraFusion::imageCallback, this );
 
-    pub_image_ = it_.advertise( "/radar_camera_test/image_out", 1 );
+    pub_image_ = it_private_.advertise( "image_out", 1 );
     pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
 
     has_radar_boxes_ = false;
