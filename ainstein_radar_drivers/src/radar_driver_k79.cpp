@@ -206,7 +206,6 @@ namespace ainstein_radar_drivers
 		offset = i * RadarDriverK79::target_msg_len;
 
 		target.id = i;
-		target.snr = 100.0; // K79 does not currently output SNR per target
 		target.azimuth = static_cast<uint8_t>( buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
 		target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
 
@@ -222,6 +221,7 @@ namespace ainstein_radar_drivers
 		  }
 	      
 		target.elevation = 0.0; // K79 does not output elevation angle
+		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
 		targets.push_back( target );
 	      }

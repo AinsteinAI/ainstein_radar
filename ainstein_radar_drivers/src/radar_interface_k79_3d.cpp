@@ -239,7 +239,6 @@ void RadarInterfaceK793D::mainLoop(void)
 		  ROS_DEBUG( "\n" );
 
 		  target.target_id = i;
-		  target.snr = 94.0; // K79 does not currently output SNR per target
 		  target.azimuth = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 0] & 0xff ) ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
 		  target.range = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 2] & 0xff ) ) * 0.1;   // 1 count = 0.1 m
 
@@ -256,6 +255,8 @@ void RadarInterfaceK793D::mainLoop(void)
 
 		  target.elevation = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1 - 90.0;
 
+		  target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
+		  
 		  ROS_DEBUG_STREAM( target << std::endl );
 		  
 		  radar_data_msg_ptr_raw_->targets.push_back( target );
