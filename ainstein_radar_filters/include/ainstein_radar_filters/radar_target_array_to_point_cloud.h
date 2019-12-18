@@ -36,6 +36,16 @@ public:
     pcl_point.elevation = target.elevation;
   }
   
+  static void pclPointToRadarTarget( const PointRadarTarget& pcl_point,
+				     ainstein_radar_msgs::RadarTarget& target )
+  {
+    target.snr = pcl_point.snr;
+    target.range = pcl_point.range;
+    target.speed = pcl_point.speed;
+    target.azimuth = pcl_point.azimuth;
+    target.elevation = pcl_point.elevation;
+  }
+
   static void radarTargetArrayToPclCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
 					  pcl::PointCloud<PointRadarTarget>& pcl_cloud )
   {
@@ -52,6 +62,24 @@ public:
 
     pcl_cloud.width = pcl_cloud.points.size();
     pcl_cloud.height = 1;
+  } 
+
+  static void pclCloudToRadarTargetArray( const pcl::PointCloud<PointRadarTarget>& pcl_cloud ,
+					  ainstein_radar_msgs::RadarTargetArray& target_array )
+  {
+    // Clear the targets array
+    target_array.targets.clear();
+    
+    // Iterate through point cloud point targets and add them to the target array
+    ainstein_radar_msgs::RadarTarget target;
+    target.target_id = 0;
+    for( auto pcl_point : pcl_cloud.points )
+      {
+	pclPointToRadarTarget( pcl_point, target );
+	++target.target_id;
+	
+	target_array.targets.push_back( target );
+      }
   } 
 
   static void radarTargetArrayToROSCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
