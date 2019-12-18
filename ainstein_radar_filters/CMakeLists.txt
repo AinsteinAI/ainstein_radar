@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 generate_dynamic_reconfigure_options(
   cfg/TrackingFilter.cfg
   cfg/RangeFilter.cfg
+  cfg/PassthroughFilter.cfg
   )
 
 catkin_package(INCLUDE_DIRS include)
@@ -56,12 +57,16 @@ add_dependencies(radardata_to_tracked_targets_node ${${PROJECT_NAME}_EXPORTED_TA
 target_link_libraries(radardata_to_tracked_targets_node ${catkin_LIBRARIES})
 
 add_executable(radardata_range_filter_node src/radardata_range_filter_node.cpp src/radardata_range_filter.cpp)
-add_dependencies(radardata_range_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(radardata_range_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radardata_range_filter_node ${catkin_LIBRARIES})
 
 add_library(radardata_range_filter_nodelet src/radardata_range_filter_nodelet.cpp src/radardata_range_filter.cpp)
-add_dependencies(radardata_range_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(radardata_range_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radardata_range_filter_nodelet ${catkin_LIBRARIES})
+
+add_executable(radar_passthrough_filter_node src/radar_passthrough_filter_node.cpp src/radar_passthrough_filter.cpp)
+add_dependencies(radar_passthrough_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(radar_passthrough_filter_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 install(TARGETS
   radar_target_array_speed_filter_node
