@@ -24,19 +24,32 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "ainstein_radar_filters/radar_target_array_to_point_cloud.h"
 #include <ros/ros.h>
+#include "ainstein_radar_filters/radar_target_array_to_point_cloud.h"
+
+ros::Publisher pub_cloud;
+ros::Subscriber sub_radar_target_array;
+
+using namespace ainstein_radar_filters;
+
+void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &radar_msg )
+{
+  sensor_msgs::PointCloud2 cloud_msg;
+  RadarTargetArrayToPointCloud::radarTargetArrayToROSCloud( radar_msg, cloud_msg );
+  pub_cloud.publish( cloud_msg );
+}
 
 int main( int argc, char** argv )
 {
   // Initialize ROS node:
-  ros::init( argc, argv, "pcl_point_radar_target_node" );
+  ros::init( argc, argv, "radar_target_array_to_point_cloud_node" );
   ros::NodeHandle node_handle;
   ros::NodeHandle node_handle_private( "~" );
 
-  ainstein_radar_filters::RadarTargetArrayToPointCloud pcl_convert( node_handle,
-								    node_handle_private );
-  
+  pub_cloud = node_handle_private.advertise<sensor_msgs::PointCloud2>( "cloud_out", 10 );
+  sub_radar_target_array = node_handle.subscribe( "radar_in", 10,
+						  &radarTargetArrayCallback );
+
   ros::spin();
 
   return 0;

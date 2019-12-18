@@ -15,13 +15,12 @@ namespace ainstein_radar_filters
 class RadarTargetArrayToPointCloud
 {
 public:
-  RadarTargetArrayToPointCloud( ros::NodeHandle node_handle,
-				ros::NodeHandle node_handle_private );
-  ~RadarTargetArrayToPointCloud(){}
+  RadarTargetArrayToPointCloud() {}
+  ~RadarTargetArrayToPointCloud() {}
 
-  // Made the static to expose radar data to 3d point conversion, however this should
-  // probably be moved to a utilities class with other such simple conversions.
-  static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget &target,
+  // Made these functions static to expose radar data to 3d point conversion, however these should
+  // probably be moved to a utilities class with other such simple conversions for data types.
+  static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget& target,
 				     PointRadarTarget& pcl_point )
   {
     pcl_point.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
@@ -37,18 +36,37 @@ public:
     pcl_point.elevation = target.elevation;
   }
   
-  void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
+  static void radarTargetArrayToPclCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
+					  pcl::PointCloud<PointRadarTarget>& pcl_cloud )
+  {
+    // Clear the PCL point cloud
+    pcl_cloud.clear();
+    
+    // Iterate through targets and add them to the point cloud
+    PointRadarTarget pcl_point;
+    for( auto target : target_array.targets )
+      {
+	radarTargetToPclPoint( target, pcl_point );
+	pcl_cloud.points.push_back( pcl_point );
+      }
+
+    pcl_cloud.width = pcl_cloud.points.size();
+    pcl_cloud.height = 1;
+  } 
+
+  static void radarTargetArrayToROSCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
+					  sensor_msgs::PointCloud2& ros_cloud )
+  {
+    pcl::PointCloud<PointRadarTarget> pcl_cloud;
+    radarTargetArrayToPclCloud( target_array, pcl_cloud );
+
+    pcl::toROSMsg( pcl_cloud, ros_cloud );
+    ros_cloud.header.frame_id = target_array.header.frame_id;
+    ros_cloud.header.stamp = target_array.header.stamp;
+  }
   
-private:
-  pcl::PointCloud<PointRadarTarget> pcl_cloud_;
-  sensor_msgs::PointCloud2 cloud_msg_;
-
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Subscriber sub_radar_target_array_;
-  ros::Publisher pub_cloud_;
 };
-
+  
 } // namespace ainstein_radar_filters
 
 #endif // RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H

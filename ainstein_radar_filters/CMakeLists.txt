@@ -39,7 +39,7 @@ target_link_libraries(radar_target_array_speed_filter_node ${catkin_LIBRARIES})
 add_library(radar_target_array_speed_filter_nodelet src/radar_target_array_speed_filter_nodelet.cpp src/radar_target_array_speed_filter.cpp)
 target_link_libraries(radar_target_array_speed_filter_nodelet ${catkin_LIBRARIES})
 
-add_executable(radar_target_array_to_point_cloud_node src/radar_target_array_to_point_cloud_node.cpp src/radar_target_array_to_point_cloud.cpp)
+add_executable(radar_target_array_to_point_cloud_node src/radar_target_array_to_point_cloud_node.cpp)
 add_dependencies(radar_target_array_to_point_cloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_point_cloud_node ${catkin_LIBRARIES})
 
