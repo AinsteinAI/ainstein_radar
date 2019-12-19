@@ -24,20 +24,24 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <ros/ros.h>
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
+
 #include "ainstein_radar_filters/radar_target_array_to_point_cloud.h"
 
-int main( int argc, char** argv )
+class NodeletRadarTargetArrayToPointCloud : public nodelet::Nodelet
 {
-  // Initialize ROS node:
-  ros::init( argc, argv, "radar_target_array_to_point_cloud_node" );
-  ros::NodeHandle node_handle;
-  ros::NodeHandle node_handle_private( "~" );
-
-  ainstein_radar_filters::RadarTargetArrayToPointCloud( node_handle, node_handle_private );
+public:
+  NodeletRadarTargetArrayToPointCloud( void ) {}
+  ~NodeletRadarTargetArrayToPointCloud( void ) {}
   
-  ros::spin();
+  virtual void onInit( void )
+  {
+    radar_to_pcl_ptr_.reset( new ainstein_radar_filters::RadarTargetArrayToPointCloud( getNodeHandle(), getPrivateNodeHandle() ) );
+  }
 
-  return 0;
-}
+private:
+  std::unique_ptr<ainstein_radar_filters::RadarTargetArrayToPointCloud> radar_to_pcl_ptr_;
+};
 
+PLUGINLIB_EXPORT_CLASS( NodeletRadarTargetArrayToPointCloud, nodelet::Nodelet )

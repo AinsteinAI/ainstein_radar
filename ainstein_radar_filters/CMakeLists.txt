@@ -44,6 +44,10 @@ add_executable(radar_target_array_to_point_cloud_node src/radar_target_array_to_
 add_dependencies(radar_target_array_to_point_cloud_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_point_cloud_node ${catkin_LIBRARIES})
 
+add_library(radar_target_array_to_point_cloud_nodelet src/radar_target_array_to_point_cloud_nodelet.cpp)
+add_dependencies(radar_target_array_to_point_cloud_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radar_target_array_to_point_cloud_nodelet ${catkin_LIBRARIES})
+
 add_executable(radar_target_array_to_laser_scan_node src/radar_target_array_to_laser_scan_node.cpp src/radar_target_array_to_laser_scan.cpp)
 add_dependencies(radar_target_array_to_laser_scan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_laser_scan_node ${catkin_LIBRARIES})
@@ -68,6 +72,10 @@ add_executable(radar_passthrough_filter_node src/radar_passthrough_filter_node.c
 add_dependencies(radar_passthrough_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radar_passthrough_filter_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_library(radar_passthrough_filter_nodelet src/radar_passthrough_filter_nodelet.cpp src/radar_passthrough_filter.cpp)
+add_dependencies(radar_passthrough_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(radar_passthrough_filter_nodelet ${catkin_LIBRARIES})
+
 install(TARGETS
   radar_target_array_speed_filter_node
   radar_target_array_speed_filter_nodelet
@@ -77,6 +85,8 @@ install(TARGETS
   radardata_to_tracked_targets_node
   radardata_range_filter_node
   radardata_range_filter_nodelet
+  radar_passthrough_filter_node
+  radar_passthrough_filter_nodelet
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

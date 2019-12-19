@@ -40,7 +40,7 @@ namespace ainstein_radar_filters
     
     // Set up dynamic reconfigure:
     dynamic_reconfigure::Server<ainstein_radar_filters::PassthroughFilterConfig>::CallbackType f;
-    f = boost::bind(&RadarPassthroughFilter::dynConfigCallback, this, _1, _2);
+    f = boost::bind( &RadarPassthroughFilter::dynConfigCallback, this, _1, _2 );
     dyn_config_server_.setCallback( f );
   }
 
@@ -48,7 +48,7 @@ namespace ainstein_radar_filters
   {
     // Convert from radar message to PCL point cloud type
     pcl::PointCloud<PointRadarTarget> pcl_cloud;
-    RadarTargetArrayToPointCloud::radarTargetArrayToPclCloud( msg, pcl_cloud );
+    data_conversions::radarTargetArrayToPclCloud( msg, pcl_cloud );
 
     // Filter the PCL point cloud using the PCL passthrough class
     pcl::PointCloud<PointRadarTarget> pcl_cloud_filt;
@@ -57,7 +57,7 @@ namespace ainstein_radar_filters
 
     // Convert back to radar message type
     ainstein_radar_msgs::RadarTargetArray msg_filt;
-    RadarTargetArrayToPointCloud::pclCloudToRadarTargetArray( pcl_cloud_filt, msg_filt );
+    data_conversions::pclCloudToRadarTargetArray( pcl_cloud_filt, msg_filt );
     
     // Copy metadata from input data and publish
     msg_filt.header = msg.header;

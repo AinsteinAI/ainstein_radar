@@ -11,7 +11,6 @@
 #include <tf2_ros/transform_listener.h>
 #include <vision_msgs/Detection2DArray.h>
 
-#include <ainstein_radar_filters/radar_target_array_to_point_cloud.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 
 namespace ainstein_radar_tools

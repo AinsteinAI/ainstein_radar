@@ -1,0 +1,7 @@
+<library path="libradar_passthrough_filter_nodelet">
+  <class name="ainstein_radar_filters/radar_passthrough_filter_nodelet" type="NodeletRadarPassthroughFilter" base_class_type="nodelet::Nodelet">
+    <description>
+      RadarTargetArray passthrough filter nodelet.
+    </description>
+  </class>
+</library>

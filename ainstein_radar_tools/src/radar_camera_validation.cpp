@@ -1,6 +1,5 @@
 #include <ainstein_radar_tools/radar_camera_validation.h>
-
-#include <ainstein_radar_filters/radar_target_array_to_point_cloud.h>
+#include <ainstein_radar_filters/data_conversions.h>
 
 namespace ainstein_radar_tools
 {
@@ -50,7 +49,7 @@ namespace ainstein_radar_tools
     for( const auto& t : targets_msg_.targets )
       {
 	// Convert the radar target to a 3d point
-	ainstein_radar_filters::RadarTargetArrayToPointCloud::radarTargetToPclPoint( t, pcl_point );
+	ainstein_radar_filters::data_conversions::radarTargetToPclPoint( t, pcl_point );
 	Eigen::Vector3d target_point = Eigen::Vector3d( pcl_point.x, pcl_point.y, pcl_point.z );
 
 	// Transform the 3d point into the camera frame

@@ -25,6 +25,7 @@
 */
 
 #include "ainstein_radar_tools/radar_camera_fusion.h"
+#include <ainstein_radar_filters/data_conversions.h>
 
 namespace ainstein_radar_tools
 {
@@ -183,7 +184,7 @@ namespace ainstein_radar_tools
       {
 	// Convert the radar target to a 3d Cartesian point
 	PointRadarTarget pcl_point;
-	ainstein_radar_filters::RadarTargetArrayToPointCloud::radarTargetToPclPoint( t, pcl_point );
+	ainstein_radar_filters::data_conversions::radarTargetToPclPoint( t, pcl_point );
 	Eigen::Vector3d target_point = Eigen::Vector3d( pcl_point.x, pcl_point.y, pcl_point.z );
 
 	// Transform the 3d point into the camera coordinate frame
