@@ -72,6 +72,7 @@ install(TARGETS
   radar_target_array_speed_filter_node
   radar_target_array_speed_filter_nodelet
   radar_target_array_to_point_cloud_node
+  radar_target_array_to_point_cloud_nodelet
   radar_target_array_to_laser_scan_node
   nearest_target_filter_node
   tracking_filter_node
