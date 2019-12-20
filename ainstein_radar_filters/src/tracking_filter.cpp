@@ -24,17 +24,17 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "ainstein_radar_filters/radardata_to_tracked_targets.h"
+#include "ainstein_radar_filters/tracking_filter.h"
 
 namespace ainstein_radar_filters
 {
-  const int RadarDataToTrackedTargets::max_tracked_targets = 100;
+  const int TrackingFilter::max_tracked_targets = 100;
 
-  void RadarDataToTrackedTargets::initialize( void )
+  void TrackingFilter::initialize( void )
   {
     // Set up raw radar data subscriber and tracked radar data publisher:
     sub_radar_data_raw_ = nh_.subscribe( "radar_in", 1,
-					 &RadarDataToTrackedTargets::radarDataCallback,
+					 &TrackingFilter::radarTargetArrayCallback,
 					 this );
 
     pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 1 );
@@ -42,15 +42,15 @@ namespace ainstein_radar_filters
     pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
     
     // Reserve space for the maximum number of target Kalman Filters:
-    filters_.reserve( RadarDataToTrackedTargets::max_tracked_targets );
+    filters_.reserve( TrackingFilter::max_tracked_targets );
 
     // Launch the periodic filter update thread:
-    filter_update_thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarDataToTrackedTargets::updateFiltersLoop,
+    filter_update_thread_ = std::unique_ptr<std::thread>( new std::thread( &TrackingFilter::updateFiltersLoop,
 									   this,
 									   filter_update_rate_ ) );									  
   }
   
-  void RadarDataToTrackedTargets::updateFiltersLoop( double frequency )
+  void TrackingFilter::updateFiltersLoop( double frequency )
   {
     // Set the periodic task rate:
     ros::Rate update_filters_rate( frequency );
@@ -142,7 +142,7 @@ namespace ainstein_radar_filters
       }
   }
   
-  void RadarDataToTrackedTargets::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr& msg )
+  void TrackingFilter::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr& msg )
   {
     // Store the frame_id for the messages:
     msg_tracked_targets_.header.frame_id = msg->header.frame_id;
@@ -214,7 +214,7 @@ namespace ainstein_radar_filters
       }
   }
 
-  jsk_recognition_msgs::BoundingBox RadarDataToTrackedTargets::getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets )
+  jsk_recognition_msgs::BoundingBox TrackingFilter::getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets )
   {
     // Find the bounding box dimensions:
     Eigen::Vector3d min_point = Eigen::Vector3d( std::numeric_limits<double>::infinity(),

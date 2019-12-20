@@ -1,5 +1,5 @@
-#ifndef RADAR_DATA_TO_TRACKED_TARGETS_H_
-#define RADAR_DATA_TO_TRACKED_TARGETS_H_
+#ifndef TRACKING_FILTER_H_
+#define TRACKING_FILTER_H_
 
 #include <thread>
 
@@ -13,21 +13,21 @@
 
 namespace ainstein_radar_filters
 {
-  class RadarDataToTrackedTargets
+  class TrackingFilter
   {
   public:
-    RadarDataToTrackedTargets( const ros::NodeHandle& node_handle,
+    TrackingFilter( const ros::NodeHandle& node_handle,
 			       const ros::NodeHandle& node_handle_private ) :
     nh_( node_handle ),
     nh_private_( node_handle_private )
     {
       // Set up dynamic reconfigure:
       dynamic_reconfigure::Server<ainstein_radar_filters::TrackingFilterConfig>::CallbackType f;
-      f = boost::bind(&RadarDataToTrackedTargets::dynConfigCallback, this, _1, _2);
+      f = boost::bind(&TrackingFilter::dynConfigCallback, this, _1, _2);
       dyn_config_server_.setCallback(f);
     }
 
-    ~RadarDataToTrackedTargets() {}
+    ~TrackingFilter() {}
 
     void dynConfigCallback( const ainstein_radar_filters::TrackingFilterConfig& config, uint32_t level )
     {
@@ -59,7 +59,7 @@ namespace ainstein_radar_filters
     void initialize( void );
     void updateFiltersLoop( double frequency );
     
-    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
+    void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
 
     jsk_recognition_msgs::BoundingBox getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets );
 
@@ -105,4 +105,4 @@ namespace ainstein_radar_filters
 
 } // namespace ainstein_radar_filters
 
-#endif // RADAR_DATA_TO_TRACKED_TARGETS_H_
+#endif // RADAR_TRACKING_FILTER_H_

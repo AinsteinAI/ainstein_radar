@@ -1,5 +1,5 @@
-#ifndef RADAR_DATA_TO_NEAREST_TARGET_H_
-#define RADAR_DATA_TO_NEAREST_TARGET_H_
+#ifndef NEAREST_TARGET_FILTER_H_
+#define NEAREST_TARGET_FILTER_H_
 
 #include <ros/ros.h>
 
@@ -8,14 +8,14 @@
 
 namespace ainstein_radar_filters
 {
-  class RadarDataToNearestTarget
+  class NearestTargetFilter
   {
   public:
-    RadarDataToNearestTarget( ros::NodeHandle node_handle,
+    NearestTargetFilter( ros::NodeHandle node_handle,
 			      ros::NodeHandle node_handle_private );
-    ~RadarDataToNearestTarget(){}
+    ~NearestTargetFilter(){}
 
-    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
+    void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
   
   private:
     ros::NodeHandle nh_;
@@ -43,4 +43,4 @@ namespace ainstein_radar_filters
 
 } // namespace ainstein_radar_filters
 
-#endif
+#endif // NEAREST_TARGET_FILTER_H_

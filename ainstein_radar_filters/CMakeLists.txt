@@ -52,13 +52,13 @@ add_executable(radar_target_array_to_laser_scan_node src/radar_target_array_to_l
 add_dependencies(radar_target_array_to_laser_scan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_laser_scan_node ${catkin_LIBRARIES})
 
-add_executable(radardata_to_nearest_target_node src/radardata_to_nearest_target_node.cpp src/radardata_to_nearest_target.cpp)
-add_dependencies(radardata_to_nearest_target_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(radardata_to_nearest_target_node ${catkin_LIBRARIES})
+add_executable(nearest_target_filter_node src/nearest_target_filter_node.cpp src/nearest_target_filter.cpp)
+add_dependencies(nearest_target_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(nearest_target_filter_node ${catkin_LIBRARIES})
 
-add_executable(radardata_to_tracked_targets_node src/radardata_to_tracked_targets_node.cpp src/radardata_to_tracked_targets.cpp src/radar_target_kf.cpp)
-add_dependencies(radardata_to_tracked_targets_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
-target_link_libraries(radardata_to_tracked_targets_node ${catkin_LIBRARIES})
+add_executable(tracking_filter_node src/tracking_filter_node.cpp src/tracking_filter.cpp src/radar_target_kf.cpp)
+add_dependencies(tracking_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(tracking_filter_node ${catkin_LIBRARIES})
 
 add_executable(radardata_range_filter_node src/radardata_range_filter_node.cpp src/radardata_range_filter.cpp)
 add_dependencies(radardata_range_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
@@ -81,8 +81,8 @@ install(TARGETS
   radar_target_array_speed_filter_nodelet
   radar_target_array_to_point_cloud_node
   radar_target_array_to_laser_scan_node
-  radardata_to_nearest_target_node
-  radardata_to_tracked_targets_node
+  nearest_target_filter_node
+  tracking_filter_node
   radardata_range_filter_node
   radardata_range_filter_nodelet
   radar_passthrough_filter_node

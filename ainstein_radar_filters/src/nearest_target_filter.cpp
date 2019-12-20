@@ -24,17 +24,17 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "ainstein_radar_filters/radardata_to_nearest_target.h"
+#include "ainstein_radar_filters/nearest_target_filter.h"
 
 namespace ainstein_radar_filters
 {
-  RadarDataToNearestTarget::RadarDataToNearestTarget( ros::NodeHandle node_handle,
+  NearestTargetFilter::NearestTargetFilter( ros::NodeHandle node_handle,
 						      ros::NodeHandle node_handle_private ) :
     nh_( node_handle ),
     nh_private_( node_handle_private )
   {
     sub_radar_data_ = nh_.subscribe( "radar_in", 10,
-				     &RadarDataToNearestTarget::radarDataCallback,
+				     &NearestTargetFilter::radarTargetArrayCallback,
 				     this );
 
     pub_nearest_target_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetStamped>( "nearest_target", 10 );
@@ -56,7 +56,7 @@ namespace ainstein_radar_filters
     nh_private_.param( "data_lpf_timeout", data_lpf_timeout_, 3.0 );
   }
 
-  void RadarDataToNearestTarget::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg )
+  void NearestTargetFilter::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg )
   {
     nearest_target_array_msg_.targets.clear();
     double nearest_range = 1000.0;
