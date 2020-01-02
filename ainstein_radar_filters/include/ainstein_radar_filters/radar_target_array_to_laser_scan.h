@@ -13,7 +13,8 @@ namespace ainstein_radar_filters
   class RadarTargetArrayToLaserScan
   {
   public:
-    RadarTargetArrayToLaserScan( void );
+    RadarTargetArrayToLaserScan( ros::NodeHandle node_handle,
+				 ros::NodeHandle node_handle_private );
     ~RadarTargetArrayToLaserScan(){}
   
     void radarVelCallback( const geometry_msgs::Twist &msg );     

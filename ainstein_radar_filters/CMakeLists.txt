@@ -52,6 +52,10 @@ add_executable(radar_target_array_to_laser_scan_node src/radar_target_array_to_l
 add_dependencies(radar_target_array_to_laser_scan_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(radar_target_array_to_laser_scan_node ${catkin_LIBRARIES})
 
+add_library(radar_target_array_to_laser_scan_nodelet src/radar_target_array_to_laser_scan_nodelet.cpp)
+add_dependencies(radar_target_array_to_laser_scan_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(radar_target_array_to_laser_scan_nodelet ${catkin_LIBRARIES})
+
 add_executable(nearest_target_filter_node src/nearest_target_filter_node.cpp src/nearest_target_filter.cpp)
 add_dependencies(nearest_target_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(nearest_target_filter_node ${catkin_LIBRARIES})
@@ -74,6 +78,7 @@ install(TARGETS
   radar_target_array_to_point_cloud_node
   radar_target_array_to_point_cloud_nodelet
   radar_target_array_to_laser_scan_node
+  radar_target_array_to_laser_scan_nodelet
   nearest_target_filter_node
   tracking_filter_node
   radar_passthrough_filter_node

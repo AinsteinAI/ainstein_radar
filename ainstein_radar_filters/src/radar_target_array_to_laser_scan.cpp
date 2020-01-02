@@ -29,8 +29,10 @@
 namespace ainstein_radar_filters
 {
   
-  RadarTargetArrayToLaserScan::RadarTargetArrayToLaserScan( void ) :
-    nh_private_( "~" )
+  RadarTargetArrayToLaserScan::RadarTargetArrayToLaserScan( ros::NodeHandle node_handle,
+							    ros::NodeHandle node_handle_private ) :
+    nh_( node_handle ),
+    nh_private_( node_handle_private )
   {
     // Get parameters:
     nh_private_.param( "angle_min", laser_scan_msg_.angle_min, static_cast<float>( -0.5 * M_PI ) );
