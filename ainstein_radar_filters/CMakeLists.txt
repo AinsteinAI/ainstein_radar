@@ -23,6 +23,7 @@ generate_dynamic_reconfigure_options(
   cfg/TrackingFilter.cfg
   cfg/RangeFilter.cfg
   cfg/PassthroughFilter.cfg
+  cfg/CombineFilter.cfg
   )
 
 catkin_package(INCLUDE_DIRS include)
@@ -72,6 +73,10 @@ add_library(radar_passthrough_filter_nodelet src/radar_passthrough_filter_nodele
 add_dependencies(radar_passthrough_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radar_passthrough_filter_nodelet ${catkin_LIBRARIES})
 
+add_executable(radar_combine_filter_node src/radar_combine_filter_node.cpp src/radar_combine_filter.cpp)
+add_dependencies(radar_combine_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(radar_combine_filter_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 install(TARGETS
   radar_target_array_speed_filter_node
   radar_target_array_speed_filter_nodelet
@@ -83,6 +88,7 @@ install(TARGETS
   tracking_filter_node
   radar_passthrough_filter_node
   radar_passthrough_filter_nodelet
+  radar_combine_filter_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
