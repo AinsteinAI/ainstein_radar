@@ -39,8 +39,8 @@ namespace ainstein_radar_filters
 				std::pow( pcl_point.y, 2.0 ) +
 				std::pow( pcl_point.z, 2.0 ) );
       target.speed = pcl_point.speed;
-      target.azimuth = std::atan2( pcl_point.y, pcl_point.x );
-      target.elevation = std::asin( pcl_point.z / target.range );
+      target.azimuth = ( 180.0 / M_PI ) * std::atan2( pcl_point.y, pcl_point.x );
+      target.elevation = ( 180.0 / M_PI ) * std::asin( pcl_point.z / target.range );
     }
 
     static void radarTargetArrayToPclCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
