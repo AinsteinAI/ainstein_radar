@@ -24,6 +24,8 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+
 #include "ainstein_radar_filters/radar_combine_filter.h"
 
 namespace ainstein_radar_filters
@@ -58,26 +60,46 @@ namespace ainstein_radar_filters
   void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B )
   {
-    // Convert from radar message to PCL point cloud type
-    pcl::PointCloud<PointRadarTarget> pcl_cloud_A, pcl_cloud_B;
-    data_conversions::radarTargetArrayToPclCloud( *msg_A, pcl_cloud_A );
-    data_conversions::radarTargetArrayToPclCloud( *msg_B, pcl_cloud_B );
+    // Convert from radar message to ROS point cloud type
+    sensor_msgs::PointCloud2 cloud_A_in, cloud_B_in;
+    data_conversions::radarTargetArrayToROSCloud( *msg_A, cloud_A_in );
+    data_conversions::radarTargetArrayToROSCloud( *msg_B, cloud_B_in );
 
-    // Transform radar point clouds to common output frame
-    // Eigen::Affine3d tf_radar_to_camera;
-    // if( buffer_tf_.canTransform( "camera_color_optical_frame", "radar_frame", ros::Time( 0 ) ) )
-    //   {
-    //     tf_radar_to_camera =
-    //       tf2::transformToEigen( buffer_tf_.lookupTransform( "camera_color_optical_frame", "radar_frame", ros::Time( 0 ) ) );
-    //   }
-    // else
-    //   {
-    //     ROS_WARN_STREAM( "Timeout while waiting for transform." );
-    //   }
+    // Transform radar point clouds to common output frame. There is no version of the function
+    // transformPointCloud for tf2, so we instead convert to ROS cloud and use tf2::doTransform.
+    // Note that we should really implement doTransform for radar types natively eg following:
+    // http://library.isr.ist.utl.pt/docs/roswiki/tf2(2f)Tutorials(2f)Transforming(20)your(20)own(20)datatypes.html
+    sensor_msgs::PointCloud2 cloud_A_out;
+    if( buffer_tf_.canTransform( output_frame_id_, msg_A->header.frame_id, ros::Time( 0 ) ) )
+      {
+	tf2::doTransform( cloud_A_in, cloud_A_out,
+			  buffer_tf_.lookupTransform( output_frame_id_,
+						      msg_A->header.frame_id, ros::Time( 0 ) ) );
+      }
+    else
+      {
+	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud A." );
+      }
+
+    sensor_msgs::PointCloud2 cloud_B_out;
+    if( buffer_tf_.canTransform( output_frame_id_, msg_B->header.frame_id, ros::Time( 0 ) ) )
+      {
+	tf2::doTransform( cloud_B_in, cloud_B_out,
+			  buffer_tf_.lookupTransform( output_frame_id_,
+						      msg_B->header.frame_id, ros::Time( 0 ) ) );
+      }
+    else
+      {
+	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud B." );
+      }
     
-    // Combine the radar point clouds
+    // Combine the radar point clouds by comverting to PCL and using PCL cloud addition
+    pcl::PointCloud<PointRadarTarget> pcl_cloud_A_out, pcl_cloud_B_out;
+    pcl::fromROSMsg( cloud_A_out, pcl_cloud_A_out );
+    pcl::fromROSMsg( cloud_B_out, pcl_cloud_B_out );
+    
     pcl::PointCloud<PointRadarTarget> pcl_cloud_combined;
-    pcl_cloud_combined = pcl_cloud_A + pcl_cloud_B;
+    pcl_cloud_combined = pcl_cloud_A_out + pcl_cloud_B_out;
     
     // Convert back to radar message type
     ainstein_radar_msgs::RadarTargetArray msg_combined;
