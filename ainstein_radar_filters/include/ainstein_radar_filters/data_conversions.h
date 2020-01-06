@@ -5,6 +5,7 @@
 
 #include <pcl_ros/point_cloud.h>
 #include <geometry_msgs/Twist.h>
+#include <pcl_ros/transforms.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 
@@ -89,6 +90,20 @@ namespace ainstein_radar_filters
       ros_cloud.header.frame_id = target_array.header.frame_id;
       ros_cloud.header.stamp = target_array.header.stamp;
     }
+
+    /* static void transformRadarTargetArray( const std::string& target_frame, */
+    /* 					   const ainstein_radar_msgs::RadarTargetArray& radar_in, */
+    /* 					   ainstein_radar_msgs::RadarTargetArray& radar_out, */
+    /* 					   const tf2_ros::Buffer& buffer ) */
+    /* { */
+    /*   pcl::PointCloud<PointRadarTarget> cloud_in; */
+    /*   radarTargetArrayToPclCloud( radar_in, cloud_in ); */
+
+    /*   pcl::PointCloud<PointRadarTarget> cloud_out; */
+    /*   pcl_ros::transformPointCloud( target_frame, cloud_in, cloud_out, buffer ); */
+
+    /*   pclCloudToRadarTargetArray( cloud_out, radar_out ); */
+    /* } */
 
   } // namespace radar_data_conversions
   
