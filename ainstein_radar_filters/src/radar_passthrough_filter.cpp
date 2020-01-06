@@ -31,12 +31,17 @@ namespace ainstein_radar_filters
   RadarPassthroughFilter::RadarPassthroughFilter( const ros::NodeHandle& node_handle,
 						  const ros::NodeHandle& node_handle_private ) :
     nh_( node_handle ),
-    nh_private_( node_handle_private )
+    nh_private_( node_handle_private ),
+    listen_tf_( buffer_tf_ )
   {
     pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radar_out", 10 );
     sub_radar_data_ = nh_.subscribe( "radar_in", 10,
 				     &RadarPassthroughFilter::radarDataCallback,
 				     this );
+
+    // Get the non-dynamic parameters:
+    nh_private_.param( "input_frame", input_frame_, std::string( "" ) );
+    nh_private_.param( "output_frame", output_frame_, std::string( "" ) );
     
     // Set up dynamic reconfigure:
     dynamic_reconfigure::Server<ainstein_radar_filters::PassthroughFilterConfig>::CallbackType f;
@@ -44,23 +49,59 @@ namespace ainstein_radar_filters
     dyn_config_server_.setCallback( f );
   }
 
-  void RadarPassthroughFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray& msg )
+  void RadarPassthroughFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg )
   {
     // Convert from radar message to PCL point cloud type
-    pcl::PointCloud<PointRadarTarget> pcl_cloud;
-    data_conversions::radarTargetArrayToPclCloud( msg, pcl_cloud );
+    sensor_msgs::PointCloud2 ros_cloud;
+    data_conversions::radarTargetArrayToROSCloud( *msg, ros_cloud );
 
+    // Transform the ROS cloud message to the specified input frame, using the
+    // message's original frame_id if not set in configuration
+    sensor_msgs::PointCloud2 ros_cloud_input_frame;
+    if( !input_frame_.empty() )
+      {
+	tf2::doTransform( ros_cloud, ros_cloud_input_frame,
+			  buffer_tf_.lookupTransform( input_frame_,
+						      msg->header.frame_id, ros::Time( 0 ) ) );
+      }
+    else
+      {
+	ros_cloud_input_frame = ros_cloud;
+      }
+
+    // Convert ROS cloud in input frame to a PCL cloud
+    pcl::PointCloud<PointRadarTarget> pcl_cloud_input_frame;
+    pcl::fromROSMsg( ros_cloud_input_frame, pcl_cloud_input_frame );
+    
     // Filter the PCL point cloud using the PCL passthrough class
     pcl::PointCloud<PointRadarTarget> pcl_cloud_filt;
-    passthrough_filt_.setInputCloud( pcl_cloud.makeShared() );
+    passthrough_filt_.setInputCloud( pcl_cloud_input_frame.makeShared() );
     passthrough_filt_.filter( pcl_cloud_filt );
 
+    // Convert back to PointCloud2
+    sensor_msgs::PointCloud2 ros_cloud_filt;
+    pcl::toROSMsg( pcl_cloud_filt, ros_cloud_filt );
+
+    // Transform to the specified output frame, using the original frame if
+    // no output frame was specified
+    sensor_msgs::PointCloud2 ros_cloud_output_frame;
+    if( !output_frame_.empty() )
+      {
+	tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame,
+			  buffer_tf_.lookupTransform( output_frame_,
+						      ros_cloud_filt.header.frame_id, ros::Time( 0 ) ) );
+      }
+    else
+      {
+	ros_cloud_output_frame = ros_cloud_filt;
+      }
+    
     // Convert back to radar message type
     ainstein_radar_msgs::RadarTargetArray msg_filt;
     data_conversions::pclCloudToRadarTargetArray( pcl_cloud_filt, msg_filt );
     
-    // Copy metadata from input data and publish
-    msg_filt.header = msg.header;
+    // Copy metadata from original message (frame should be consistent) and publish
+    msg_filt.header.stamp = msg->header.stamp;
     pub_radar_data_.publish( msg_filt );
   }
 

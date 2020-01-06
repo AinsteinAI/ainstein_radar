@@ -24,8 +24,6 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-
 #include "ainstein_radar_filters/radar_combine_filter.h"
 
 namespace ainstein_radar_filters

@@ -8,6 +8,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <ainstein_radar_filters/PassthroughFilterConfig.h>
 #include <ainstein_radar_filters/radar_target_array_to_point_cloud.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
 #include <pcl/filters/passthrough.h>
 
@@ -33,7 +34,7 @@ namespace ainstein_radar_filters
       passthrough_filt_.setFilterLimitsNegative( config_.filter_limit_negative );
     }
     
-  void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray& msg );
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg );
   
   private:
     ros::NodeHandle nh_;
@@ -44,7 +45,11 @@ namespace ainstein_radar_filters
 
     pcl::PassThrough<PointRadarTarget> passthrough_filt_;
     
+    tf2_ros::TransformListener listen_tf_;
+    tf2_ros::Buffer buffer_tf_;
+
     // Parameters:
+    std::string input_frame_, output_frame_;
     dynamic_reconfigure::Server<ainstein_radar_filters::PassthroughFilterConfig> dyn_config_server_;
     ainstein_radar_filters::PassthroughFilterConfig config_;
   };
