@@ -91,6 +91,17 @@ namespace ainstein_radar_filters
       ros_cloud.header.stamp = target_array.header.stamp;
     }
 
+    
+    static void rosCloudToRadarTargetArray( const sensor_msgs::PointCloud2& ros_cloud,
+					    ainstein_radar_msgs::RadarTargetArray& target_array )
+    {
+      // Convert to PCL cloud and use the appropriate conversion function above
+      pcl::PointCloud<PointRadarTarget> pcl_cloud;
+      pcl::fromROSMsg( ros_cloud, pcl_cloud );
+
+      pclCloudToRadarTargetArray( pcl_cloud, target_array );
+    }
+
     /* static void transformRadarTargetArray( const std::string& target_frame, */
     /* 					   const ainstein_radar_msgs::RadarTargetArray& radar_in, */
     /* 					   ainstein_radar_msgs::RadarTargetArray& radar_out, */
