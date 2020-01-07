@@ -93,7 +93,14 @@ namespace ainstein_radar_filters
       }
     else
       {
-	ros_cloud_output_frame = ros_cloud_filt;
+	// If the input frame in which filtering was performed is not empty, then we need to
+	// transform back to the original output frame before publishing the result
+	if( !input_frame_.empty() )
+	  {
+	    tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame,
+			      buffer_tf_.lookupTransform( msg->header.frame_id,
+							  ros_cloud_filt.header.frame_id, ros::Time( 0 ) ) );
+	  }
       }
     
     // Convert back to radar message type
