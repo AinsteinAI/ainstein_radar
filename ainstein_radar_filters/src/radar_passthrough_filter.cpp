@@ -58,11 +58,13 @@ namespace ainstein_radar_filters
     // Transform the ROS cloud message to the specified input frame, using the
     // message's original frame_id if not set in configuration
     sensor_msgs::PointCloud2 ros_cloud_input_frame;
+    geometry_msgs::TransformStamped tf_msg_to_input;
     if( !input_frame_.empty() )
       {
-	tf2::doTransform( ros_cloud, ros_cloud_input_frame,
-			  buffer_tf_.lookupTransform( input_frame_,
-						      msg->header.frame_id, ros::Time( 0 ) ) );
+	tf_msg_to_input = buffer_tf_.lookupTransform( input_frame_,
+						      msg->header.frame_id,
+						      ros::Time( 0 ) );
+	tf2::doTransform( ros_cloud, ros_cloud_input_frame, tf_msg_to_input );
       }
     else
       {
@@ -81,7 +83,7 @@ namespace ainstein_radar_filters
     // Convert back to PointCloud2
     sensor_msgs::PointCloud2 ros_cloud_filt;
     pcl::toROSMsg( pcl_cloud_filt, ros_cloud_filt );
-    
+
     // Transform to the specified output frame, using the original frame if
     // no output frame was specified
     sensor_msgs::PointCloud2 ros_cloud_output_frame;
@@ -103,6 +105,12 @@ namespace ainstein_radar_filters
 							     ros_cloud_filt.header.frame_id,
 							     ros::Time( 0 ) );
 	    tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame, tf_input_to_output );
+	  }
+	else
+	  {
+	    // if both input and output frames were not specified, nothing to do but
+	    // copy the filtered cloud
+	    ros_cloud_output_frame = ros_cloud_filt;
 	  }
       }
     
