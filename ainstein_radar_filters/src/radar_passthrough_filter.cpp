@@ -100,8 +100,17 @@ namespace ainstein_radar_filters
     ainstein_radar_msgs::RadarTargetArray msg_filt;
     data_conversions::pclCloudToRadarTargetArray( pcl_cloud_filt, msg_filt );
     
-    // Copy metadata from original message (frame should be consistent) and publish
+    // Copy metadata from original message/output frame param and publish
     msg_filt.header.stamp = msg->header.stamp;
+    if( !output_frame_.empty() )
+      {
+	msg_filt.header.frame_id = output_frame_;
+      }
+    else
+      {
+	msg_filt.header.frame_id = msg->header.frame_id;
+      }
+
     pub_radar_data_.publish( msg_filt );
   }
 
