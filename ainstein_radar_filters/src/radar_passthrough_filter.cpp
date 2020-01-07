@@ -72,7 +72,7 @@ namespace ainstein_radar_filters
     // Convert ROS cloud in input frame to a PCL cloud
     pcl::PointCloud<PointRadarTarget> pcl_cloud_input_frame;
     pcl::fromROSMsg( ros_cloud_input_frame, pcl_cloud_input_frame );
-    
+
     // Filter the PCL point cloud using the PCL passthrough class
     pcl::PointCloud<PointRadarTarget> pcl_cloud_filt;
     passthrough_filt_.setInputCloud( pcl_cloud_input_frame.makeShared() );
@@ -81,15 +81,17 @@ namespace ainstein_radar_filters
     // Convert back to PointCloud2
     sensor_msgs::PointCloud2 ros_cloud_filt;
     pcl::toROSMsg( pcl_cloud_filt, ros_cloud_filt );
-
+    
     // Transform to the specified output frame, using the original frame if
     // no output frame was specified
     sensor_msgs::PointCloud2 ros_cloud_output_frame;
+    geometry_msgs::TransformStamped tf_input_to_output;
     if( !output_frame_.empty() )
       {
-	tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame,
-			  buffer_tf_.lookupTransform( output_frame_,
-						      ros_cloud_filt.header.frame_id, ros::Time( 0 ) ) );
+	tf_input_to_output = buffer_tf_.lookupTransform( output_frame_,
+							 ros_cloud_filt.header.frame_id,
+							 ros::Time( 0 ) );
+	tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame, tf_input_to_output );
       }
     else
       {
@@ -97,16 +99,17 @@ namespace ainstein_radar_filters
 	// transform back to the original output frame before publishing the result
 	if( !input_frame_.empty() )
 	  {
-	    tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame,
-			      buffer_tf_.lookupTransform( msg->header.frame_id,
-							  ros_cloud_filt.header.frame_id, ros::Time( 0 ) ) );
+	    tf_input_to_output = buffer_tf_.lookupTransform( msg->header.frame_id,
+							     ros_cloud_filt.header.frame_id,
+							     ros::Time( 0 ) );
+	    tf2::doTransform( ros_cloud_filt, ros_cloud_output_frame, tf_input_to_output );
 	  }
       }
     
     // Convert back to radar message type
     ainstein_radar_msgs::RadarTargetArray msg_filt;
-    data_conversions::pclCloudToRadarTargetArray( pcl_cloud_filt, msg_filt );
-    
+    data_conversions::rosCloudToRadarTargetArray( ros_cloud_output_frame, msg_filt );
+
     // Copy metadata from original message/output frame param and publish
     msg_filt.header.stamp = msg->header.stamp;
     if( !output_frame_.empty() )
@@ -117,7 +120,7 @@ namespace ainstein_radar_filters
       {
 	msg_filt.header.frame_id = msg->header.frame_id;
       }
-
+    
     pub_radar_data_.publish( msg_filt );
   }
 

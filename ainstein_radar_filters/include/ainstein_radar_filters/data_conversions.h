@@ -16,15 +16,41 @@ namespace ainstein_radar_filters
 {
   namespace data_conversions
   {
+    static void sphericalToCartesian( double range, double azimuth, double elevation,
+				      Eigen::Vector3d& p )
+    {
+      // Convert spherical coordinates to Cartesian coordinates. Range and point xyz are in
+      // meters, angles are in radians.
+      p.x() = range * cos( azimuth ) * cos( elevation );
+      p.y() = range * sin( azimuth ) * cos( elevation );
+      p.z() = range * sin( elevation );
+    }
+
+    static void cartesianToSpherical( const Eigen::Vector3d& p,
+				      double& range, double& azimuth, double& elevation )
+    {
+      // Convert Cartesian coordinates to spherical coordinates. Range and point xyz are in
+      // meters, angles are in radians.
+      range = std::sqrt( std::pow( p.x(), 2.0 ) +
+			 std::pow( p.y(), 2.0 ) +
+			 std::pow( p.z(), 2.0 ) );
+      azimuth = std::atan2( p.y(), p.x() );
+      elevation = std::asin( p.z() / range );
+    }
+
     static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget& target,
 				       PointRadarTarget& pcl_point )
     {
-      pcl_point.x = cos( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
-	* target.range;
-      pcl_point.y = sin( ( M_PI / 180.0 ) * target.azimuth ) * cos( ( M_PI / 180.0 ) * target.elevation )
-	* target.range;
-      pcl_point.z = sin( ( M_PI / 180.0 ) * target.elevation ) * target.range;
+      Eigen::Vector3d p;
+      sphericalToCartesian( target.range,
+			    ( M_PI / 180.0 ) * target.azimuth,
+			    ( M_PI / 180.0 ) * target.elevation,
+			    p );
+      pcl_point.x = p.x();
+      pcl_point.y = p.y();
+      pcl_point.z = p.z();
 
+      // Copy the spherical coordinate data
       pcl_point.snr = target.snr;
       pcl_point.range = target.range;
       pcl_point.speed = target.speed;
@@ -36,12 +62,14 @@ namespace ainstein_radar_filters
 				       ainstein_radar_msgs::RadarTarget& target )
     {
       target.snr = pcl_point.snr;
-      target.range = std::sqrt( std::pow( pcl_point.x, 2.0 ) +
-				std::pow( pcl_point.y, 2.0 ) +
-				std::pow( pcl_point.z, 2.0 ) );
       target.speed = pcl_point.speed;
-      target.azimuth = ( 180.0 / M_PI ) * std::atan2( pcl_point.y, pcl_point.x );
-      target.elevation = ( 180.0 / M_PI ) * std::asin( pcl_point.z / target.range );
+
+      double range, azimuth, elevation;
+      cartesianToSpherical( Eigen::Vector3d( pcl_point.x, pcl_point.y, pcl_point.z ),
+			    range, azimuth, elevation );
+      target.range = range;
+      target.azimuth = ( 180.0 / M_PI ) * azimuth;
+      target.elevation = ( 180.0 / M_PI ) * elevation;
     }
 
     static void radarTargetArrayToPclCloud( const ainstein_radar_msgs::RadarTargetArray& target_array,
