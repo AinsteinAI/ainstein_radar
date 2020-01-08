@@ -60,12 +60,12 @@ namespace ainstein_radar_filters
       sync_3_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3 ) );
     }
     
-    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
-    			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B );
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+    			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2 );
 
-    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
-			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B,
-			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_C );
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3 );
     
   private:
     ros::NodeHandle nh_;
