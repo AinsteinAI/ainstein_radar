@@ -79,134 +79,73 @@ namespace ainstein_radar_filters
   void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2 )
   {
-    // Convert from radar message to ROS point cloud type
-    sensor_msgs::PointCloud2 cloud1_in, cloud2_in;
-    data_conversions::radarTargetArrayToROSCloud( *msg1, cloud1_in );
-    data_conversions::radarTargetArrayToROSCloud( *msg2, cloud2_in );
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 2 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
 
-    // Transform radar point clouds to common output frame. There is no version of the function
-    // transformPointCloud for tf2, so we instead convert to ROS cloud and use tf2::doTransform.
-    // Note that we should really implement doTransform for radar types natively eg following:
-    // http://library.isr.ist.utl.pt/docs/roswiki/tf2(2f)Tutorials(2f)Transforming(20)your(20)own(20)datatypes.html
-    sensor_msgs::PointCloud2 cloud1_out;
-    if( buffer_tf_.canTransform( output_frame_id_, msg1->header.frame_id, ros::Time( 0 ) ) )
+  void RadarCombineFilter::combineMsgs( const std::vector<ainstein_radar_msgs::RadarTargetArray>& msg_arr,
+					ainstein_radar_msgs::RadarTargetArray& msg_combined )
+  {
+    pcl::PointCloud<PointRadarTarget> pcl_cloud_combined;
+    pcl_cloud_combined.clear();
+    for( const auto& msg : msg_arr)
       {
-	tf2::doTransform( cloud1_in, cloud1_out,
+	// Convert from radar message to ROS point cloud type
+	sensor_msgs::PointCloud2 cloud_in;
+	data_conversions::radarTargetArrayToROSCloud( msg, cloud_in );
+
+	// Transform radar point clouds to common output frame. There is no version of the function
+	// transformPointCloud for tf2, so we instead convert to ROS cloud and use tf2::doTransform.
+	// Note that we should really implement doTransform for radar types natively eg following:
+	// http://library.isr.ist.utl.pt/docs/roswiki/tf2(2f)Tutorials(2f)Transforming(20)your(20)own(20)datatypes.html
+	sensor_msgs::PointCloud2 cloud_out;
+	if( buffer_tf_.canTransform( output_frame_id_, msg.header.frame_id, ros::Time( 0 ) ) )
+      {
+	tf2::doTransform( cloud_in, cloud_out,
 			  buffer_tf_.lookupTransform( output_frame_id_,
-						      msg1->header.frame_id, ros::Time( 0 ) ) );
+						      msg.header.frame_id, ros::Time( 0 ) ) );
       }
     else
       {
 	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud A." );
       }
 
-    sensor_msgs::PointCloud2 cloud2_out;
-    if( buffer_tf_.canTransform( output_frame_id_, msg2->header.frame_id, ros::Time( 0 ) ) )
-      {
-	tf2::doTransform( cloud2_in, cloud2_out,
-			  buffer_tf_.lookupTransform( output_frame_id_,
-						      msg2->header.frame_id, ros::Time( 0 ) ) );
-      }
-    else
-      {
-	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud B." );
-      }
+	// Combine the radar point clouds by comverting to PCL and using PCL cloud addition
+	pcl::PointCloud<PointRadarTarget> pcl_cloud_out;
+	pcl::fromROSMsg( cloud_out, pcl_cloud_out );
     
-    // Combine the radar point clouds by comverting to PCL and using PCL cloud addition
-    pcl::PointCloud<PointRadarTarget> pcl_cloud1_out, pcl_cloud2_out;
-    pcl::fromROSMsg( cloud1_out, pcl_cloud1_out );
-    pcl::fromROSMsg( cloud2_out, pcl_cloud2_out );
-    
-    pcl::PointCloud<PointRadarTarget> pcl_cloud_combined;
-    pcl_cloud_combined = pcl_cloud1_out + pcl_cloud2_out;
+	pcl_cloud_combined += pcl_cloud_out;
+      }
     
     // Convert back to radar message type
-    ainstein_radar_msgs::RadarTargetArray msg_combined;
     data_conversions::pclCloudToRadarTargetArray( pcl_cloud_combined, msg_combined );
-    
-    // Copy metadata from input data and publish
-    msg_combined.header.frame_id = output_frame_id_;
-    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
-    pub_radar_data_.publish( msg_combined );
   }
 
   void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3 )
   {
-    // Convert from radar message to ROS point cloud type
-    sensor_msgs::PointCloud2 cloud1_in, cloud2_in, cloud3_in;
-    data_conversions::radarTargetArrayToROSCloud( *msg1, cloud1_in );
-    data_conversions::radarTargetArrayToROSCloud( *msg2, cloud2_in );
-    data_conversions::radarTargetArrayToROSCloud( *msg3, cloud3_in );
-
-    // Transform radar point clouds to common output frame. There is no version of the function
-    // transformPointCloud for tf2, so we instead convert to ROS cloud and use tf2::doTransform.
-    // Note that we should really implement doTransform for radar types natively eg following:
-    // http://library.isr.ist.utl.pt/docs/roswiki/tf2(2f)Tutorials(2f)Transforming(20)your(20)own(20)datatypes.html
-    sensor_msgs::PointCloud2 cloud1_out;
-    if( buffer_tf_.canTransform( output_frame_id_, msg1->header.frame_id, ros::Time( 0 ) ) )
-      {
-	tf2::doTransform( cloud1_in, cloud1_out,
-			  buffer_tf_.lookupTransform( output_frame_id_,
-						      msg1->header.frame_id, ros::Time( 0 ) ) );
-      }
-    else
-      {
-	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud A." );
-      }
-
-    sensor_msgs::PointCloud2 cloud2_out;
-    if( buffer_tf_.canTransform( output_frame_id_, msg2->header.frame_id, ros::Time( 0 ) ) )
-      {
-	tf2::doTransform( cloud2_in, cloud2_out,
-			  buffer_tf_.lookupTransform( output_frame_id_,
-						      msg2->header.frame_id, ros::Time( 0 ) ) );
-      }
-    else
-      {
-	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud B." );
-      }
-
-    sensor_msgs::PointCloud2 cloud3_out;
-    if( buffer_tf_.canTransform( output_frame_id_, msg3->header.frame_id, ros::Time( 0 ) ) )
-      {
-	tf2::doTransform( cloud3_in, cloud3_out,
-			  buffer_tf_.lookupTransform( output_frame_id_,
-						      msg3->header.frame_id, ros::Time( 0 ) ) );
-      }
-    else
-      {
-	ROS_WARN_STREAM( "Timeout while waiting for transform for cloud C." );
-      }
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 3 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
     
-    // Combine the radar point clouds by comverting to PCL and using PCL cloud addition
-    pcl::PointCloud<PointRadarTarget> pcl_cloud1_out, pcl_cloud2_out, pcl_cloud3_out;
-    pcl::fromROSMsg( cloud1_out, pcl_cloud1_out );
-    pcl::fromROSMsg( cloud2_out, pcl_cloud2_out );
-    pcl::fromROSMsg( cloud3_out, pcl_cloud3_out );
-    
-    pcl::PointCloud<PointRadarTarget> pcl_cloud_combined;
-    pcl_cloud_combined.clear();
-    pcl_cloud_combined += pcl_cloud1_out;
-    pcl_cloud_combined += pcl_cloud2_out;
-    pcl_cloud_combined += pcl_cloud3_out;
-    
-    // Convert back to radar message type
     ainstein_radar_msgs::RadarTargetArray msg_combined;
-    data_conversions::pclCloudToRadarTargetArray( pcl_cloud_combined, msg_combined );
-    
+    combineMsgs( msg_arr, msg_combined );
+       
     // Copy metadata from input data and publish
     msg_combined.header.frame_id = output_frame_id_;
     msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
-    pub_radar_data_.publish( msg_combined );
+    pub_radar_data_.publish( msg_combined ); 
   }
-
-  // void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
-  // 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
-  // 					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3 )
-  // {
-  //   radarDataCallback( msg1, msg2 );
-  // }
   
 } // namespace ainstein_radar_filters

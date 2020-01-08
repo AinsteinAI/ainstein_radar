@@ -66,7 +66,10 @@ namespace ainstein_radar_filters
     void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
 			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
 			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3 );
-    
+
+    void combineMsgs( const std::vector<ainstein_radar_msgs::RadarTargetArray>& msg_arr,
+		      ainstein_radar_msgs::RadarTargetArray& msg_combined );
+
   private:
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
