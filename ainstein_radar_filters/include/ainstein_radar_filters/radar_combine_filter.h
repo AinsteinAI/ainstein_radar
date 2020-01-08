@@ -16,8 +16,12 @@
 
 namespace ainstein_radar_filters
 {
-  typedef message_filters::sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
-							 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy;
+  using namespace message_filters;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy2;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy3;
 					 
   class RadarCombineFilter
   {
@@ -32,22 +36,47 @@ namespace ainstein_radar_filters
       // Copy the configuration:
       config_ = config;
 
-      // Set the filter parameters
-      sync_policy_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      // Set the filter parameters (set for all topic numbers for now)
+      // sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      // sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+    }
+
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2 )
+    {
+      sync_policy_2_.reset( new RadarSyncPolicy2( 10 ) );
+      sync_2_.reset( new Synchronizer<RadarSyncPolicy2>( static_cast<const RadarSyncPolicy2&>( *sync_policy_2_ ),
+    						      sub1, sub2 ) );
+      sync_2_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2 ) );
+    }
+   
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3 )
+    {
+      sync_policy_3_.reset( new RadarSyncPolicy3( 10 ) );
+      sync_3_.reset( new Synchronizer<RadarSyncPolicy3>( static_cast<const RadarSyncPolicy3&>( *sync_policy_3_ ),
+    						      sub1, sub2, sub3 ) );
+      sync_3_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3 ) );
     }
     
-  void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
-			  const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B );
-  
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
+    			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B );
+
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_A,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_B,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg_C );
+    
   private:
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
 
     std::string output_frame_id_;
-    message_filters::Subscriber<ainstein_radar_msgs::RadarTargetArray> sub_radar_data_A_;
-    message_filters::Subscriber<ainstein_radar_msgs::RadarTargetArray> sub_radar_data_B_;
-    std::unique_ptr<RadarSyncPolicy> sync_policy_;
-    std::unique_ptr<message_filters::Synchronizer<RadarSyncPolicy>> sync_;
+    std::vector<std::unique_ptr<Subscriber<ainstein_radar_msgs::RadarTargetArray>>> sub_radar_data_;
+    std::unique_ptr<RadarSyncPolicy2> sync_policy_2_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy2>> sync_2_;
+    std::unique_ptr<RadarSyncPolicy3> sync_policy_3_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy3>> sync_3_;
     ros::Publisher pub_radar_data_;
 
     tf2_ros::TransformListener listen_tf_;
