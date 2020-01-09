@@ -219,7 +219,7 @@ namespace ainstein_radar_drivers
 		  {
 		    target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
 		  }
-	      
+	
 		target.elevation = 0.0; // K79 does not output elevation angle
 		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
