@@ -253,6 +253,9 @@ void RadarInterfaceK793D::mainLoop(void)
 		      target.speed = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 3] & 0xff ) - 127 ) * -0.045; // 1 count = 0.045 m/s
 		    }
 
+		  // Negate speed, required for new SNR firmware:
+		  target.speed *= -1.0;
+		  
 		  target.elevation = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1 - 90.0;
 
 		  target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );

@@ -38,10 +38,12 @@ namespace ainstein_radar_filters
     sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
 					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
 					     this );
+    ROS_INFO_STREAM( "GOT HERE constructing radar to pcl" );
   }
 
   void RadarTargetArrayToPointCloud::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
   {
+    ROS_INFO_STREAM( "GOT HERE callback radar to pcl" );
     // Clear the point cloud point vector:
     pcl_cloud_.clear();
 
