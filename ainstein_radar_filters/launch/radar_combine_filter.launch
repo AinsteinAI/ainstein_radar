@@ -1,0 +1,6 @@
+<launch>
+  <arg name="topic_names" default="[/radar1/targets/raw,/radar2/targets/raw,/radar3/targets/raw]"/>
+  <node name="combine_filter" pkg="ainstein_radar_filters" type="radar_combine_filter_node" output="screen" >
+    <rosparam param="topic_names" subst_value="True">$(arg topic_names)</rosparam> 
+  </node>
+</launch>
