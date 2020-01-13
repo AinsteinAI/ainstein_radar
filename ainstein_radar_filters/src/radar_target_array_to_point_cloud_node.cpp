@@ -34,7 +34,7 @@ int main( int argc, char** argv )
   ros::NodeHandle node_handle;
   ros::NodeHandle node_handle_private( "~" );
 
-  ainstein_radar_filters::RadarTargetArrayToPointCloud( node_handle, node_handle_private );
+  ainstein_radar_filters::RadarTargetArrayToPointCloud radar_target_array_to_point_cloud( node_handle, node_handle_private );
   
   ros::spin();
 

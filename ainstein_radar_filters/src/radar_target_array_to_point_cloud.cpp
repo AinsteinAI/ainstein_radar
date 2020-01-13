@@ -34,35 +34,18 @@ namespace ainstein_radar_filters
     nh_( node_handle ),
     nh_private_( node_handle_private )
   {
+    sub_radar_data_ = nh_.subscribe( "radar_in", 10,
+				     &RadarTargetArrayToPointCloud::radarDataCallback,
+				     this );
+
     pub_cloud_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud_out", 10 );
-    sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
-					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
-					     this );
-    ROS_INFO_STREAM( "GOT HERE constructing radar to pcl" );
   }
 
-  void RadarTargetArrayToPointCloud::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg )
+  void RadarTargetArrayToPointCloud::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr &msg )
   {
-    ROS_INFO_STREAM( "GOT HERE callback radar to pcl" );
-    // Clear the point cloud point vector:
-    pcl_cloud_.clear();
-
-    // Iterate through targets and add them to the point cloud:
-    PointRadarTarget pcl_point;
-    for( auto target : msg.targets )
-      {
-	radarTargetToPclPoint( target, pcl_point );
-	pcl_cloud_.points.push_back( pcl_point );
-      }
-
-    pcl_cloud_.width = pcl_cloud_.points.size();
-    pcl_cloud_.height = 1;
-	
-    pcl::toROSMsg( pcl_cloud_, cloud_msg_ );
-    cloud_msg_.header.frame_id = msg.header.frame_id;
-    cloud_msg_.header.stamp = msg.header.stamp;
-
-    pub_cloud_.publish( cloud_msg_ );
+    sensor_msgs::PointCloud2 cloud_msg;
+    data_conversions::radarTargetArrayToROSCloud( *msg, cloud_msg );
+    pub_cloud_.publish( cloud_msg );
   } 
   
-} // namespace ainstein_radar_filters
+}// namespace ainstein_radar_filters

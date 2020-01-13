@@ -1,10 +1,7 @@
-#ifndef RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H
-#define RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H
+#ifndef RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H_
+#define RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H_
 
-#include <pcl_ros/point_cloud.h>
-#include <geometry_msgs/Twist.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <ros/ros.h>
 
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_filters/data_conversions.h>
@@ -12,37 +9,23 @@
 namespace ainstein_radar_filters
 {
   
-class RadarTargetArrayToPointCloud
-{
-public:
-  RadarTargetArrayToPointCloud( ros::NodeHandle node_handle,
-				ros::NodeHandle node_handle_private ) :
-    nh_( node_handle ),
-    nh_private_( node_handle_private )
+  class RadarTargetArrayToPointCloud
   {
-    pub_cloud_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud_out", 10 );
-    sub_radar_target_array_ = nh_.subscribe( "radar_in", 10,
-					     &RadarTargetArrayToPointCloud::radarTargetArrayCallback,
-					     this );
+  public:
+    RadarTargetArrayToPointCloud( ros::NodeHandle node_handle,
+				  ros::NodeHandle node_handle_private );
+    ~RadarTargetArrayToPointCloud() {}
     
-
-  }
-  ~RadarTargetArrayToPointCloud() {}
-
-  void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &radar_msg )
-  {
-    sensor_msgs::PointCloud2 cloud_msg;
-    data_conversions::radarTargetArrayToROSCloud( radar_msg, cloud_msg );
-    pub_cloud_.publish( cloud_msg );
-  }
-
-private:
-  ros::NodeHandle nh_, nh_private_;
-  ros::Publisher pub_cloud_;
-  ros::Subscriber sub_radar_target_array_;
-  
-};
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr &msg );
+    
+  private:
+    ros::NodeHandle nh_;
+    ros::NodeHandle nh_private_;
+    ros::Subscriber sub_radar_data_;
+    ros::Publisher pub_cloud_;
+    
+  };
   
 } // namespace ainstein_radar_filters
 
-#endif // RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H
+#endif // RADAR_TARGET_ARRAY_TO_POINT_CLOUD_H_
