@@ -37,8 +37,8 @@ namespace ainstein_radar_filters
       config_ = config;
 
       // Set the filter parameters (set for all topic numbers for now)
-      // sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      // sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
     }
 
     void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
