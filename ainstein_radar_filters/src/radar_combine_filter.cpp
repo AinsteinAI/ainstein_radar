@@ -65,6 +65,51 @@ namespace ainstein_radar_filters
       			     *sub_radar_data_.at( 1 ),
       			     *sub_radar_data_.at( 2 ) );
       	break;
+	
+      case 4:
+      	registerSubscribers( *sub_radar_data_.at( 0 ),
+      			     *sub_radar_data_.at( 1 ),
+      			     *sub_radar_data_.at( 2 ),
+      			     *sub_radar_data_.at( 3 ) );
+      	break;
+	
+      case 5:
+      	registerSubscribers( *sub_radar_data_.at( 0 ),
+      			     *sub_radar_data_.at( 1 ),
+      			     *sub_radar_data_.at( 2 ),
+      			     *sub_radar_data_.at( 3 ),
+      			     *sub_radar_data_.at( 4 ) );
+      	break;
+	
+      case 6:
+      	registerSubscribers( *sub_radar_data_.at( 0 ),
+      			     *sub_radar_data_.at( 1 ),
+      			     *sub_radar_data_.at( 2 ),
+      			     *sub_radar_data_.at( 3 ),
+      			     *sub_radar_data_.at( 4 ),
+      			     *sub_radar_data_.at( 5 ) );
+      	break;
+	
+      case 7:
+      	registerSubscribers( *sub_radar_data_.at( 0 ),
+      			     *sub_radar_data_.at( 1 ),
+      			     *sub_radar_data_.at( 2 ),
+      			     *sub_radar_data_.at( 3 ),
+      			     *sub_radar_data_.at( 4 ),
+      			     *sub_radar_data_.at( 5 ),
+      			     *sub_radar_data_.at( 6 ) );
+      	break;
+	
+      case 8:
+      	registerSubscribers( *sub_radar_data_.at( 0 ),
+      			     *sub_radar_data_.at( 1 ),
+      			     *sub_radar_data_.at( 2 ),
+      			     *sub_radar_data_.at( 3 ),
+      			     *sub_radar_data_.at( 4 ),
+      			     *sub_radar_data_.at( 5 ),
+      			     *sub_radar_data_.at( 6 ),
+      			     *sub_radar_data_.at( 7 ) );
+      	break;
 
       default:
 	ROS_ERROR_STREAM( "Unsupported number of topics (" << sub_radar_data_.size() << ") specified." );
@@ -138,6 +183,126 @@ namespace ainstein_radar_filters
     msg_arr.at( 0 ) = *msg1;
     msg_arr.at( 1 ) = *msg2;
     msg_arr.at( 2 ) = *msg3;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
+
+  void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4 )
+  {
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 4 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
+    msg_arr.at( 3 ) = *msg4;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
+
+  void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5 )
+  {
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 5 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
+    msg_arr.at( 3 ) = *msg4;
+    msg_arr.at( 4 ) = *msg5;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
+
+  void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6 )
+  {
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 6 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
+    msg_arr.at( 3 ) = *msg4;
+    msg_arr.at( 4 ) = *msg5;
+    msg_arr.at( 5 ) = *msg6;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
+  
+  void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg7 )
+  {
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 7 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
+    msg_arr.at( 3 ) = *msg4;
+    msg_arr.at( 4 ) = *msg5;
+    msg_arr.at( 5 ) = *msg6;
+    msg_arr.at( 6 ) = *msg7;
+    
+    ainstein_radar_msgs::RadarTargetArray msg_combined;
+    combineMsgs( msg_arr, msg_combined );
+       
+    // Copy metadata from input data and publish
+    msg_combined.header.frame_id = output_frame_id_;
+    msg_combined.header.stamp = msg1->header.stamp; // use msg1's stamp for now    
+    pub_radar_data_.publish( msg_combined ); 
+  }
+  
+  void RadarCombineFilter::radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg7,
+					      const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg8 )
+  {
+    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_arr( 8 );
+    msg_arr.at( 0 ) = *msg1;
+    msg_arr.at( 1 ) = *msg2;
+    msg_arr.at( 2 ) = *msg3;
+    msg_arr.at( 3 ) = *msg4;
+    msg_arr.at( 4 ) = *msg5;
+    msg_arr.at( 5 ) = *msg6;
+    msg_arr.at( 6 ) = *msg7;
+    msg_arr.at( 7 ) = *msg8;
     
     ainstein_radar_msgs::RadarTargetArray msg_combined;
     combineMsgs( msg_arr, msg_combined );

@@ -22,6 +22,36 @@ namespace ainstein_radar_filters
   typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
 					 ainstein_radar_msgs::RadarTargetArray,
 					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy3;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy4;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy5;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy6;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy7;
+  typedef sync_policies::ApproximateTime<ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+					 ainstein_radar_msgs::RadarTargetArray,
+  					 ainstein_radar_msgs::RadarTargetArray> RadarSyncPolicy8;
 					 
   class RadarCombineFilter
   {
@@ -33,14 +63,21 @@ namespace ainstein_radar_filters
     void dynConfigCallback( const ainstein_radar_filters::CombineFilterConfig& config,
 			    uint32_t level )
     {
-      // Copy the configuration:
+      // Copy the configuration
       config_ = config;
 
-      // Set the filter parameters (set for all topic numbers for now)
+      // Set the filter parameters (set for all topic numbers for now, should store the
+      // actual number of topics and only set that sync policy)
       sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
       sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_4_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_5_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_6_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_7_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      sync_policy_8_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
     }
 
+    // Register the callback to the input subscribers for synchronizing TWO topics
     void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
     			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2 )
     {
@@ -50,6 +87,7 @@ namespace ainstein_radar_filters
       sync_2_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2 ) );
     }
    
+    // Register the callback to the input subscribers for synchronizing THREE topics
     void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
     			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
     			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3 )
@@ -59,13 +97,125 @@ namespace ainstein_radar_filters
     						      sub1, sub2, sub3 ) );
       sync_3_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3 ) );
     }
-    
+
+    // Register the callback to the input subscribers for synchronizing FOUR topics
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub4 )
+    {
+      sync_policy_4_.reset( new RadarSyncPolicy4( 10 ) );
+      sync_4_.reset( new Synchronizer<RadarSyncPolicy4>( static_cast<const RadarSyncPolicy4&>( *sync_policy_4_ ),
+							 sub1, sub2, sub3, sub4 ) );
+      sync_4_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3, _4 ) );
+    }
+
+    // Register the callback to the input subscribers for synchronizing FIVE topics
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub4,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub5 )
+    {
+      sync_policy_5_.reset( new RadarSyncPolicy5( 10 ) );
+      sync_5_.reset( new Synchronizer<RadarSyncPolicy5>( static_cast<const RadarSyncPolicy5&>( *sync_policy_5_ ),
+							 sub1, sub2, sub3, sub4, sub5 ) );
+      sync_5_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3, _4, _5 ) );
+    }
+
+    // Register the callback to the input subscribers for synchronizing SIX topics
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub4,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub5,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub6 )
+    {
+      sync_policy_6_.reset( new RadarSyncPolicy6( 10 ) );
+      sync_6_.reset( new Synchronizer<RadarSyncPolicy6>( static_cast<const RadarSyncPolicy6&>( *sync_policy_6_ ),
+							 sub1, sub2, sub3, sub4, sub5, sub6 ) );
+      sync_6_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3, _4, _5, _6 ) );
+    }
+
+    // Register the callback to the input subscribers for synchronizing SEVEN topics
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub4,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub5,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub6,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub7 )
+    {
+      sync_policy_7_.reset( new RadarSyncPolicy7( 10 ) );
+      sync_7_.reset( new Synchronizer<RadarSyncPolicy7>( static_cast<const RadarSyncPolicy7&>( *sync_policy_7_ ),
+							 sub1, sub2, sub3, sub4, sub5, sub6, sub7 ) );
+      sync_7_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3, _4, _5, _6, _7 ) );
+    }
+
+    // Register the callback to the input subscribers for synchronizing EIGHT topics
+    void registerSubscribers( Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub1,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub2,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub3,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub4,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub5,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub6,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub7,
+    			      Subscriber<ainstein_radar_msgs::RadarTargetArray>& sub8 )
+    {
+      sync_policy_8_.reset( new RadarSyncPolicy8( 10 ) );
+      sync_8_.reset( new Synchronizer<RadarSyncPolicy8>( static_cast<const RadarSyncPolicy8&>( *sync_policy_8_ ),
+							 sub1, sub2, sub3, sub4, sub5, sub6, sub7, sub8 ) );
+      sync_8_->registerCallback( boost::bind( &RadarCombineFilter::radarDataCallback, this, _1, _2, _3, _4, _5, _6, _7, _8 ) );
+    }
+
+    // Data callback for TWO topics
     void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
     			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2 );
 
+    // Data callback for THREE topics
     void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
 			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
 			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3 );
+    
+    // Data callback for FOUR topics
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4 );
+
+    // Data callback for FIVE topics
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5 );
+
+    // Data callback for SIX topics
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6 );
+
+    // Data callback for SEVEN topics
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg7 );
+
+    // Data callback for EIGHT topics
+    void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg1,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg2,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg3,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg4,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg5,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg6,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg7,
+			    const ainstein_radar_msgs::RadarTargetArray::ConstPtr& msg8 );
 
     void combineMsgs( const std::vector<ainstein_radar_msgs::RadarTargetArray>& msg_arr,
 		      ainstein_radar_msgs::RadarTargetArray& msg_combined );
@@ -80,6 +230,16 @@ namespace ainstein_radar_filters
     std::unique_ptr<Synchronizer<RadarSyncPolicy2>> sync_2_;
     std::unique_ptr<RadarSyncPolicy3> sync_policy_3_;
     std::unique_ptr<Synchronizer<RadarSyncPolicy3>> sync_3_;
+    std::unique_ptr<RadarSyncPolicy4> sync_policy_4_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy4>> sync_4_;
+    std::unique_ptr<RadarSyncPolicy5> sync_policy_5_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy5>> sync_5_;
+    std::unique_ptr<RadarSyncPolicy6> sync_policy_6_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy6>> sync_6_;
+    std::unique_ptr<RadarSyncPolicy7> sync_policy_7_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy7>> sync_7_;
+    std::unique_ptr<RadarSyncPolicy8> sync_policy_8_;
+    std::unique_ptr<Synchronizer<RadarSyncPolicy8>> sync_8_;
     ros::Publisher pub_radar_data_;
 
     tf2_ros::TransformListener listen_tf_;
