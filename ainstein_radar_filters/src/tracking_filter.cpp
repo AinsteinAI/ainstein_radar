@@ -76,6 +76,9 @@ namespace ainstein_radar_filters
 	time_now = ros::Time::now();
 
 	dt = ( time_now - time_prev ).toSec();
+	
+	// Block callback from modifying the filters
+	mutex_.lock();
 
 	// Remove filters which have not been updated in specified time:
 	ROS_DEBUG_STREAM( "Number of filters before pruning: " << filters_.size() << std::endl );
@@ -125,6 +128,9 @@ namespace ainstein_radar_filters
 	      }
 	  }
 
+	// Release lock on filter state
+	mutex_.unlock();
+	
 	// Publish the tracked targets:
 	pub_radar_data_tracked_.publish( msg_tracked_targets_ );
 
@@ -152,6 +158,9 @@ namespace ainstein_radar_filters
     meas_count_vec_.resize( msg->targets.size() );
     std::fill( meas_count_vec_.begin(), meas_count_vec_.end(), 0 );
 
+    // Block update loop from modifying the filters
+    mutex_.lock();
+    
     // Resize the targets associated with each filter and set headers:
     filter_targets_.clear();
     filter_targets_.resize( filters_.size() );
@@ -204,14 +213,23 @@ namespace ainstein_radar_filters
     ROS_DEBUG_STREAM( std::endl );
 
     // Iterate through targets and push back new KFs for unused measurements:
+    ainstein_radar_msgs::RadarTargetArray arr;
+    arr.header.stamp = ros::Time::now();
+    arr.header.frame_id = msg->header.frame_id;
     for( int i = 0; i < meas_count_vec_.size(); ++i )
       {
     	if( meas_count_vec_.at( i ) == 0 )
     	  {
 	    ROS_DEBUG_STREAM( "Pushing back: " << msg->targets.at( i ) << std::endl );
     	    filters_.emplace_back( msg->targets.at( i ), nh_, nh_private_ );
+
+	    // Make sure to push back an empty array of targets associated with the new filter
+	    filter_targets_.push_back( arr );
     	  }
       }
+
+    // Release lock on filter state
+    mutex_.unlock();
   }
 
   jsk_recognition_msgs::BoundingBox TrackingFilter::getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets )
