@@ -2,6 +2,7 @@
 #define TRACKING_FILTER_H_
 
 #include <thread>
+#include <mutex>
 
 #include <ainstein_radar_filters/radar_target_kf.h>
 #include <ainstein_radar_filters/TrackingFilterConfig.h>
@@ -97,6 +98,7 @@ namespace ainstein_radar_filters
     jsk_recognition_msgs::BoundingBoxArray msg_tracked_boxes_;
 
     std::unique_ptr<std::thread> filter_update_thread_;
+    std::mutex mutex_;
     
     std::vector<ainstein_radar_filters::RadarTargetKF> filters_;
     std::vector<ainstein_radar_msgs::RadarTargetArray> filter_targets_;
