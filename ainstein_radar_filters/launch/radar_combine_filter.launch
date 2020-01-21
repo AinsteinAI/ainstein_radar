@@ -1,6 +1,27 @@
 <launch>
+  <node name="radar1" pkg="ainstein_radar_drivers" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1024" />
+    <param name="radar_ip" value="10.0.0.10" />
+    <param name="radar_port" value="7" />
+  </node>
+
+  <node name="radar2" pkg="ainstein_radar_drivers" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1025" />
+    <param name="radar_ip" value="10.0.0.11" />
+    <param name="radar_port" value="7" />
+  </node>
+
+  <node name="radar3" pkg="ainstein_radar_drivers" type="k79_node" output="screen" required="true" >
+    <param name="host_ip" value="10.0.0.75" />
+    <param name="host_port" value="1026" />
+    <param name="radar_ip" value="10.0.0.12" />
+    <param name="radar_port" value="7" />
+  </node>
+
   <arg name="topic_names" default="[/radar1/targets/raw,/radar2/targets/raw,/radar3/targets/raw]"/>
-  <node name="combine_filter" pkg="ainstein_radar_filters" type="radar_combine_filter_node" output="screen" >
+  <node name="combine_filter" pkg="ainstein_radar_filters" type="radar_combine_filter_node" output="screen" launch-prefix="xterm -e gdb --args" >
     <rosparam param="topic_names" subst_value="True">$(arg topic_names)</rosparam> 
   </node>
 </launch>

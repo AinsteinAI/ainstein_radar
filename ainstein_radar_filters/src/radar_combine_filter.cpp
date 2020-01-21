@@ -48,8 +48,11 @@ namespace ainstein_radar_filters
 	sub_radar_data_.push_back( std::unique_ptr<Subscriber<ainstein_radar_msgs::RadarTargetArray>>( new Subscriber<ainstein_radar_msgs::RadarTargetArray>( nh_, name, 1 ) ) );
       }
 
+    // Store the number of input topics to sync
+    n_topics_ = sub_radar_data_.size();
+    
     // Register subscribers based on number of specified topics
-    switch( sub_radar_data_.size() )
+    switch( n_topics_ )
       {
       case 1:
 	ROS_ERROR_STREAM( "Combine filter should only be used for 2+ topics." );

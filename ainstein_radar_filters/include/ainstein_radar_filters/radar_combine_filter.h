@@ -66,15 +66,44 @@ namespace ainstein_radar_filters
       // Copy the configuration
       config_ = config;
 
-      // Set the filter parameters (set for all topic numbers for now, should store the
-      // actual number of topics and only set that sync policy)
-      sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_4_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_5_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_6_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_7_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
-      sync_policy_8_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      // Set the filter parameters
+      switch( n_topics_ )
+	{
+	case 1:
+	  ROS_ERROR_STREAM( "Combine filter should only be used for 2+ topics." );
+	  break;
+	  
+	case 2:
+	  sync_policy_2_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+	  break;
+	  
+	case 3:
+	  sync_policy_3_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+	  break;
+	
+      case 4:
+	sync_policy_4_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      	break;
+	
+      case 5:
+	sync_policy_5_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      	break;
+	
+      case 6:
+	sync_policy_6_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+      	break;
+	
+      case 7:
+      	sync_policy_7_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+	break;
+	
+	case 8:
+	  sync_policy_8_->setMaxIntervalDuration( ros::Duration( config_.slop_duration ) );
+	break;
+
+      default:
+	ROS_ERROR_STREAM( "Unsupported number of topics (" << sub_radar_data_.size() << ") specified." );
+	}
     }
 
     // Register the callback to the input subscribers for synchronizing TWO topics
@@ -224,6 +253,8 @@ namespace ainstein_radar_filters
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
 
+    int n_topics_;
+    
     std::string output_frame_id_;
     std::vector<std::unique_ptr<Subscriber<ainstein_radar_msgs::RadarTargetArray>>> sub_radar_data_;
     std::unique_ptr<RadarSyncPolicy2> sync_policy_2_;
