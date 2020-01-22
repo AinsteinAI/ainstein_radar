@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 
+#include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/radar_target_kf.h>
 #include <ainstein_radar_filters/TrackingFilterConfig.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
@@ -11,6 +12,7 @@
 #include <jsk_recognition_msgs/BoundingBoxArray.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
+#include <sensor_msgs/PointCloud2.h>
 
 namespace ainstein_radar_filters
 {
@@ -59,8 +61,16 @@ namespace ainstein_radar_filters
       
     void initialize( void );
     void updateFiltersLoop( double frequency );
-    
-    void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr &msg );
+
+    void pointCloudCallback( const sensor_msgs::PointCloud2 &cloud )
+    {
+      ainstein_radar_msgs::RadarTargetArray msg;
+      data_conversions::rosCloudToRadarTargetArray( cloud, msg );
+      
+      radarTargetArrayCallback( msg );
+    }
+
+    void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
 
     jsk_recognition_msgs::BoundingBox getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets );
 
@@ -90,6 +100,7 @@ namespace ainstein_radar_filters
     double filter_val_gate_thresh_;
     
     ros::Subscriber sub_radar_data_raw_;
+    ros::Subscriber sub_point_cloud_raw_;
     ros::Publisher pub_radar_data_tracked_;
     ros::Publisher pub_bounding_boxes_;
     

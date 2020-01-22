@@ -37,6 +37,11 @@ namespace ainstein_radar_filters
 					 &TrackingFilter::radarTargetArrayCallback,
 					 this );
 
+    sub_point_cloud_raw_ = nh_.subscribe( "cloud_in", 1,
+					  &TrackingFilter::pointCloudCallback,
+					  this );
+    
+
     pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 1 );
     
     pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
@@ -147,15 +152,15 @@ namespace ainstein_radar_filters
 	update_filters_rate.sleep(); 
       }
   }
-  
-  void TrackingFilter::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray::Ptr& msg )
+
+  void TrackingFilter::radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray& msg )
   {
     // Store the frame_id for the messages:
-    msg_tracked_targets_.header.frame_id = msg->header.frame_id;
-    msg_tracked_boxes_.header.frame_id = msg->header.frame_id;
+    msg_tracked_targets_.header.frame_id = msg.header.frame_id;
+    msg_tracked_boxes_.header.frame_id = msg.header.frame_id;
     
     // Reset the measurement count vector for keeping track of which measurements get used:
-    meas_count_vec_.resize( msg->targets.size() );
+    meas_count_vec_.resize( msg.targets.size() );
     std::fill( meas_count_vec_.begin(), meas_count_vec_.end(), 0 );
 
     // Block update loop from modifying the filters
@@ -167,20 +172,20 @@ namespace ainstein_radar_filters
     for( auto& targets : filter_targets_ )
       {
 	targets.header.stamp = ros::Time::now();
-	targets.header.frame_id = msg->header.frame_id;
+	targets.header.frame_id = msg.header.frame_id;
       }
     
     // Pass the raw detections to the filters for updating:
     for( int i = 0; i < filters_.size(); ++i )
       {
 	ROS_DEBUG_STREAM( filters_.at( i ) );
-	for( int j = 0; j < msg->targets.size(); ++j )
+	for( int j = 0; j < msg.targets.size(); ++j )
 	  {
 	    // Only use this target if it hasn't already been used by a filter:
 	    if( meas_count_vec_.at( j ) == 0 )
 	      {
 		// Check whether the target should be used as measurement by this filter:
-		ainstein_radar_msgs::RadarTarget t = msg->targets.at( j );
+		ainstein_radar_msgs::RadarTarget t = msg.targets.at( j );
 		Eigen::Vector4d z = filters_.at( i ).computePredMeas( filters_.at( i ).getState() );
 		Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
 	    
@@ -215,13 +220,13 @@ namespace ainstein_radar_filters
     // Iterate through targets and push back new KFs for unused measurements:
     ainstein_radar_msgs::RadarTargetArray arr;
     arr.header.stamp = ros::Time::now();
-    arr.header.frame_id = msg->header.frame_id;
+    arr.header.frame_id = msg.header.frame_id;
     for( int i = 0; i < meas_count_vec_.size(); ++i )
       {
     	if( meas_count_vec_.at( i ) == 0 )
     	  {
-	    ROS_DEBUG_STREAM( "Pushing back: " << msg->targets.at( i ) << std::endl );
-    	    filters_.emplace_back( msg->targets.at( i ), nh_, nh_private_ );
+	    ROS_DEBUG_STREAM( "Pushing back: " << msg.targets.at( i ) << std::endl );
+    	    filters_.emplace_back( msg.targets.at( i ), nh_, nh_private_ );
 
 	    // Make sure to push back an empty array of targets associated with the new filter
 	    filter_targets_.push_back( arr );
