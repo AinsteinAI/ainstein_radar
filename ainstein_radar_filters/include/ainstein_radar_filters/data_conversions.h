@@ -95,7 +95,10 @@ namespace ainstein_radar_filters
     {
       // Clear the targets array
       target_array.targets.clear();
-    
+
+      // Copy the header info
+      pcl_conversions::fromPCL( pcl_cloud.header, target_array.header );
+      
       // Iterate through point cloud point targets and add them to the target array
       ainstein_radar_msgs::RadarTarget target;
       target.target_id = 0;
