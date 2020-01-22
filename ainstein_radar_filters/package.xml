@@ -23,7 +23,7 @@
 
   <export>
     <nodelet plugin="${prefix}/plugins/nodelet_radar_target_array_to_point_cloud.xml" />
-    <nodelet plugin="${prefix}/plugins/nodelet_radardata_range_filter.xml" />
+    <nodelet plugin="${prefix}/plugins/nodelet_radar_target_array_to_laser_scan.xml" />
     <nodelet plugin="${prefix}/plugins/nodelet_radar_passthrough_filter.xml" />
   </export>
 
