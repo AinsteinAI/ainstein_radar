@@ -10,7 +10,7 @@
 #define Q_VEL_STDEV 5.0
 
 #define R_SPEED_STDEV 1.0
-#define R_UNIT_STDEV 0.1
+#define R_POS_STDEV 0.1
 
 #define INIT_POS_STDEV 1.0
 #define INIT_VEL_STDEV 2.0
@@ -26,9 +26,16 @@ namespace ainstein_radar_filters
       FilterState( const ainstein_radar_msgs::RadarTarget& target,
 		   const Eigen::Matrix<double, 6, 6>& initial_covariance )
       {
-	Eigen::Vector3d pos;
-	Eigen::Vector3d vel;
-	    
+	data_conversions::sphericalToCartesian( target.range,
+						( M_PI / 180.0 ) * target.azimuth,
+						( M_PI / 180.0 ) * target.elevation,
+						pos );
+
+	data_conversions::sphericalToCartesian( target.speed,
+						( M_PI / 180.0 ) * target.azimuth,
+						( M_PI / 180.0 ) * target.elevation,
+						vel );
+		    
 	cov = initial_covariance;
       }
       FilterState( const FilterState& state )
@@ -73,9 +80,9 @@ namespace ainstein_radar_filters
 	data_conversions::cartesianToSpherical( pos, range, azimuth, elevation );
 
 	t.range = range;
-	t.speed = vel.norm();
-	t.azimuth = azimuth;
-	t.elevation = elevation;
+	t.speed = ( pos / pos.norm() ).transpose() * vel;
+	t.azimuth = ( 180.0 / M_PI ) * azimuth;
+	t.elevation = ( 180.0 / M_PI ) * elevation;
 
 	return t;
       }
@@ -99,7 +106,7 @@ namespace ainstein_radar_filters
       double q_vel_stdev;
 
       double r_speed_stdev;
-      double r_unit_stdev;
+      double r_pos_stdev;
     };
 
     friend std::ostream& operator<< ( std::ostream& out, const RadarTargetCartesianKF& kf )
@@ -119,7 +126,26 @@ namespace ainstein_radar_filters
     }
     Eigen::Vector4d computePredMeas( const FilterState& state )
     {
-      return H_ * state.asVec();
+      Eigen::Vector3d n_unit = state.pos / state.pos.norm();
+      double speed = n_unit.transpose() * state.vel;
+
+      return Eigen::Vector4d( speed,
+			      state.pos.x(),
+			      state.pos.y(),
+			      state.pos.z() );
+    }
+    Eigen::Vector4d computeMeas( const ainstein_radar_msgs::RadarTarget& target )
+    {
+      Eigen::Vector3d pos;
+      data_conversions::sphericalToCartesian( target.range,
+					      ( M_PI / 180.0 ) * target.azimuth,
+					      ( M_PI / 180.0 ) * target.elevation,
+					      pos );
+
+      return Eigen::Vector4d( target.speed,
+			      pos.x(),
+			      pos.y(),
+			      pos.z() );
     }
     Eigen::Matrix4d computeMeasCov( const FilterState& state )
     {

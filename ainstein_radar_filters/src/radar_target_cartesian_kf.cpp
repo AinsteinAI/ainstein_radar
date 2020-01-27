@@ -53,9 +53,9 @@ namespace ainstein_radar_filters
   
   Eigen::Matrix4d RadarTargetCartesianKF::R_ = ( Eigen::Vector4d() <<
 					std::pow( R_SPEED_STDEV, 2.0 ),
-					std::pow( R_UNIT_STDEV, 2.0 ),
-					std::pow( R_UNIT_STDEV, 2.0 ),
-					std::pow( R_UNIT_STDEV, 2.0 ) ).finished().asDiagonal();
+					std::pow( R_POS_STDEV, 2.0 ),
+					std::pow( R_POS_STDEV, 2.0 ),
+					std::pow( R_POS_STDEV, 2.0 ) ).finished().asDiagonal();
 
   Eigen::Matrix<double, 6, 6> RadarTargetCartesianKF::P_init_ = ( Eigen::Matrix<double, 6, 1>() <<
 								  std::pow( INIT_POS_STDEV, 2.0 ),
@@ -74,9 +74,9 @@ namespace ainstein_radar_filters
   
     RadarTargetCartesianKF::R_ = ( Eigen::Matrix<double, 4, 1>() <<
 				   std::pow( params.r_speed_stdev, 2.0 ),
-				   std::pow( params.r_unit_stdev, 2.0 ),
-				   std::pow( params.r_unit_stdev, 2.0 ),
-				   std::pow( params.r_unit_stdev, 2.0 ) ).finished().asDiagonal();
+				   std::pow( params.r_pos_stdev, 2.0 ),
+				   std::pow( params.r_pos_stdev, 2.0 ),
+				   std::pow( params.r_pos_stdev, 2.0 ) ).finished().asDiagonal();
 
     RadarTargetCartesianKF::P_init_ = ( Eigen::Matrix<double, 6, 1>() <<
 					std::pow( params.init_pos_stdev, 2.0 ),
@@ -103,13 +103,13 @@ namespace ainstein_radar_filters
     Eigen::Matrix<double, 6, 6> Fk = ( Eigen::Matrix<double, 6, 6>::Identity() + dt * F_ );
     Eigen::Matrix<double, 6, 6> Qk = dt * L_ * Q_ * L_.transpose();
 
-    // ROS_INFO_STREAM( "State pre-process: " << state_post_ );
+    // ROS_DEBUG_STREAM( "State pre-process: " << state_post_ );
 
     // Update the state and covariance:
     state_pre_.fromVec( Fk * state_post_.asVec() );
     state_pre_.cov = Fk * state_post_.cov * Fk.transpose() + Qk;
     
-    // ROS_INFO_STREAM( "State post-process: " << state_pre_ );
+    // ROS_DEBUG_STREAM( "State post-process: " << state_pre_ );
 
     // Set the post-measurement state to pre-measurement in case of no new measurements:
     state_post_ = state_pre_;
@@ -121,28 +121,20 @@ namespace ainstein_radar_filters
     Eigen::Vector3d ds_dp = ( ( Eigen::Matrix3d::Identity() / p_norm ) -
 			      ( ( state.pos * state.pos.transpose() ) / std::pow( p_norm, 3.0 ) ) ) * state.vel;
     Eigen::Vector3d ds_dv = state.pos.transpose() / p_norm;
-    Eigen::Matrix3d dn_dp = ( Eigen::Matrix3d::Identity() / p_norm ) -
-      ( ( state.pos * state.pos.transpose() ) / std::pow( p_norm, 3.0 ) );
+    Eigen::Matrix3d dn_dp = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d dn_dv = Eigen::Matrix3d::Zero();
 
     H_.block( 0, 0, 1, 3 ) = ds_dp.transpose();
     H_.block( 0, 3, 1, 3 ) = ds_dv.transpose();
-    H_.block( 3, 0, 3, 3 ) = dn_dp.transpose();
-    H_.block( 3, 3, 3, 3 ) = dn_dv.transpose();
+    H_.block( 1, 0, 3, 3 ) = dn_dp.transpose();
+    H_.block( 1, 3, 3, 3 ) = dn_dv.transpose();
   }
 
   void RadarTargetCartesianKF::update( const ainstein_radar_msgs::RadarTarget& target )
   {
     // Convert the target to a measurement:
-    Eigen::Vector3d n_unit = Eigen::Vector3d( cos( target.elevation) * cos( target.azimuth ),
-					      cos( target.elevation) * sin( target.azimuth ),
-					      sin( target.elevation ) );
-					      
-    Eigen::Vector4d meas_vec = Eigen::Vector4d( target.speed,
-						n_unit.x(),
-						n_unit.y(),
-						n_unit.z() );
-
+    Eigen::Vector4d meas_vec = computeMeas( target );
+    
     // Form the state-dependent measurement Jacobian:
     updateMeasJacobian( state_pre_ );
     
@@ -150,15 +142,15 @@ namespace ainstein_radar_filters
     Eigen::Matrix4d meas_cov = ( H_ * state_pre_.cov * H_.transpose() + R_ );
     K_ = state_pre_.cov * H_.transpose() * meas_cov.inverse(); 
 
-    ROS_INFO_STREAM( "Kalman gain: " << K_ );
+    ROS_DEBUG_STREAM( "Kalman gain: " << K_ );
 
-    ROS_INFO_STREAM( "State pre-update: " << state_pre_ );
+    ROS_DEBUG_STREAM( "State pre-update: " << state_pre_ );
     
     // Update the state from the measurement and Kalman gain:
     state_post_.fromVec( state_pre_.asVec() + K_ *
 			 ( meas_vec - computePredMeas( state_post_ ) ) );
 
-    ROS_INFO_STREAM( "State post-update: " << state_post_ );
+    ROS_DEBUG_STREAM( "State post-update: " << state_post_ );
     
     // Update the state covariance:
     state_post_.cov = ( Eigen::Matrix<double, 6, 6>::Identity() - K_ * H_ ) * state_pre_.cov;

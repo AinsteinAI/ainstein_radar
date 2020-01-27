@@ -48,7 +48,7 @@ namespace ainstein_radar_filters
       kf_params.q_vel_stdev = config.kf_q_vel_stdev;
 
       kf_params.r_speed_stdev = config.kf_r_speed_stdev;
-      kf_params.r_unit_stdev = config.kf_r_unit_stdev;
+      kf_params.r_pos_stdev = config.kf_r_pos_stdev;
 
       RadarTargetCartesianKF::setFilterParameters( kf_params );
     }

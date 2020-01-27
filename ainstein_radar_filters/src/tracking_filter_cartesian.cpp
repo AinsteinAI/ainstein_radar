@@ -52,8 +52,7 @@ namespace ainstein_radar_filters
     // Launch the periodic filter update thread:
     filter_update_thread_ = std::unique_ptr<std::thread>( new std::thread( &TrackingFilterCartesian::updateFiltersLoop,
 									   this,
-									   filter_update_rate_ ) );									  
-  }
+									   filter_update_rate_ ) );  }
   
   void TrackingFilterCartesian::updateFiltersLoop( double frequency )
   {
@@ -86,7 +85,7 @@ namespace ainstein_radar_filters
 	mutex_.lock();
 
 	// Remove filters which have not been updated in specified time:
-	ROS_DEBUG_STREAM( "Number of filters before pruning: " << filters_.size() << std::endl );
+	//ROS_DEBUG_STREAM( "Number of filters before pruning: " << filters_.size() << std::endl );
 	if( filters_.size() > 0 )
 	  {
 	    filters_.erase( std::remove_if( filters_.begin(),
@@ -94,7 +93,7 @@ namespace ainstein_radar_filters
 	    				    [&]( const RadarTargetCartesianKF& kf ){ return ( kf.getTimeSinceUpdate() > filter_timeout_ ); } ),
 			    filters_.end() );
 	  }
-	ROS_DEBUG_STREAM( "Number of filters after pruning: " << filters_.size() << std::endl );
+	//ROS_DEBUG_STREAM( "Number of filters after pruning: " << filters_.size() << std::endl );
 	
 	// Run process model for each filter:
 	for( auto& kf : filters_ )
@@ -178,8 +177,12 @@ namespace ainstein_radar_filters
     // Pass the raw detections to the filters for updating:
     for( int i = 0; i < filters_.size(); ++i )
       {
-	ROS_DEBUG_STREAM( filters_.at( i ) );
-	for( int j = 0; j < msg.targets.size(); ++j )
+	// Form the state-dependent measurement Jacobian:
+	filters_.at( i ).updateMeasJacobian( filters_.at( i ).getState() );
+
+	ROS_DEBUG_STREAM( "Filter " << i << " State: " << filters_.at( i ) );
+	ROS_DEBUG_STREAM( "Filter " << i << " Meas Cov Inv: " << filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() << std::endl );
+			for( int j = 0; j < msg.targets.size(); ++j )
 	  {
 	    // Only use this target if it hasn't already been used by a filter:
 	    if( meas_count_vec_.at( j ) == 0 )
@@ -187,15 +190,20 @@ namespace ainstein_radar_filters
 		// Check whether the target should be used as measurement by this filter:
 		ainstein_radar_msgs::RadarTarget t = msg.targets.at( j );
 		Eigen::Vector4d z = filters_.at( i ).computePredMeas( filters_.at( i ).getState() );
-		Eigen::Vector4d y = Eigen::Vector4d( t.range, t.speed, t.azimuth, t.elevation );
+		Eigen::Vector4d y = filters_.at( i ).computeMeas( t );
 	    
 		// Compute the normalized measurement error (squared):
 		double meas_err = ( y - z ).transpose() * filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() * ( y - z );
 
-		ROS_DEBUG_STREAM( "Meas Cov Inv: " << filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() << std::endl );
-		
 		ROS_DEBUG_STREAM( "Target " << j << " meas_err: " << meas_err );
 		ROS_DEBUG_STREAM( "Target " << j << ": " << std::endl << t );
+		Eigen::Vector3d target_pos;
+		data_conversions::sphericalToCartesian( t.range,
+							( M_PI / 180.0 ) * t.azimuth,
+							( M_PI / 180.0 ) * t.elevation,
+							target_pos );
+
+		ROS_DEBUG_STREAM( "Target " << j << " pos: " << std::endl << target_pos );
 		
 		// Allow the measurement through the validation gate based on threshold:
 		if( meas_err < filter_val_gate_thresh_ )
@@ -227,7 +235,7 @@ namespace ainstein_radar_filters
     	  {
 	    ROS_DEBUG_STREAM( "Pushing back: " << msg.targets.at( i ) << std::endl );
     	    filters_.emplace_back( msg.targets.at( i ), nh_, nh_private_ );
-
+	    ROS_DEBUG_STREAM( "New filter state: " << filters_.back().getState() );
 	    // Make sure to push back an empty array of targets associated with the new filter
 	    filter_targets_.push_back( arr );
     	  }
