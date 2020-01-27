@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Must be called after catkin_python_setup() and before catkin_package():
 generate_dynamic_reconfigure_options(
   cfg/TrackingFilter.cfg
+  cfg/TrackingFilterCartesian.cfg
   cfg/RangeFilter.cfg
   cfg/PassthroughFilter.cfg
   cfg/CombineFilter.cfg
@@ -65,6 +66,10 @@ add_executable(tracking_filter_node src/tracking_filter_node.cpp src/tracking_fi
 add_dependencies(tracking_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(tracking_filter_node ${catkin_LIBRARIES})
 
+add_executable(tracking_filter_cartesian_node src/tracking_filter_cartesian_node.cpp src/tracking_filter_cartesian.cpp src/radar_target_cartesian_kf.cpp)
+add_dependencies(tracking_filter_cartesian_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(tracking_filter_cartesian_node ${catkin_LIBRARIES})
+
 add_executable(radar_passthrough_filter_node src/radar_passthrough_filter_node.cpp src/radar_passthrough_filter.cpp)
 add_dependencies(radar_passthrough_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radar_passthrough_filter_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -86,6 +91,7 @@ install(TARGETS
   radar_target_array_to_laser_scan_nodelet
   nearest_target_filter_node
   tracking_filter_node
+  tracking_filter_cartesian_node
   radar_passthrough_filter_node
   radar_passthrough_filter_nodelet
   radar_combine_filter_node
