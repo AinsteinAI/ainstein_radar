@@ -86,6 +86,25 @@ namespace ainstein_radar_filters
 
 	return t;
       }
+
+      geometry_msgs::Pose asPose( void ) const
+      {
+	Eigen::Affine3d pose_eigen;
+	pose_eigen.translation() = pos;
+
+	// Compute the pose assuming the +x direction is the current
+	// estimated Cartesian velocity direction
+	Eigen::Matrix3d rot_mat;
+	rot_mat.col( 0 ) = vel / vel.norm();
+	rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+	rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+	pose_eigen.linear() = rot_mat;
+	
+	geometry_msgs::Pose pose_msg;
+	pose_msg = tf2::toMsg( pose_eigen );
+	
+	return pose_msg;
+      }
     };
 
   public:

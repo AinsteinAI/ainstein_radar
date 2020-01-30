@@ -9,6 +9,7 @@
 #include <ainstein_radar_filters/TrackingFilterCartesianConfig.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/PoseArray.h>
 #include <jsk_recognition_msgs/BoundingBoxArray.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
@@ -96,9 +97,11 @@ namespace ainstein_radar_filters
     ros::Subscriber sub_radar_data_raw_;
     ros::Subscriber sub_point_cloud_raw_;
     ros::Publisher pub_radar_data_tracked_;
+    ros::Publisher pub_poses_tracked_;
     ros::Publisher pub_bounding_boxes_;
     
     ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
+    geometry_msgs::PoseArray msg_tracked_poses_;
     std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
     jsk_recognition_msgs::BoundingBoxArray msg_tracked_boxes_;
 

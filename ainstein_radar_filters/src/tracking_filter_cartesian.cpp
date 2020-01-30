@@ -43,7 +43,9 @@ namespace ainstein_radar_filters
     
 
     pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "tracked", 1 );
-    
+
+    pub_poses_tracked_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 1 );
+
     pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
     
     // Reserve space for the maximum number of target Kalman Filters:
@@ -103,9 +105,11 @@ namespace ainstein_radar_filters
 
 	// Add tracked targets for filters which have been running for specified time:
 	msg_tracked_targets_.targets.clear();
+	msg_tracked_poses_.poses.clear();
 
 	// Set timestamp for output messages:
 	msg_tracked_targets_.header.stamp = ros::Time::now();
+	msg_tracked_poses_.header.stamp = ros::Time::now();
 	msg_tracked_boxes_.header.stamp = ros::Time::now();
 
 	// Clear the tracked "clusters" message and publisher:
@@ -113,6 +117,7 @@ namespace ainstein_radar_filters
 	msg_tracked_boxes_.boxes.clear();
 	
 	ainstein_radar_msgs::RadarTarget tracked_target;
+	geometry_msgs::Pose tracked_pose;
 	int target_id = 0;
 	for( int i = 0; i < filters_.size(); ++i )
 	  {
@@ -123,6 +128,10 @@ namespace ainstein_radar_filters
 		tracked_target.target_id = target_id;
 		msg_tracked_targets_.targets.push_back( tracked_target );
 
+		// Fill the tracked poses message:
+		tracked_pose = filters_.at( i ).getState().asPose();
+		msg_tracked_poses_.poses.push_back( tracked_pose );
+		
 		// Fill the tracked target clusters message:
 		msg_tracked_clusters_.push_back( filter_targets_.at( i ) );
 
@@ -137,6 +146,9 @@ namespace ainstein_radar_filters
 	
 	// Publish the tracked targets:
 	pub_radar_data_tracked_.publish( msg_tracked_targets_ );
+
+	// Publish the tracked poses:
+	pub_poses_tracked_.publish( msg_tracked_poses_ );
 
 	// Publish the bounding boxes:
 	pub_bounding_boxes_.publish( msg_tracked_boxes_ );
@@ -156,6 +168,7 @@ namespace ainstein_radar_filters
   {
     // Store the frame_id for the messages:
     msg_tracked_targets_.header.frame_id = msg.header.frame_id;
+    msg_tracked_poses_.header.frame_id = msg.header.frame_id;
     msg_tracked_boxes_.header.frame_id = msg.header.frame_id;
     
     // Reset the measurement count vector for keeping track of which measurements get used:
