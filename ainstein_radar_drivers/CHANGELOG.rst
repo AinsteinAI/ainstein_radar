@@ -2,6 +2,18 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar
+* Minor, needed to negate speed for K79-3D using new SNR firmware
+* Add SNR to K79 and K79-3D output
+  Added SNR output corresponding to the new fimrware which packs the SNR
+  in the message in the expected place. SNR sppears to be from roughly
+  140-200, with some targets at 0 (needs to be debugged).
+* Minor, update K79 specs to longer max range
+* Minor, add missing K79 specifications
+* Contributors: Nick Rotella
+
 2.0.2 (2019-11-19)
 ------------------
 * Minor, remove temporary file

@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.2 (2019-11-19)
 ------------------
 

@@ -2,6 +2,32 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Major refactor, add conversion header and nodelets
+  Refactored the conversion utilities to live within a namespace instead
+  of the radar to pointcloud class, changed their usage in all dependent
+  files.
+  Added nodelets for the passthrough and radar to pointcloud filters,
+  tested on K79 data. Removed old nodelets which weren't being built
+  properly.
+* Fix radar camera fusion output image and launches
+  Fixed the name of the radar+camera fusion class' output image topic to
+  be scoped within a new private image transport instance, and fixed the
+  launch files to use the correct topic name.
+* Minor, fix launch for radar camera val
+* Minor fixes to radar+camera fusion launch and node
+  Fixed the radar+camera fusion launch file to use the updated topic
+  names for radar and camera data. Also fixed the fusion class itself to
+  prevent crashing when empty bounding box arrays are processed. This
+  node is still intended for use with the tracking filter.
+* Fix multiple target rendering without SNR alpha
+  Fixed rendering multiple target rectangles when the SNR-based alpha is
+  not used for blending. Now renders all targets instead of only the
+  first one.
+  Also fixed a few small issues with other files.
+* Contributors: Nick Rotella
+
 2.0.2 (2019-11-19)
 ------------------
 * Use RadarInfo for sizing validation 2d bounding box
