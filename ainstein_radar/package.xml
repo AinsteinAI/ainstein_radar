@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ainstein_radar</name>
-  <version>2.0.2</version>
+  <version>3.0.0</version>
   <description>
     ROS support for Ainstein radar sensors.
   </description>

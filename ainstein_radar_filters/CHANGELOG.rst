@@ -2,8 +2,8 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2020-02-06)
+------------------
 * Add Cartesian tracking filter tracked pose output
   Added publishing of tracked object poses as geometry_msgs/PoseArray msg
   populated from tracked Cartesian position and using Cartesian velocity
