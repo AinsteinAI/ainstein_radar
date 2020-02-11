@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_gazebo_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 3.0.0 (2020-02-06)
 ------------------
 
