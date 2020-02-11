@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   tf2_eigen
+  tf2_sensor_msgs
   ainstein_radar_msgs
   dynamic_reconfigure
   jsk_recognition_msgs
