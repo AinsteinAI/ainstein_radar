@@ -1,7 +1,0 @@
-<launch>
-  <node name="vave_node" pkg="ainstein_radar_drivers" type="vave_node" />
-  
-  <node name="radar_to_pcl" pkg="ainstein_radar_filters" type="radar_target_array_to_point_cloud_node" >
-    <remap from="radar_in" to="/vave_node/targets/raw" />
-  </node>
-</launch>

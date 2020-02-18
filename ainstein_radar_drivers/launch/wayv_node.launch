@@ -1,0 +1,12 @@
+<launch>
+
+  <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" >
+    <param name="frame_id" value="map" />
+  </node>
+
+  <!-- Convert Wayv raw detections (targets) to PointCloud2 -->
+  <node name="wayv_pcl" pkg="ainstein_radar_filters" type="radar_target_array_to_point_cloud_node" >
+    <remap from="radar_in" to="/wayv/targets/raw" />
+  </node>
+
+</launch>

@@ -298,16 +298,15 @@ class PeopleCountingCLI:
                         offset = offset + tlvHeaderLengthInBytes
                         valueLength = tlvLength - tlvHeaderLengthInBytes
 
-                        for type in TLVs_to_use:
-                            if (tlvType == type): # check to see if the user wants to save this type of message
-                                s = tlvs.return_TLV_struct(type)
-                                s_length = self.lengthFromStruct(s)
-                                numItems = valueLength/s_length
-                                for n in range( numItems ):
-                                    RadarOutput[type].append(self.readToStruct(s, rxData, offset))
-                                    offset += s_length
-                            else:
-                                offset += valueLength
+                        if (tlvType in TLVs_to_use): # check to see if the user wants to save this type of message
+                            s = tlvs.return_TLV_struct(tlvType)
+                            s_length = self.lengthFromStruct(s)
+                            numItems = int(valueLength/s_length)
+                            for n in range( numItems ):
+                                RadarOutput[tlvType].append(self.readToStruct(s, rxData, offset))
+                                offset += s_length
+                        else:
+                            offset += valueLength
 
                     if not silent:
                         print str(RadarOutput)

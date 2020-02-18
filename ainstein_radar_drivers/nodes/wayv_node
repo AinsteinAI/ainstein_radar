@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+
+import mmwave_CLI as cli
+
+from collections import OrderedDict
+import math
+import numpy as np
+import time
+import serial
+
+from ainstein_radar_msgs.msg import RadarTargetArray
+from ainstein_radar_msgs.msg import RadarTarget
+from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import Pose
+import quaternion
+import rospy
+
+# Wayv device communication parameters
+data_port = '/dev/ttyUSB0'
+data_baud = 921600
+stay_silent = True
+
+# define lab-specific TLV data structures
+MMWDEMO_OUTPUT_MSG_POINT_CLOUD = 6
+MMWDEMO_OUTPUT_MSG_TARGET_LIST = 7
+MMWDEMO_OUTPUT_MSG_TARGET_INDEX = 8
+
+# Define TLVs (Type-Length-Values) to read from Wayv 
+TLVs_to_use = [MMWDEMO_OUTPUT_MSG_POINT_CLOUD, MMWDEMO_OUTPUT_MSG_TARGET_LIST]
+
+class WayvROSInterface( object ):
+    """
+    This class defines a ROS interface to the people counting software running on 
+    the Wayv radar sensor in order to publish raw detections as RadarTargetArray
+    and tracked detections in Cartesian space as PoseArray.
+
+    """
+    
+    def __init__( self, frame_id ):
+        """ Initialize the ROS interface.
+
+        Initializes the ROS interface for Wayv, setting up publishers for raw and 
+        tracked detections. Raw detections are published as RadarTargetArray and
+        tracked detections are published as PoseArray because the underlying TI
+        people counting firmware tracks in Cartesian space.
+
+        Args:
+            frame_id (string): Name of the Wayv sensor's coordinate frame.
+
+        Return:
+            (None)
+
+        """
+        
+        self.pub_point_cloud = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
+        self.radar_data_msg = RadarTargetArray()
+        self.radar_data_msg.header.stamp = rospy.Time( 0 )
+        self.radar_data_msg.header.frame_id = frame_id
+
+        self.pub_tracked_pose = rospy.Publisher( '~objects/poses', PoseArray, queue_size=10 )
+        self.tracked_pose_msg = PoseArray()
+        self.tracked_pose_msg.header.stamp = rospy.Time( 0 )
+        self.tracked_pose_msg.header.frame_id = frame_id
+
+        
+    def callback( self, data ):
+        """ Callback to process data from the Wayv and publish ROS messages.
+
+        Receives point cloud (raw detection) and tracked object data from the TI
+        firmware, packs the data into ROS messages and publishes. Note that the 
+        orientation of the tracked object pose is derived from its velocity,
+        under the assumption that objects always move in the forward direction.
+
+        Also note that the full (3d) velocity and acceleration are available for
+        all tracked objects but are unused in this driver because they would 
+        require custom VectorArray message types. To be added in the future.
+
+        Args:
+            data (array of dict arrays): Data from the Wayv, organized by TLV.
+
+        Returns:
+            (None)
+
+        """
+
+        # Clear the output ROS message arrays
+        self.radar_data_msg.targets = []
+        self.tracked_pose_msg.poses = []
+
+        # Receive and pack Wayv point cloud detections into ROS message
+        i = 0
+        for point in data[MMWDEMO_OUTPUT_MSG_POINT_CLOUD]:
+            target = RadarTarget()
+            target.target_id = i
+            target.range = point['range']
+            target.azimuth = -1.0 * math.degrees( point['angle'] )
+            target.elevation = math.degrees( point['elev'] )
+            target.speed = point['doppler']
+            target.snr = point['snr']
+            self.radar_data_msg.targets.append( target )
+            i = i + 1
+
+        # Receive and pack Wayv tracked object info into ROS message
+        for obj in data[MMWDEMO_OUTPUT_MSG_TARGET_LIST]:
+            pose = Pose()
+            pose.position.x = obj['posY']
+            pose.position.y = -obj['posX']
+            pose.position.z = obj['posZ']
+
+            # Compute object pose, assuming velocity is in +x direction
+            vel = np.array( [obj['velY'], -obj['velX'], obj['velZ']] ).transpose()
+
+            # If velocity is near zero, keep identity orientation
+            rot_mat = np.identity( 3 )
+            if( np.linalg.norm( vel ) > 0.001 ):
+                rot_mat[:,0] = vel / np.linalg.norm( vel )
+                rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
+                                         rot_mat[:,0] )
+                rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
+
+            # Convert from rotation matrix to quaternion to fill ROS pose
+            quat = quaternion.from_rotation_matrix( rot_mat )
+            pose.orientation.w = quat.w
+            pose.orientation.x = quat.x
+            pose.orientation.y = quat.y
+            pose.orientation.z = quat.z
+            self.tracked_pose_msg.poses.append( pose )
+
+        # Timestamp and publish radar point cloud
+        self.radar_data_msg.header.stamp = rospy.Time()
+        self.pub_point_cloud.publish( self.radar_data_msg )
+
+        # Timestamp and publish tracked object poses
+        self.tracked_pose_msg.header.stamp = rospy.Time()
+        self.pub_tracked_pose.publish( self.tracked_pose_msg )
+
+    
+if __name__ == "__main__":
+    try:
+        rospy.init_node( 'wayv_node' )
+        frame_id = rospy.get_param( '~frame_id', 'map' )
+
+        # Create the ROS interface 
+        wayv_intf = WayvROSInterface( frame_id )
+
+        # Register the ROS interface data callback with the sensor
+        ppl_cnt = cli.PeopleCountingCLI( data_port, data_baud, wayv_intf.callback )
+    
+        print( "Waiting to start communication" )
+        time.sleep( 1.0 )
+
+        # Run the underlying people counting demo to trigger callbacks
+        ppl_cnt.read_data( stay_silent, TLVs_to_use )
+        
+    except rospy.ROSInterruptException:
+        pass
