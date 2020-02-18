@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.1 (2020-02-11)
+------------------
+
 3.0.0 (2020-02-06)
 ------------------
 * Merge branch 'master' of https://github.com/AinsteinAI/ainstein_radar

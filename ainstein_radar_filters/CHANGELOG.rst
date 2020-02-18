@@ -2,6 +2,11 @@
 Changelog for package ainstein_radar_filters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.1 (2020-02-11)
+------------------
+* Minor, add missing dependency
+* Contributors: Nick Rotella
+
 3.0.0 (2020-02-06)
 ------------------
 * Add Cartesian tracking filter tracked pose output

@@ -2,6 +2,9 @@
 Changelog for package ainstein_radar_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.1 (2020-02-11)
+------------------
+
 3.0.0 (2020-02-06)
 ------------------
 * Major refactor, add conversion header and nodelets
