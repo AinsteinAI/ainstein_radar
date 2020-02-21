@@ -79,11 +79,10 @@ namespace ainstein_radar_filters
 			  std::pow( params.init_elev_stdev, 2.0 ) ).finished().asDiagonal();    
   }
       
-  RadarTargetKF::RadarTargetKF( const ainstein_radar_msgs::RadarTarget& target,
-				const ros::NodeHandle& node_handle,
-				const ros::NodeHandle& node_handle_private) :
-    state_pre_( target, P_init_ ),
-    state_post_( target, P_init_ )
+  RadarTargetKF::RadarTargetKF( double target_range, double target_speed,
+				double target_azimuth, double target_elevation ) :
+    state_pre_( target_range, target_speed, target_azimuth, target_elevation, P_init_ ),
+    state_post_( target_range, target_speed, target_azimuth, target_elevation, P_init_ )
   {
     time_first_update_ = ros::Time::now();
     time_last_update_ = time_first_update_;
@@ -107,13 +106,14 @@ namespace ainstein_radar_filters
     state_post_ = state_pre_;
   }
 
-  void RadarTargetKF::update( const ainstein_radar_msgs::RadarTarget& target )
+  void RadarTargetKF::update( double target_range, double target_speed,
+			      double target_azimuth, double target_elevation )
   {
     // Convert the target to a measurement:
-    Eigen::Vector4d meas_vec = Eigen::Vector4d( target.range,
-						target.speed,
-						target.azimuth,
-						target.elevation );
+    Eigen::Vector4d meas_vec = Eigen::Vector4d( target_range,
+						target_speed,
+						target_azimuth,
+						target_elevation );
 
     // Compute the Kalman gain:
     Eigen::Matrix4d meas_cov = ( H_ * state_pre_.cov * H_.transpose() + R_ );
