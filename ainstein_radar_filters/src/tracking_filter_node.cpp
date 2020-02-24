@@ -24,8 +24,15 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <ainstein_radar_filters/data_conversions.h>
+#include <ainstein_radar_filters/tracking_filter.h>
+#include <ainstein_radar_filters/utilities.h>
+#include <ainstein_radar_msgs/RadarTarget.h>
+#include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
-#include "ainstein_radar_filters/tracking_filter.h"
+#include <sensor_msgs/PointCloud2.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 class TrackingFilterROS
 {
@@ -73,7 +80,7 @@ public:
     tracking_filter_.setFilterParameters(params);
   }
 
-  void TrackingFilterROS::initialize(void)
+  void initialize(void)
   {
     // Set up raw radar data subscriber and tracked radar data publisher:
     sub_radar_data_raw_ = nh_.subscribe("radar_in", 1, &TrackingFilterROS::radarTargetArrayCallback, this);
@@ -91,7 +98,7 @@ public:
         std::unique_ptr<std::thread>(new std::thread(&TrackingFilterROS::publishLoop, this, publish_freq_));
   }
 
-  void TrackingFilterROS::publishLoop(double pub_freq)
+  void publishLoop(double pub_freq)
   {
     // Set the periodic task rate:
     ros::Rate publish_rate(pub_freq);
@@ -104,39 +111,50 @@ public:
     {
       // Add tracked targets for filters which have been running for specified time:
       msg_tracked_targets_.targets.clear();
-
-      // Set timestamp for output messages:
       msg_tracked_targets_.header.stamp = ros::Time::now();
-      msg_tracked_boxes_.header.stamp = ros::Time::now();
 
-      // Clear the tracked "clusters" message and publisher:
-      msg_tracked_clusters_.clear();
-      msg_tracked_boxes_.boxes.clear();
-
-      ainstein_radar_msgs::RadarTarget tracked_target;
-      int target_id = 0;
-      for (int i = 0; i < filters_.size(); ++i)
+      std::vector<ainstein_radar_filters::RadarTarget> tracked_objects;
+      tracking_filter_.getTrackedObjects(tracked_objects);
+      for (int i = 0; i < tracked_objects.size(); ++i)
       {
-        if (filters_.at(i).getTimeSinceStart() >= filter_min_time_)
-        {
-          // Fill the tracked targets message:
-          tracked_target = filters_.at(i).getState().asMsg();
-          tracked_target.target_id = target_id;
-          msg_tracked_targets_.targets.push_back(tracked_target);
+        ainstein_radar_msgs::RadarTarget t;
+        t.target_id = i;
+        t.range = tracked_objects.at(i).range;
+        t.speed = tracked_objects.at(i).speed;
+        t.azimuth = tracked_objects.at(i).azimuth;
+        t.elevation = tracked_objects.at(i).elevation;
 
-          // Fill the tracked target clusters message:
-          msg_tracked_clusters_.push_back(filter_targets_.at(i));
-
-          msg_tracked_boxes_.boxes.push_back(getBoundingBox(tracked_target, filter_targets_.at(i)));
-
-          ++target_id;
-        }
+        msg_tracked_targets_.targets.push_back(t);
       }
 
-      // Publish the tracked targets:
       pub_radar_data_tracked_.publish(msg_tracked_targets_);
 
-      // Publish the bounding boxes:
+      // Get targets associated with alive filters and publish bounding boxes:
+      msg_tracked_boxes_.boxes.clear();
+      msg_tracked_boxes_.header.stamp = ros::Time::now();
+
+      std::vector<std::vector<ainstein_radar_filters::RadarTarget>> tracked_object_targets;
+      tracking_filter_.getTrackedObjectTargets(tracked_object_targets);
+
+      for (const auto& targets : tracked_object_targets)
+      {
+        ainstein_radar_msgs::RadarTargetArray msg_targets;
+        for (const auto& t : targets)
+        {
+          ainstein_radar_msgs::RadarTarget target;
+          target.range = t.range;
+          target.speed = t.speed;
+          target.azimuth = t.azimuth;
+          target.elevation = t.elevation;
+          msg_targets.targets.push_back(target);
+        }
+
+        jsk_recognition_msgs::BoundingBox box;
+        ainstein_radar_filters::utilities::getTargetsBoundingBox(msg_targets, box);
+
+        msg_tracked_boxes_.boxes.push_back(box);
+      }
+
       pub_bounding_boxes_.publish(msg_tracked_boxes_);
 
       // Store the current time:
@@ -150,7 +168,7 @@ public:
     }
   }
 
-  void TrackingFilterROS::radarTargetArrayCallback(const ainstein_radar_msgs::RadarTargetArray& msg)
+  void radarTargetArrayCallback(const ainstein_radar_msgs::RadarTargetArray& msg)
   {
     // Store the frame_id for the messages:
     msg_tracked_targets_.header.frame_id = msg.header.frame_id;
@@ -159,68 +177,18 @@ public:
     std::vector<ainstein_radar_filters::RadarTarget> targets;
     for (const auto& t : msg.targets)
     {
-      targets.push_back(t.range, t.speed, t.azimuth, t.elevation);
+      targets.emplace_back(t.range, t.speed, t.azimuth, t.elevation);
     }
 
     tracking_filter_.updateFilters(targets);
   }
 
-  void TrackingFilterROS::pointCloudCallback(const sensor_msgs::PointCloud2& cloud)
+  void pointCloudCallback(const sensor_msgs::PointCloud2& cloud)
   {
     ainstein_radar_msgs::RadarTargetArray msg;
-    data_conversions::rosCloudToRadarTargetArray(cloud, msg);
+    ainstein_radar_filters::data_conversions::rosCloudToRadarTargetArray(cloud, msg);
 
     radarTargetArrayCallback(msg);
-  }
-
-  jsk_recognition_msgs::BoundingBox TrackingFilterROS::getBoundingBox(
-      const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets)
-  {
-    // Find the bounding box dimensions:
-    Eigen::Vector3d min_point =
-        Eigen::Vector3d(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
-                        std::numeric_limits<double>::infinity());
-    Eigen::Vector3d max_point =
-        Eigen::Vector3d(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
-                        -std::numeric_limits<double>::infinity());
-    if (targets.targets.size() == 0)
-    {
-      min_point = max_point = radarTargetToPoint(tracked_target);
-    }
-    else
-    {
-      for (const auto& t : targets.targets)
-      {
-        min_point = min_point.cwiseMin(radarTargetToPoint(t));
-        max_point = max_point.cwiseMax(radarTargetToPoint(t));
-      }
-    }
-
-    // Check for the case in which the box is degenerative:
-    if ((max_point - min_point).norm() < 1e-6)
-    {
-      min_point -= 0.1 * Eigen::Vector3d::Ones();
-      max_point += 0.1 * Eigen::Vector3d::Ones();
-    }
-
-    // Compute box pose (identity orientation, geometric center is position):
-    Eigen::Affine3d box_pose;
-    box_pose.linear() = Eigen::Matrix3d::Identity();
-    box_pose.translation() = min_point + (0.5 * (max_point - min_point));
-
-    // Form the box message:
-    jsk_recognition_msgs::BoundingBox box;
-
-    box.header.stamp = targets.header.stamp;
-    box.header.frame_id = targets.header.frame_id;
-
-    box.pose = tf2::toMsg(box_pose);
-
-    box.dimensions.x = max_point.x() - min_point.x();
-    box.dimensions.y = max_point.y() - min_point.y();
-    box.dimensions.z = 0.1;
-
-    return box;
   }
 
 private:
@@ -256,9 +224,10 @@ int main(int argc, char** argv)
   }
 
   // Create node to publish tracked targets:
-  TrackingFilterROS tracking_filter;
+  double publish_freq = node_handle_private.param("publish_freq", 20.0);
+  TrackingFilterROS tracking_filter_ros(node_handle, node_handle_private, publish_freq);
 
-  tracking_filter.initialize();
+  tracking_filter_ros.initialize();
 
   ros::spin();
 

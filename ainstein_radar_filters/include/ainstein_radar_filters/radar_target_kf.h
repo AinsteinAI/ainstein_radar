@@ -23,7 +23,7 @@ namespace ainstein_radar_filters
 class RadarTargetKF
 {
 public:
-  RadarTargetKF(const ainstein_radar_msgs::RadarTarget& target);
+  RadarTargetKF(double target_range, double target_speed, double target_azimuth, double target_elevation);
   ~RadarTargetKF()
   {
   }
@@ -117,7 +117,7 @@ public:
   }
 
   void process(double dt);
-  void update(const ainstein_radar_msgs::RadarTarget& target);
+  void update(double target_range, double target_speed, double target_azimuth, double target_elevation);
 
   FilterState getState(void) const
   {
@@ -148,8 +148,8 @@ private:
   FilterState state_pre_;
   FilterState state_post_;
 
-  std::chrono::time_point time_first_update_;
-  std::chrono::time_point time_last_update_;
+  std::chrono::system_clock::time_point time_first_update_;
+  std::chrono::system_clock::time_point time_last_update_;
 
   Eigen::Matrix4d K_;
 

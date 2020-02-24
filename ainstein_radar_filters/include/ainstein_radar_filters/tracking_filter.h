@@ -1,18 +1,13 @@
 #ifndef TRACKING_FILTER_H_
 #define TRACKING_FILTER_H_
 
+#include <Eigen/Eigen>
 #include <chrono>
 #include <mutex>
 #include <thread>
 
 #include <ainstein_radar_filters/TrackingFilterConfig.h>
-#include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/radar_target_kf.h>
-#include <dynamic_reconfigure/server.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <tf2_eigen/tf2_eigen.h>
 
 namespace ainstein_radar_filters
 {
@@ -30,7 +25,9 @@ public:
     this->azimuth = azimuth;
     this->elevation = elevation;
   }
-  ~RadarTarget(void);
+  ~RadarTarget(void)
+  {
+  }
 
 public:
   double range;
@@ -42,7 +39,9 @@ public:
 class TrackingFilter
 {
 public:
-  TrackingFilter(void);
+  TrackingFilter(void)
+  {
+  }
   ~TrackingFilter()
   {
   }
@@ -66,7 +65,7 @@ public:
     RadarTargetKF::FilterParameters kf_params;
   };
 
-  void setFilterParameters(const TrackingFilterParams& params)
+  void setFilterParameters(const FilterParameters& params)
   {
     filter_process_rate_ = params.filter_process_rate;
     filter_min_time_ = params.filter_min_time;
@@ -79,20 +78,10 @@ public:
   void initialize(void);
   void processFiltersLoop(double frequency);
 
-  void radarTargetArrayCallback(const ainstein_radar_msgs::RadarTargetArray& msg);
+  void updateFilters(const std::vector<RadarTarget>& targets);
 
-  jsk_recognition_msgs::BoundingBox getBoundingBox(const ainstein_radar_msgs::RadarTarget& tracked_target,
-                                                   const ainstein_radar_msgs::RadarTargetArray& targets);
-
-  Eigen::Vector3d radarTargetToPoint(const ainstein_radar_msgs::RadarTarget& target)
-  {
-    Eigen::Vector3d point;
-    point.x() = cos((M_PI / 180.0) * target.azimuth) * cos((M_PI / 180.0) * target.elevation) * target.range;
-    point.y() = sin((M_PI / 180.0) * target.azimuth) * cos((M_PI / 180.0) * target.elevation) * target.range;
-    point.z() = sin((M_PI / 180.0) * target.elevation) * target.range;
-
-    return point;
-  }
+  void getTrackedObjects(std::vector<RadarTarget>& tracked_objects);
+  void getTrackedObjectTargets(std::vector<std::vector<RadarTarget>>& tracked_objects);
 
   static const int max_tracked_targets;
 
@@ -113,9 +102,7 @@ private:
   std::vector<ainstein_radar_filters::RadarTargetKF> filters_;
   std::vector<std::vector<ainstein_radar_filters::RadarTarget>> filter_targets_;
   std::vector<int> meas_count_vec_;
-
-  std::vector<ainstein_radar_filters::RadarTarget> tracked_targets_;
-  std::vector<std::vector<ainstein_radar_filters::RadarTarget>> tracked_clusters_;
+  std::vector<bool> is_tracked_;
 };
 
 }  // namespace ainstein_radar_filters
