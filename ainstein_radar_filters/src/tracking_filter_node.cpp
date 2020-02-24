@@ -139,6 +139,7 @@ public:
       for (const auto& targets : tracked_object_targets)
       {
         ainstein_radar_msgs::RadarTargetArray msg_targets;
+        msg_targets.header.frame_id = msg_tracked_boxes_.header.frame_id;  // need to pass this through
         for (const auto& t : targets)
         {
           ainstein_radar_msgs::RadarTarget target;

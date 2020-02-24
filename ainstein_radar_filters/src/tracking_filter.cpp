@@ -57,8 +57,12 @@ void TrackingFilter::processFiltersLoop(double frequency)
 	}
 
 	time_now = std::chrono::system_clock::now();
+	dt = 0.001 * std::chrono::duration_cast<std::chrono::milliseconds>(time_now - time_prev).count();
 
-	dt = (time_now - time_prev).count();
+	if (print_debug_)
+	{
+	  std::cout << "Loop period (dt=time_now-time_prev): " << dt << std::endl;
+	}
 
 	// Block callback from modifying the filters
 	mutex_.lock();
@@ -87,6 +91,8 @@ void TrackingFilter::processFiltersLoop(double frequency)
 	}
 
 	// Update which filters are currently tracking (based on time alive):
+	is_tracked_.resize(filters_.size());
+	std::fill(is_tracked_.begin(), is_tracked_.end(), false);
 	for (int i = 0; i < filters_.size(); ++i)
 	{
 	  if (filters_.at(i).getTimeSinceStart() >= filter_min_time_)
@@ -106,7 +112,15 @@ void TrackingFilter::processFiltersLoop(double frequency)
 	time_prev = time_now;
 
 	// Sleep to maintain desired freq:
-	double sleep_time = thread_period - (std::chrono::system_clock::now() - time_now).count();
+	double processing_time =
+		1e-6 *
+		std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time_now).count();
+	double sleep_time = thread_period - processing_time;
+	if (print_debug_)
+	{
+	  std::cout << "processing time: " << processing_time << std::endl;
+	  std::cout << "sleep time: " << sleep_time << std::endl;
+	}
 	if (sleep_time > 1e-9)
 	{
 	  std::this_thread::sleep_for(std::chrono::duration<double>(sleep_time));
@@ -192,12 +206,29 @@ void TrackingFilter::updateFilters(const std::vector<RadarTarget>& targets)
 	}
   }
 
+  // Update which filters are currently tracking (based on time alive):
+  is_tracked_.resize(filters_.size());
+  std::fill(is_tracked_.begin(), is_tracked_.end(), false);
+  for (int i = 0; i < filters_.size(); ++i)
+  {
+	if (filters_.at(i).getTimeSinceStart() >= filter_min_time_)
+	{
+	  is_tracked_.at(i) = true;
+	}
+	else
+	{
+	  is_tracked_.at(i) = false;
+	}
+  }
+
   // Release lock on filter state
   mutex_.unlock();
 }
 
 void TrackingFilter::getTrackedObjects(std::vector<RadarTarget>& tracked_objects)
 {
+  mutex_.lock();
+
   tracked_objects.clear();
   for (int i = 0; i < filters_.size(); ++i)
   {
@@ -208,10 +239,14 @@ void TrackingFilter::getTrackedObjects(std::vector<RadarTarget>& tracked_objects
 	  tracked_objects.push_back(object);
 	}
   }
+
+  mutex_.unlock();
 }
 
 void TrackingFilter::getTrackedObjectTargets(std::vector<std::vector<RadarTarget>>& tracked_object_targets)
 {
+  mutex_.lock();
+
   tracked_object_targets.clear();
   for (int i = 0; i < filters_.size(); ++i)
   {
@@ -220,6 +255,8 @@ void TrackingFilter::getTrackedObjectTargets(std::vector<std::vector<RadarTarget
 	  tracked_object_targets.push_back(filter_targets_.at(i));
 	}
   }
+
+  mutex_.unlock();
 }
 
 }  // namespace ainstein_radar_filters

@@ -41,6 +41,8 @@ class TrackingFilter
 public:
   TrackingFilter(void)
   {
+    print_debug_ = false;
+    is_running_ = true;
   }
   ~TrackingFilter()
   {
@@ -77,9 +79,11 @@ public:
 
   void initialize(void);
   void processFiltersLoop(double frequency);
-
   void updateFilters(const std::vector<RadarTarget>& targets);
-
+  void stopRunning(void)
+  {
+    is_running_ = false;
+  }
   void getTrackedObjects(std::vector<RadarTarget>& tracked_objects);
   void getTrackedObjectTargets(std::vector<std::vector<RadarTarget>>& tracked_objects);
 

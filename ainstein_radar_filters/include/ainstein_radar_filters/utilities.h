@@ -27,7 +27,8 @@ void getTargetsBoundingBox(const ainstein_radar_msgs::RadarTargetArray& targets,
     for (const auto& t : targets.targets)
     {
       Eigen::Vector3d target_point;
-      data_conversions::sphericalToCartesian(t.range, t.azimuth, t.elevation, target_point);
+      data_conversions::sphericalToCartesian(t.range, (M_PI / 180.0) * t.azimuth, (M_PI / 180.0) * t.elevation,
+                                             target_point);
       min_point = min_point.cwiseMin(target_point);
       max_point = max_point.cwiseMax(target_point);
     }

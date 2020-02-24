@@ -134,12 +134,16 @@ public:
 
   double getTimeSinceStart(void) const
   {
-	return (std::chrono::system_clock::now() - time_first_update_).count();
+	return 0.001 *
+		   std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - time_first_update_)
+			   .count();
   }
 
   double getTimeSinceUpdate(void) const
   {
-	return (std::chrono::system_clock::now() - time_last_update_).count();
+	return 0.001 *
+		   std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - time_last_update_)
+			   .count();
   }
 
   static void setFilterParameters(const FilterParameters& params);
