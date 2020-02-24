@@ -6,7 +6,6 @@
 #include <mutex>
 #include <thread>
 
-#include <ainstein_radar_filters/TrackingFilterConfig.h>
 #include <ainstein_radar_filters/radar_target_kf.h>
 
 namespace ainstein_radar_filters
