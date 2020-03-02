@@ -26,6 +26,7 @@
 
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/tracking_filter.h>
+#include <ainstein_radar_filters/TrackingFilterConfig.h>
 #include <ainstein_radar_filters/utilities.h>
 #include <ainstein_radar_msgs/RadarTarget.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
