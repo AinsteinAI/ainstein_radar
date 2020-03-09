@@ -54,12 +54,10 @@ class WayvROSInterface( object ):
         
         self.pub_point_cloud = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
         self.radar_data_msg = RadarTargetArray()
-        self.radar_data_msg.header.stamp = rospy.Time( 0 )
         self.radar_data_msg.header.frame_id = frame_id
 
         self.pub_tracked_pose = rospy.Publisher( '~objects/poses', PoseArray, queue_size=10 )
         self.tracked_pose_msg = PoseArray()
-        self.tracked_pose_msg.header.stamp = rospy.Time( 0 )
         self.tracked_pose_msg.header.frame_id = frame_id
 
         
@@ -127,11 +125,11 @@ class WayvROSInterface( object ):
             self.tracked_pose_msg.poses.append( pose )
 
         # Timestamp and publish radar point cloud
-        self.radar_data_msg.header.stamp = rospy.Time()
+        self.radar_data_msg.header.stamp = rospy.Time.now()
         self.pub_point_cloud.publish( self.radar_data_msg )
 
         # Timestamp and publish tracked object poses
-        self.tracked_pose_msg.header.stamp = rospy.Time()
+        self.tracked_pose_msg.header.stamp = rospy.Time.now()
         self.pub_tracked_pose.publish( self.tracked_pose_msg )
 
     
