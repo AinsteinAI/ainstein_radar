@@ -16,7 +16,6 @@ import quaternion
 import rospy
 
 # Wayv device communication parameters
-data_port = '/dev/ttyUSB0'
 data_baud = 921600
 stay_silent = True
 
@@ -137,6 +136,7 @@ if __name__ == "__main__":
     try:
         rospy.init_node( 'wayv_node' )
         frame_id = rospy.get_param( '~frame_id', 'map' )
+        data_port = rospy.get_param( '~data_port', '/dev/ttyUSB0' )
 
         # Create the ROS interface 
         wayv_intf = WayvROSInterface( frame_id )

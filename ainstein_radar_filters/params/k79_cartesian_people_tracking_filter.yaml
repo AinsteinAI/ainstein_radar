@@ -1,0 +1,33 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  filter_min_time: 3.0
+  filter_timeout: 0.5
+  filter_update_rate: 20
+  filter_val_gate_thresh: 1.923
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      filter_min_time: 3.0
+      filter_timeout: 0.5
+      filter_update_rate: 20
+      filter_val_gate_thresh: 1.923
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      kf_init_pos_stdev: 1.0
+      kf_init_vel_stdev: 2.0
+      kf_q_vel_stdev: 0.1
+      kf_r_pos_stdev: 1.0
+      kf_r_speed_stdev: 2.0
+      name: Default
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      state: true
+      type: ''
+    state: []
+  kf_init_pos_stdev: 1.0
+  kf_init_vel_stdev: 2.0
+  kf_q_vel_stdev: 0.1
+  kf_r_pos_stdev: 1.0
+  kf_r_speed_stdev: 2.0
+state: []
