@@ -46,6 +46,7 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
   nh_( node_handle ),
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -67,6 +68,7 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
   publishRadarInfo();
@@ -83,6 +85,9 @@ RadarInterfaceK79::RadarInterfaceK79( ros::NodeHandle node_handle,
 
   // Advertise the K79 raw targets data:
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
+
+  // Advertise the K79 tracked targets data:
+  pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
 }
 
 RadarInterfaceK79::~RadarInterfaceK79(void)
@@ -100,27 +105,45 @@ void RadarInterfaceK79::mainLoop(void)
   
   // Enter the main data receiving loop:
   bool running = true;
-  std::vector<ainstein_radar_drivers::RadarTarget> targets;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_raw;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_tracked;
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets ) == false )
+      if( driver_->receiveTargets( targets_raw, targets_tracked ) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
       else
 	{
-	  // Fill in the RadarTargetArray message from the received targets:
-	  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-	  radar_data_msg_ptr_raw_->targets.clear();
-	  for( const auto &t : targets )
+	  if( targets_raw.size() > 0 )
 	    {
-	      radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+	      // Fill in the raw RadarTargetArray message from the received targets:
+	      radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_raw_->targets.clear();
+	      for( const auto &t : targets_raw )
+		{
+		  radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+		}
+	      
+	      // Publish the raw target data:
+	      pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
 	    }
+
+	  if( targets_tracked.size() > 0 )
+	    {
+	      // Fill in the tracked RadarTargetArray message from the received targets:
+	      radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_tracked_->targets.clear();
+	      for( const auto &t : targets_tracked )
+		{
+		  radar_data_msg_ptr_tracked_->targets.push_back( targetToROSMsg( t ) );
+		}
 	  
-	  // Publish the target data:
-	  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-	}
+	      // Publish the tracked target data:
+	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+	    }
+	} 
 
       // Check whether the data loop should still be running:
       mutex_.lock();

@@ -164,10 +164,12 @@ namespace ainstein_radar_drivers
     return true;
   }
 
-  bool RadarDriverK79::receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets )
+  bool RadarDriverK79::receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets,
+				       std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked )
   {
     // Clear the targets array in preparation for message processing:
     targets.clear();
+    targets_tracked.clear();
     
     // Received message length:
     int msg_len;
@@ -201,29 +203,59 @@ namespace ainstein_radar_drivers
 	  {
 	    int offset;
 	    ainstein_radar_drivers::RadarTarget target;
-	    for( int i = 0; i < ( msg_len / RadarDriverK79::target_msg_len ); ++i )
+	    if( buffer_[0] == 0x01 && buffer_[1] == 0x02 && buffer_[2] == 0x03 && buffer_[3] == 0x04 ) // tracked message
 	      {
-		offset = i * RadarDriverK79::target_msg_len;
-
-		target.id = i;
-		target.azimuth = static_cast<uint8_t>( buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
-		target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
-
-		// Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
-		// Note that 65 is the highest speed moving towards, hence the manipulation below.
-		if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
+		for( int i = 1; i < ( msg_len / RadarDriverK79::target_msg_len ); ++i )
 		  {
-		    target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
-		  }
-		else // MOVING TOWARDS RADAR
-		  {
-		    target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
-		  }
+		    offset = i * RadarDriverK79::target_msg_len;
+
+		    target.id = i;
+		    target.azimuth = static_cast<uint8_t>( buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
+		    target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
+
+		    // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
+		    // Note that 65 is the highest speed moving towards, hence the manipulation below.
+		    if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
+		      {
+			target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
+		      }
+		    else // MOVING TOWARDS RADAR
+		      {
+			target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
+		      }
 	
-		target.elevation = 0.0; // K79 does not output elevation angle
-		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
+		    target.elevation = 0.0; // K79 does not output elevation angle
+		    target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
-		targets.push_back( target );
+		    targets_tracked.push_back( target );
+		  }
+	      }
+	    else
+	      {
+		for( int i = 0; i < ( msg_len / RadarDriverK79::target_msg_len ); ++i )
+		  {
+		    offset = i * RadarDriverK79::target_msg_len;
+
+		    target.id = i;
+		    target.azimuth = static_cast<uint8_t>( buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
+		    target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
+
+		    // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
+		    // Note that 65 is the highest speed moving towards, hence the manipulation below.
+		    if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
+		      {
+			target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
+		      }
+		    else // MOVING TOWARDS RADAR
+		      {
+			target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
+		      }
+	
+		    target.elevation = 0.0; // K79 does not output elevation angle
+		    target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
+
+		    targets.push_back( target );
+		  }
 	      }
 	  }
       }

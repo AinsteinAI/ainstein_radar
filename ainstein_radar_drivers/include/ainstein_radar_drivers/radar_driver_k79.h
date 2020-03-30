@@ -55,7 +55,8 @@ namespace ainstein_radar_drivers
     ~RadarDriverK79( void );
 
     bool connect( void );
-    bool receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets );
+    bool receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets,
+			 std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked );
   
     static const std::string connect_cmd_str;
     static const unsigned int connect_res_len;
