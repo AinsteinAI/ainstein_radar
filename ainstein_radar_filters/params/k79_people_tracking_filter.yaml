@@ -1,14 +1,14 @@
 !!python/object/new:dynamic_reconfigure.encoding.Config
 dictitems:
   filter_min_time: 1.0
-  filter_timeout: 0.25
-  filter_update_rate: 20
+  filter_timeout: 0.5
+  filter_update_rate: 5
   filter_val_gate_thresh: 1.923
   groups: !!python/object/new:dynamic_reconfigure.encoding.Config
     dictitems:
       filter_min_time: 1.0
-      filter_timeout: 0.25
-      filter_update_rate: 20
+      filter_timeout: 0.5
+      filter_update_rate: 5
       filter_val_gate_thresh: 1.923
       groups: !!python/object/new:dynamic_reconfigure.encoding.Config
         state: []
