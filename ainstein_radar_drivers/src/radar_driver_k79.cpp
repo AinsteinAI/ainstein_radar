@@ -229,10 +229,6 @@ namespace ainstein_radar_drivers
 		    target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
 		    targets_tracked.push_back( target );
-
-		    std::cout << "TRACKED TARGET:" << std::endl;
-		    std::cout << target.range << " " << target.speed << " " << target.azimuth << " " << target.elevation << std::endl;
-		    std::cout << std::endl;
 		  }
 	      }
 	    else
