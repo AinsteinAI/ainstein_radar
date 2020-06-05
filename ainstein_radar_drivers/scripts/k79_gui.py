@@ -202,21 +202,33 @@ class Window( tk.Frame ):
             # Get the length of the firmware string in bytes:
             f_size = len( firmware_arr )
 
-            # Pad the firmware string to a multiple of CHUNK_SIZE:
-            ceil_fsize = int( CHUNK_SIZE * math.ceil( len( firmware_arr ) / float( CHUNK_SIZE ) ) )
-            firmware_arr += '\0' * ( ceil_fsize - f_size )
-
             # Send firmware to radar:
-            total_chunks = len( firmware_arr ) / CHUNK_SIZE
-            for i in range( total_chunks ):
+            total_chunks = int( math.ceil( f_size / float( CHUNK_SIZE ) ) )
+            for i in range( total_chunks - 1 ):
                 self.overwrite_text_display( "Sending firmware chunk " + str( i + 1 ) + "/" + str( total_chunks ) + " (" +
                                              str( int( 100.0 * float( i + 1 ) / float( total_chunks ) ) ) + "%)" )
+
+                # for b in firmware_arr[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE]:
+                #     sys.stdout.write(hex(ord(b))+' ')
+                # sys.stdout.write('\n')
+                
                 self.sock.sendto( firmware_arr[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE],
                                   ( self.current_radar_ip,
                                     RADAR_PORT ) )
                 self.master.update()
-                time.sleep( 0.002 )
-                    
+                time.sleep( 0.010 )
+        
+            # Send the last chunk which is smaller than the rest:
+            # for b in firmware_arr[((total_chunks-1) * CHUNK_SIZE):]:
+            #     sys.stdout.write(hex(ord(b))+' ')
+            # sys.stdout.write('\n')
+        
+            self.sock.sendto( firmware_arr[((total_chunks-1) * CHUNK_SIZE):],
+                              ( self.current_radar_ip,
+                                RADAR_PORT ) )
+            self.master.update()
+            time.sleep( 0.010 )
+
             # Inform the radar that firmware sending is done:
             self.master.update()
             time.sleep( 1.0 )
