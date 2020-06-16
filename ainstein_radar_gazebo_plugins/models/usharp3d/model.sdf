@@ -57,7 +57,7 @@
 	    <resolution>0.6</resolution>
 	  </range>
 	</ray>
-	<plugin name="range" filename="libainstein_radar_gazebo_plugins.so.so">
+	<plugin name="range" filename="libainstein_radar_gazebo_plugins.so">
 	  <alwaysOn>true</alwaysOn>
 	  <updateRate>10</updateRate>
 	  <topicName>usharp3d/data</topicName>
