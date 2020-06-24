@@ -31,6 +31,10 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   )
 
+add_executable(o79_can_node src/o79_can_node.cpp src/radar_interface_o79_can.cpp)
+add_dependencies(o79_can_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(o79_can_node ${catkin_LIBRARIES})
+
 add_executable(k79_node src/k79_node.cpp src/radar_interface_k79.cpp src/radar_driver_k79.cpp)
 add_dependencies(k79_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(k79_node ${catkin_LIBRARIES})
@@ -54,6 +58,7 @@ add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 target_link_libraries(t79_bsd_node ${catkin_LIBRARIES})
 
 install(TARGETS
+  o79_can_node
   k79_node
   k79_nodelet
   k79_3d_node

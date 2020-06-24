@@ -1,0 +1,20 @@
+<launch>
+  <!-- CAN interface and O-79 CAN nodes -->
+  <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
+    <param name="can_device" value="can0" />
+  </node>
+  <node name="o79_can" pkg="ainstein_radar_drivers" type="o79_can_node" required="true" output="screen" />
+
+  <!-- Filter for tracking targets based on raw targets -->
+  <node name="tracking_filter" pkg="ainstein_radar_filters" type="tracking_filter_node" output="screen" >
+    <remap from="radar_in" to="/o79_can/targets/raw" />
+    <param name="filter/update_rate" value="20.0" />
+  </node>
+
+  <!-- Load the tracking filter parameters -->
+  <node name="tracking_dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /tracking_filter $(find ainstein_radar_filters)/params/k79_people_tracking_filter.yaml" />
+
+  <!-- Run RViz -->
+  <node name="rviz" pkg="rviz" type="rviz" />
+
+</launch>
