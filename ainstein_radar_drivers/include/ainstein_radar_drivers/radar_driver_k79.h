@@ -1,52 +1,15 @@
-#ifndef RADAR_DRIVER_K79_H
-#define RADAR_DRIVER_K79_H
+#ifndef RADAR_DRIVER_K79_H_
+#define RADAR_DRIVER_K79_H_
 
 #include <netinet/in.h>
 #include <string>
 #include <memory>
 #include <vector>
 
+#include "radar_target.h"
+
 namespace ainstein_radar_drivers
-{
-  class RadarTarget
-  {
-  public:
-
-    RadarTarget( int id,
-		 double range,
-		 double speed,
-		 double azimuth,
-		 double elevation,
-		 double snr ) :
-      id( id ),
-      range( range ),
-      speed( speed),
-      azimuth( azimuth ),
-      elevation( elevation ),
-      snr( snr)
-    {
-    }
-    RadarTarget( void )
-    {
-      id = 0;
-      range = 0.0;
-      speed = 0.0;
-      azimuth = 0.0;
-	elevation = 0.0;
-	snr = 0.0;
-      }
-    ~RadarTarget( void )
-      {
-      }
-
-    int id;
-    double range;
-    double speed;
-    double azimuth;
-    double elevation;
-    double snr;
-  };
-  
+{  
   class RadarDriverK79 {
 
   public:
