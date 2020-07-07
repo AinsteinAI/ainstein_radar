@@ -47,6 +47,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
+  msg_ptr_tracked_boxes_( new jsk_recognition_msgs::BoundingBoxArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -69,6 +70,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
+  msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
   publishRadarInfo();
@@ -88,6 +90,9 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Advertise the O79 tracked targets data:
   pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
+
+  // Advertise the O79 tracked object bounding boxes:
+  pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 10 );
 }
 
 RadarInterfaceO79UDP::~RadarInterfaceO79UDP(void)
@@ -107,10 +112,12 @@ void RadarInterfaceO79UDP::mainLoop(void)
   bool running = true;
   std::vector<ainstein_radar_drivers::RadarTarget> targets_raw;
   std::vector<ainstein_radar_drivers::RadarTarget> targets_tracked;
+  std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
+  
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets_raw, targets_tracked ) == false )
+      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes ) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
@@ -143,6 +150,22 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
 	    }
+
+	  if( bounding_boxes.size() > 0 )
+	    {
+	      // Fill in the BoundingBox message from the received boxes:
+	      msg_ptr_tracked_boxes_->header.stamp = ros::Time::now();
+	      msg_ptr_tracked_boxes_->boxes.clear();
+
+	      for( const auto &b : bounding_boxes )
+		{
+		  msg_ptr_tracked_boxes_->boxes.push_back( boundingBoxToROSMsg( b, frame_id_ ) );
+		}
+	  
+	      // Publish the tracked target data:
+	      pub_bounding_boxes_.publish( msg_ptr_tracked_boxes_ );
+	    }
+	  
 	} 
 
       // Check whether the data loop should still be running:

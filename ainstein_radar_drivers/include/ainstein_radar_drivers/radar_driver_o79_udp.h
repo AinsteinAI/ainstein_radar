@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "radar_target.h"
+#include "bounding_box.h"
 
 namespace ainstein_radar_drivers
 {
@@ -20,7 +21,8 @@ namespace ainstein_radar_drivers
 
     bool connect( void );
     bool receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets,
-			 std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked );
+			 std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
+			 std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes );
   
     static const std::string connect_cmd_str;
     static const unsigned int connect_res_len;
@@ -30,11 +32,13 @@ namespace ainstein_radar_drivers
     static const unsigned int max_msg_len;
     static const unsigned int msg_len_raw_targets;
     static const unsigned int msg_len_tracked_targets;
+    static const unsigned int msg_len_bounding_boxes;
 
     static const unsigned int msg_header_len;
 
     static const unsigned int msg_id_raw_targets;
     static const unsigned int msg_id_tracked_targets;
+    static const unsigned int msg_id_bounding_boxes;
     
   private:
     std::string host_ip_addr_;

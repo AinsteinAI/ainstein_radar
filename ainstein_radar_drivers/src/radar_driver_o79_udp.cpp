@@ -50,11 +50,13 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::max_msg_len = 3000; // maximum length in bytes
   const unsigned int RadarDriverO79UDP::msg_len_raw_targets = 8; // 8 bytes per raw target
   const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // 8 bytes per raw target
+  const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // 9 bytes per bounding box
   
   const unsigned int RadarDriverO79UDP::msg_header_len = 8; // 8 byte header per message
 
   const unsigned int RadarDriverO79UDP::msg_id_raw_targets = 0x00;
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets = 0x01;
+  const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 0x02;
   
   RadarDriverO79UDP::RadarDriverO79UDP( std::string host_ip_address, int host_port,
 		  std::string radar_ip_address, int radar_port ) :
@@ -171,11 +173,13 @@ namespace ainstein_radar_drivers
   }
 
   bool RadarDriverO79UDP::receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets,
-					  std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked )
+					  std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
+					  std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes )
   {
     // Clear the targets array in preparation for message processing:
     targets.clear();
     targets_tracked.clear();
+    bounding_boxes.clear();
     
     // Received message length:
     int msg_len;
@@ -208,6 +212,7 @@ namespace ainstein_radar_drivers
 	// Extract the target ID and data from the message:
 	int offset;
 	ainstein_radar_drivers::RadarTarget target;
+	ainstein_radar_drivers::BoundingBox box;
 
 	// Check the first byte for the message type ID:
 	if( buffer_[0] == RadarDriverO79UDP::msg_id_tracked_targets )
@@ -273,6 +278,25 @@ namespace ainstein_radar_drivers
 		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
 		targets.push_back( target );
+	      }
+	  }
+	else if( buffer_[0] == RadarDriverO79UDP::msg_id_bounding_boxes )
+	  {
+	    for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_bounding_boxes ); ++i )
+	      {
+		offset = i * RadarDriverO79UDP::msg_len_bounding_boxes + RadarDriverO79UDP::msg_header_len;
+
+		// Compute box pose (identity orientation, geometric center is position):
+		box.pose.linear() = Eigen::Matrix3d::Identity();
+		box.pose.translation().x() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ) * 0.1; 
+		box.pose.translation().y() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ) * 0.1; 
+		box.pose.translation().z() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1; 
+
+		box.dimensions.x() = static_cast<uint8_t>( buffer_[offset + 6] ) * 0.1;
+		box.dimensions.y() = static_cast<uint8_t>( buffer_[offset + 7] ) * 0.1;
+		box.dimensions.z() = static_cast<uint8_t>( buffer_[offset + 8] ) * 0.1;
+
+		bounding_boxes.push_back( box );
 	      }
 	  }
 	else
