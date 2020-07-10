@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Must be called after catkin_python_setup() and before catkin_package():
 generate_dynamic_reconfigure_options(
   cfg/ZoneOfInterestT79.cfg
+  cfg/O79Params.cfg
   )
 
 catkin_package()

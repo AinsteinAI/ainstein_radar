@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+
+import errno
+import socket
+import struct
+import time
+
+import rospy 
+from dynamic_reconfigure.server import Server
+from ainstein_radar_drivers.cfg import O79ParamsConfig
+
+RADAR_PORT = 7
+RADAR_IP = "10.0.0.10"
+
+CONNECT_CMD = "connect"
+CONNECT_RES = "Connection established."
+
+PARAMS_CMD = "params"
+
+class O79ConfigInterface( object ):
+    
+    def __init__( self ):    
+        self.sock = None
+        self.is_radar_connected = False
+
+        self.config = None
+        
+        # Connect to the radar:
+        self.connect_to_radar()
+
+        # Create the dynamic_reconfigure server:
+        self.dynconfig_srv = Server( O79ParamsConfig, self.dynconfig_callback )
+        
+        
+    def connect_to_radar( self ):
+        if not self.is_radar_connected:
+            # Create a new socket instance:
+            self.sock = socket.socket( socket.AF_INET, # Internet
+                                       socket.SOCK_STREAM ) # TCP
+
+            # Set the socket timeout:
+            self.sock.settimeout( 3 )
+
+            # Connect the socket to the server (radar):
+            try:
+                self.sock.connect( ( RADAR_IP, RADAR_PORT ) ) # radar port is always 7 (ECHO port)
+            except socket.error as err:
+                if err.errno == errno.EADDRNOTAVAIL:
+                    rospy.logerr( "Address not available" )
+                else:
+                    rospy.logerr( "%s", str( err ) )
+                return
+
+            # Send the connect command and receive the stored network configuraton in response:
+            self.sock.sendall( CONNECT_CMD )
+
+            try:
+                msg = self.sock.recv( 1024 )
+                time.sleep(1)
+                self.is_radar_connected = True
+
+            except socket.error as err:
+                rospy.logerr( "Failed to connect to radar." )
+                return
+
+            except socket.timeout as err:
+                rospy.logerr( "Connect timed out. Is the radar connected and powered?" )
+                return
+
+
+    def send_params_to_radar( self ):
+        if not self.is_radar_connected:
+            rospy.logerr( "Must connect to radar before sending parameters." )
+            return
+        
+        # Send start configuration command:
+        try:
+            self.sock.sendto( PARAMS_CMD, ( RADAR_IP, RADAR_PORT ) )
+        except socket.error as err:
+            rospy.logerr( "%s", str(err) )
+            return
+        
+        time.sleep( 1 )
+        msg, addr = self.sock.recvfrom( 1024 )
+        
+        # Send new filter parameters:
+        params_msg = struct.pack( "<BBBB", int( 1.0 * float( self.config.filter_update_rate ) ), \
+                                  int( 10.0 * float( self.config.filter_min_time ) ), \
+                                  int( 10.0 * float( self.config.filter_timeout ) ), \
+                                  int( float( self.config.filter_confidence_level ) ) )
+        
+        try:
+            self.sock.sendto( params_msg, ( RADAR_IP, RADAR_PORT ) )
+        except socket.error as err:
+            rospy.logerr( "%s", str(err) )
+            return
+
+            
+    def dynconfig_callback( self, config, level ):
+        self.config = config
+        self.send_params_to_radar()
+        return config
+
+    
+if __name__ == "__main__":
+    try:
+        rospy.init_node( 'o79_config_node' )
+        # frame_id = rospy.get_param( '~frame_id', 'map' )
+        # data_port = rospy.get_param( '~data_port', '/dev/ttyUSB0' )
+
+        # Create the ROS interface 
+        o79_config_intf = O79ConfigInterface()
+
+        rospy.spin()
+        
+    except rospy.ROSInterruptException:
+        pass
