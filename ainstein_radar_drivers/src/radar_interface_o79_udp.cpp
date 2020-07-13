@@ -78,12 +78,6 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Create the radar driver object:
   driver_.reset( new RadarDriverO79UDP( host_ip_addr, host_port,
 					radar_ip_addr, radar_port ) );
-  
-  // Start the data collection thread:
-  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
-  mutex_.lock();
-  is_running_ = true;
-  mutex_.unlock();
 
   // Advertise the O79 raw targets data:
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
@@ -93,6 +87,13 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 10 );
+
+  
+  // Start the data collection thread:
+  thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
+  mutex_.lock();
+  is_running_ = true;
+  mutex_.unlock();
 }
 
 RadarInterfaceO79UDP::~RadarInterfaceO79UDP(void)
