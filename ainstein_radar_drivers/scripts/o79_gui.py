@@ -64,7 +64,7 @@ class Window( tk.Frame ):
         self.current_radar_ip = ""
         self.is_radar_connected = False
         self.fwVersion = NO_VERSION
-    
+
         self.sock = None
         
         self.network_params = ( ( "radar_ip", "Radar IP", "10.0.0.10" ),
@@ -75,10 +75,15 @@ class Window( tk.Frame ):
         self.network_param_labels = {}
         self.network_param_entry = {}
 
-        self.filter_params = ( ( "filter_process_rate", "Filter Process Rate", "20.0" ),
-                               ( "filter_min_time", "Filter Minimum Time", "1.0" ),
-                               ( "filter_timeout", "Filter Timeout", "0.5" ),
-                               ( "filter_confidence_level", "Filter Confidence Level", "3" ) )
+        self.filter_params = ( ( "filter_process_rate", "Filter Process Rate (Hz)", "20.0" ),
+                               ( "filter_min_time", "Filter Minimum Time (s)", "2.0" ),
+                               ( "filter_timeout", "Filter Timeout (s)", "0.5" ),
+                               ( "filter_confidence_level", "Filter Confidence Level", "3" ),
+                               ( "filter_process_noise_speed", "Filter Speed Process Noise (m/s)", "0.1" ),
+                               ( "filter_process_noise_azim", "Filter Azimuth Process Noise (deg)", "5.0" ),
+                               ( "filter_process_noise_elev", "Filter Elevation Process Noise (deg)", "5.0" ),
+                               ( "filter_update_min_range", "Filter Update Minimum Range (m)", "0.2" ),
+                               ( "filter_update_max_range", "Filter Update Maximum Range (m)", "15.0" ) )
         self.filter_param_labels = {}
         self.filter_param_entry = {}
 
@@ -91,14 +96,40 @@ class Window( tk.Frame ):
     def close_window( self ):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             # Send FIN and deallocate open TCP socket:
-            if self.sock is not None:
+            if self.sock is not None and self.is_radar_connected:
                 self.sock.shutdown(1)
                 self.sock.close()
 
             # Destroy the main window (root):
             self.master.destroy()
 
+            
+    def set_config_state_all_enabled( self, enabled=True ):
+        if enabled is True:
+            config_state = tk.NORMAL
+        elif enabled is False:
+            config_state = tk.DISABLED
+        else:
+            print( "ERROR >> Invalid option." )
+            return
         
+        # Disable network parameter entries
+        for ind, param in enumerate( self.network_params ):
+            self.network_param_entry[param[0]].config( state=config_state )
+
+        # Disable filter parameter entries
+        for ind, param in enumerate( self.filter_params ):
+            self.filter_param_entry[param[0]].config( state=config_state )
+
+        # Disable buttons
+        self.connect_button.config( state=config_state )
+        self.send_config_button.config( state=config_state )
+        self.update_firmware_button.config( state=config_state )
+        self.update_golden_button.config( state=config_state )
+        self.run_radar_button.config( state=config_state )
+        self.send_params_button.config( state=config_state )
+
+            
     def init_window( self ):
         self.master.title( "O-79 Network App" )
 
@@ -132,18 +163,18 @@ class Window( tk.Frame ):
         # Update Firmware Button:
         self.update_firmware_button = ttk.Button(self.tab1, text="Update",
                                                 command = lambda: self.update_firmware(PRIMARY_UPDATE_CMD))
-        self.update_firmware_button.grid( row=5, column=2 )
+        self.update_firmware_button.grid( row=6, column=0 )
         self.update_firmware_button.config( state=tk.DISABLED )
 
         # Update Golden Image Button:
-        self.update_golden_button = tk.Button(self, text="Update Golden Image",
+        self.update_golden_button = ttk.Button(self.tab1, text="Update Golden Image",
                                               command = lambda: self.update_firmware(GOLDEN_UPDATE_CMD))
-        self.update_golden_button.grid( row=5, column=3 )
+        self.update_golden_button.grid( row=6, column=1 )
         self.update_golden_button.config( state=tk.DISABLED )
 
         # Run Radar Button:
         self.run_radar_button = ttk.Button( self.tab1, text="Run", command=self.run_radar )
-        self.run_radar_button.grid( row=5, column=4 )
+        self.run_radar_button.grid( row=5, column=2 )
         self.run_radar_button.config( state=tk.DISABLED )
 
         # Display for output:
@@ -169,7 +200,7 @@ class Window( tk.Frame ):
 
         # Send Parameters Button:
         self.send_params_button = ttk.Button( self.tab2, text="Send Parameters", command=self.send_params_to_radar )
-        self.send_params_button.grid( row=4, column=0 )
+        self.send_params_button.grid( row=9, column=0 )
         self.send_params_button.config( state=tk.DISABLED )
 
     def connect_to_radar( self ):
@@ -250,12 +281,7 @@ class Window( tk.Frame ):
 
         # Read in firmware file path from user input:
         bin_path = filedialog.askopenfilename(filetypes = [('Binary Files', '*.bin')])
-        self.connect_button.config( state=tk.DISABLED )
-        self.update_firmware_button.config( state=tk.DISABLED )
-        self.update_golden_button.config( state=tk.DISABLED )
-        self.send_config_button.config( state=tk.DISABLED )
-        self.run_radar_button.config( state=tk.DISABLED )
-        self.update_text_display_newline( "Preparing to send file " + bin_path )
+        self.set_config_state_all_enabled( False ) # disable all entries and buttons
 
         # Send start configuration command:
         try:
@@ -297,19 +323,19 @@ class Window( tk.Frame ):
                 self.overwrite_text_display( "Sending firmware chunk " + str( i + 1 ) + "/" + str( total_chunks ) + " (" +
                                              str( int( 100.0 * float( i + 1 ) / float( total_chunks ) ) ) + "%)" )
 
-                sys.stdout.write("chunk "+str(i))
-                for b in firmware_arr[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE]:
-                    sys.stdout.write(hex(ord(b))+' ')
-                sys.stdout.write('\n')
+                #sys.stdout.write("chunk "+str(i))
+                #for b in firmware_arr[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE]:
+                #    sys.stdout.write(hex(ord(b))+' ')
+                #sys.stdout.write('\n')
 
                 self.sock.send( firmware_arr[i*CHUNK_SIZE:(i+1)*CHUNK_SIZE] )
                 self.master.update()
                 time.sleep( 0.005 )
 
             # Send the last chunk which is smaller than the rest:
-            for b in firmware_arr[((total_chunks-1) * CHUNK_SIZE):]:
-                sys.stdout.write(hex(ord(b))+' ')
-            sys.stdout.write('\n')
+            #for b in firmware_arr[((total_chunks-1) * CHUNK_SIZE):]:
+            #    sys.stdout.write(hex(ord(b))+' ')
+            #sys.stdout.write('\n')
 
             self.sock.send( firmware_arr[((total_chunks-1) * CHUNK_SIZE):] )
             self.master.update()
@@ -375,10 +401,15 @@ class Window( tk.Frame ):
         self.update_text_display_newline( self.current_radar_ip + " sent: " + msg )
 
         # Send new filter parameters:
-        params_msg = struct.pack( "<BBBB", int( 1.0 * float( self.filter_param_entry[self.filter_params[0][0]].get() ) ), \
+        params_msg = struct.pack( "<BBBBBBBBB", int( 1.0 * float( self.filter_param_entry[self.filter_params[0][0]].get() ) ), \
                                   int( 10.0 * float( self.filter_param_entry[self.filter_params[1][0]].get() ) ), \
                                   int( 10.0 * float( self.filter_param_entry[self.filter_params[2][0]].get() ) ), \
-                                  int( float( self.filter_param_entry[self.filter_params[3][0]].get() ) ) )
+                                  int( float( self.filter_param_entry[self.filter_params[3][0]].get() ) ), \
+                                  int( 10.0 * float( self.filter_param_entry[self.filter_params[4][0]].get() ) ), \
+                                  int( 10.0 * float( self.filter_param_entry[self.filter_params[5][0]].get() ) ), \
+                                  int( 10.0 * float( self.filter_param_entry[self.filter_params[6][0]].get() ) ), \
+                                  int( 10.0 * float( self.filter_param_entry[self.filter_params[7][0]].get() ) ), \
+                                  int( 10.0 * float( self.filter_param_entry[self.filter_params[8][0]].get() ) ) )
         
         try:
             self.sock.sendto( params_msg, ( self.current_radar_ip, RADAR_PORT ) )
@@ -416,7 +447,7 @@ class Window( tk.Frame ):
         
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry( "900x200" )
+    root.geometry( "900x250" )
     root.resizable( 0, 0 )
     app = Window( root )
     root.mainloop()
