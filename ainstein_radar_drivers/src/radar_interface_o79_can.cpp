@@ -104,10 +104,10 @@ namespace ainstein_radar_drivers
 	    // Speed scaling is 0.01m/s per count, +ve AWAY from radar, -ve TOWARDS:
 	    target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) * 0.045;
 
-	    // Azimuth angle scaling is -0.01rad per count: 
+	    // Azimuth angle scaling is 1 deg per count: 
 	    target.azimuth = (int8_t)( msg.data[6] );
 
-	    // Elevation angle is unused for O79:
+	    // Elevation angle scaling is 1 deg per count: 
 	    target.elevation = (int8_t)( msg.data[7] );
 
 	    radar_data_msg_ptr_raw_->targets.push_back( target );
@@ -128,10 +128,10 @@ namespace ainstein_radar_drivers
 	    // Speed scaling is 0.01m/s per count, +ve AWAY from radar, -ve TOWARDS:
 	    target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) * 0.045;
 
-	    // Azimuth angle scaling is -0.01rad per count: 
+	    // Azimuth angle scaling is 1 deg per count: 
 	    target.azimuth = (int8_t)( msg.data[6] );
 
-	    // Elevation angle is unused for O79:
+	    // Elevation angle scaling is 1 deg per count: 
 	    target.elevation = (int8_t)( msg.data[7] );
 
 	    radar_data_msg_ptr_tracked_->targets.push_back( target );

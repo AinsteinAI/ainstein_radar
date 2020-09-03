@@ -231,8 +231,7 @@ namespace ainstein_radar_drivers
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets + RadarDriverO79UDP::msg_header_len;
 
 		    target.id = i;
-		    target.azimuth =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 0] & 0xff ) ) * -1.0 + 90.0;
-		    // target.azimuth = static_cast<uint8_t>( buffer_[offset + 0] ) * -1.0 + 90.0; // 1 count = 1 deg, 90 deg offset
+		    target.azimuth =  static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) );
 		    target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
 
 		    // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
@@ -246,7 +245,7 @@ namespace ainstein_radar_drivers
 			target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
 		      }
 
-		    target.elevation = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 4] & 0xff ) ) * -1.0 + 90.0;
+		    target.elevation = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
 		    target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
 		    targets_tracked.push_back( target );
@@ -260,7 +259,7 @@ namespace ainstein_radar_drivers
 		offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
 
 		target.id = i;
-		target.azimuth =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 0] & 0xff ) ) * -1.0 + 90.0;
+		target.azimuth =  static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) );
 		target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
 
 		// Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
@@ -274,7 +273,7 @@ namespace ainstein_radar_drivers
 		    target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
 		  }
 
-    target.elevation = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 4] & 0xff ) ) * -1.0 + 90.0;
+		target.elevation = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
 		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
 
 		targets.push_back( target );
@@ -292,9 +291,9 @@ namespace ainstein_radar_drivers
 		box.pose.translation().y() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ) * 0.1; 
 		box.pose.translation().z() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1; 
 
-		box.dimensions.x() = static_cast<uint8_t>( buffer_[offset + 6] ) * 0.1;
-		box.dimensions.y() = static_cast<uint8_t>( buffer_[offset + 7] ) * 0.1;
-		box.dimensions.z() = static_cast<uint8_t>( buffer_[offset + 8] ) * 0.1;
+		box.dimensions.x() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 6] ) * 0.1 );
+		box.dimensions.y() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 7] ) * 0.1 );
+		box.dimensions.z() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 8] ) * 0.1);
 
 		bounding_boxes.push_back( box );
 	      }
