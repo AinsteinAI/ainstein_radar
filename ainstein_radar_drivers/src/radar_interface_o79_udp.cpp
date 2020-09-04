@@ -48,6 +48,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
   msg_ptr_tracked_boxes_( new jsk_recognition_msgs::BoundingBoxArray ),
+  msg_ptr_tracked_targets_cart_( new geometry_msgs::PoseArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -71,6 +72,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
   msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
+  msg_ptr_tracked_targets_cart_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
   publishRadarInfo();
@@ -88,7 +90,10 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 10 );
 
-  
+
+  // Advertise the O79 tracked object bounding boxes:
+  pub_tracked_targets_cart_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
+
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
   mutex_.lock();
@@ -114,11 +119,12 @@ void RadarInterfaceO79UDP::mainLoop(void)
   std::vector<ainstein_radar_drivers::RadarTarget> targets_raw;
   std::vector<ainstein_radar_drivers::RadarTarget> targets_tracked;
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
+  std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
   
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes ) == false )
+      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart ) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
@@ -166,7 +172,35 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      // Publish the tracked target data:
 	      pub_bounding_boxes_.publish( msg_ptr_tracked_boxes_ );
 	    }
+
+	  if( targets_tracked_cart.size() > 0 )
+	    {
+	      // Fill in the tracked PoseArray message from the received targets:
+	      msg_ptr_tracked_targets_cart_->header.stamp = ros::Time::now();
+	      msg_ptr_tracked_targets_cart_->poses.clear();
+	      for( const auto &t : targets_tracked_cart )
+		{
+		  Eigen::Affine3d pose_eigen;
+		  pose_eigen.translation() = t.pos;
+
+		  // Compute the pose assuming the +x direction is the current
+		  // estimated Cartesian velocity direction
+		  Eigen::Matrix3d rot_mat;
+		  rot_mat.col( 0 ) = t.vel / t.vel.norm();
+		  rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+		  rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+		  pose_eigen.linear() = rot_mat;
+	
+		  geometry_msgs::Pose pose_msg;
+		  pose_msg = tf2::toMsg( pose_eigen );
+
+		  msg_ptr_tracked_targets_cart_->poses.push_back( pose_msg );
+		}
 	  
+	      // Publish the tracked target data:
+	      pub_tracked_targets_cart_.publish( msg_ptr_tracked_targets_cart_ );
+	    }
+
 	} 
 
       // Check whether the data loop should still be running:

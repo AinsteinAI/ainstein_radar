@@ -97,11 +97,13 @@ private:
   ros::Publisher pub_radar_data_tracked_;
   ros::Publisher pub_radar_info_;
   ros::Publisher pub_bounding_boxes_;
-
+  ros::Publisher pub_tracked_targets_cart_;
+  
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
   boost::shared_ptr<jsk_recognition_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
+  boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_;
 };
 
 } // namespace ainstein_radar_drivers
