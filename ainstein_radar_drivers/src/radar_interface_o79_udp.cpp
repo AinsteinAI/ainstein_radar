@@ -186,9 +186,17 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  // Compute the pose assuming the +x direction is the current
 		  // estimated Cartesian velocity direction
 		  Eigen::Matrix3d rot_mat;
-		  rot_mat.col( 0 ) = t.vel / t.vel.norm();
-		  rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
-		  rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+		  if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
+		    {
+		      rot_mat = Eigen::Matrix3d::Identity();
+		    }
+		  else
+		    {
+		      rot_mat.col( 0 ) = t.vel / t.vel.norm();
+		      rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+		      rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+		    }
+
 		  pose_eigen.linear() = rot_mat;
 	
 		  geometry_msgs::Pose pose_msg;
