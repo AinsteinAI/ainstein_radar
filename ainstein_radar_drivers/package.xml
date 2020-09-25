@@ -20,7 +20,12 @@
   <depend>ainstein_radar_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>nodelet</depend>
+
   
+  <build_depend>message_generation</build_depend>
+  <depend>std_msgs</depend>
+  <exec_depend>message_runtime</exec_depend>
+
   <export>
     <nodelet plugin="${prefix}/plugins/nodelet_k79.xml" />
     <nodelet plugin="${prefix}/plugins/nodelet_k79_3d.xml" />

@@ -16,7 +16,20 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   ainstein_radar_msgs
   dynamic_reconfigure
+  message_generation
   )
+
+add_message_files(
+  FILES
+  O79NetworkParams.msg
+  O79DeviceParams.msg
+  O79TrackingParams.msg
+  )
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 # Must be called after catkin_python_setup() and before catkin_package():
 generate_dynamic_reconfigure_options(
