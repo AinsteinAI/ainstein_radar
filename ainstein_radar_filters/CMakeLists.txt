@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 project(ainstein_radar_filters)
 
@@ -16,7 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_sensor_msgs
   ainstein_radar_msgs
   dynamic_reconfigure
-  jsk_recognition_msgs
 )
 
 # Must be called after catkin_python_setup() and before catkin_package():

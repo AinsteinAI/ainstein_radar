@@ -9,9 +9,9 @@
 
 #include <ainstein_radar_msgs/RadarInfo.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_msgs/BoundingBoxArray.h>
 #include <ainstein_radar_drivers/radar_driver_o79_udp.h>
 #include <geometry_msgs/PoseArray.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
 
@@ -39,9 +39,9 @@ public:
     return target;
   }
 
-  jsk_recognition_msgs::BoundingBox boundingBoxToROSMsg( const ainstein_radar_drivers::BoundingBox &b, std::string frame_id_str )
+  ainstein_radar_msgs::BoundingBox boundingBoxToROSMsg( const ainstein_radar_drivers::BoundingBox &b, std::string frame_id_str )
   {
-    jsk_recognition_msgs::BoundingBox box;
+    ainstein_radar_msgs::BoundingBox box;
     box.header.frame_id = frame_id_str;
     box.pose = tf2::toMsg( b.pose );
     box.dimensions.x = b.dimensions.x();
@@ -102,7 +102,7 @@ private:
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
-  boost::shared_ptr<jsk_recognition_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
+  boost::shared_ptr<ainstein_radar_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
   boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_;
 };
 

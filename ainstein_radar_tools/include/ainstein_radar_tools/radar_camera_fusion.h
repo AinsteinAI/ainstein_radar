@@ -4,8 +4,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
-#include <opencv/cv.h>
+#include <ainstein_radar_msgs/BoundingBoxArray.h>
 #include <sensor_msgs/image_encodings.h>
 #include <tf/transform_listener.h>
 #include <tf2_ros/transform_listener.h>
@@ -27,7 +26,7 @@ namespace ainstein_radar_tools
     // Store the target array for processing in the next image callback
     void radarCallback( const ainstein_radar_msgs::RadarTargetArray& targets );
 
-    void radarBboxCallback( const jsk_recognition_msgs::BoundingBoxArray& bboxes );
+    void radarBboxCallback( const ainstein_radar_msgs::BoundingBoxArray& bboxes );
 
     // Store the detected objects for processing in the next image callback
     void objectsCallback( const vision_msgs::Detection2DArray& objects );
@@ -51,7 +50,7 @@ namespace ainstein_radar_tools
     ros::Subscriber sub_radar_;
     ros::Subscriber sub_radar_bbox_;
     ainstein_radar_msgs::RadarTargetArray targets_msg_;
-    jsk_recognition_msgs::BoundingBoxArray radar_boxes_msg_;
+    ainstein_radar_msgs::BoundingBoxArray radar_boxes_msg_;
 
     ros::Subscriber sub_objects_;
     vision_msgs::Detection2DArray objects_msg_;
@@ -62,7 +61,7 @@ namespace ainstein_radar_tools
     image_transport::Publisher pub_image_;
 
     ros::Publisher pub_bounding_boxes_;
-    jsk_recognition_msgs::BoundingBoxArray boxes_msg_;
+    ainstein_radar_msgs::BoundingBoxArray boxes_msg_;
     bool has_radar_boxes_;
     bool use_object_width_for_bbox_;
     

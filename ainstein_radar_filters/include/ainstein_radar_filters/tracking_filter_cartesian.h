@@ -10,7 +10,7 @@
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
+#include <ainstein_radar_msgs/BoundingBoxArray.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -67,7 +67,7 @@ namespace ainstein_radar_filters
 
     void radarTargetArrayCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
 
-    jsk_recognition_msgs::BoundingBox getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets );
+    ainstein_radar_msgs::BoundingBox getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets );
 
     Eigen::Vector3d radarTargetToPoint( const ainstein_radar_msgs::RadarTarget& target )
     {
@@ -103,7 +103,7 @@ namespace ainstein_radar_filters
     ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
     geometry_msgs::PoseArray msg_tracked_poses_;
     std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
-    jsk_recognition_msgs::BoundingBoxArray msg_tracked_boxes_;
+    ainstein_radar_msgs::BoundingBoxArray msg_tracked_boxes_;
 
     std::unique_ptr<std::thread> filter_update_thread_;
     std::mutex mutex_;

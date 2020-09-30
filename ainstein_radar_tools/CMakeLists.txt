@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 project(ainstein_radar_tools)
+
+find_package(PCL REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
 roscpp
@@ -10,6 +12,8 @@ cv_bridge
 pcl_ros
 roscpp
 std_msgs
+tf2
+tf2_ros
 image_transport
 image_geometry 
 ainstein_radar_msgs
@@ -22,7 +26,8 @@ catkin_package()
 include_directories(
  include
  ${catkin_INCLUDE_DIRS}
- )
+ ${PCL_INCLUDE_DIRS}
+  )
 
 add_executable(radar_camera_validation_node src/radar_camera_validation_node.cpp src/radar_camera_validation.cpp)
 add_dependencies(radar_camera_validation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -1,7 +1,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <image_transport/image_transport.h>
-#include <opencv/cv.h>
 #include <sensor_msgs/image_encodings.h>
 #include <tf/transform_listener.h>
 #include <tf2_ros/transform_listener.h>

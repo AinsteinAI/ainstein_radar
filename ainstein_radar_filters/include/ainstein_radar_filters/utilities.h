@@ -5,14 +5,14 @@
 
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
-#include <jsk_recognition_msgs/BoundingBoxArray.h>
+#include <ainstein_radar_msgs/BoundingBoxArray.h>
 #include <tf2_eigen/tf2_eigen.h>
 
 namespace ainstein_radar_filters
 {
 namespace utilities
 {
-void getTargetsBoundingBox(const ainstein_radar_msgs::RadarTargetArray& targets, jsk_recognition_msgs::BoundingBox& box)
+void getTargetsBoundingBox(const ainstein_radar_msgs::RadarTargetArray& targets, ainstein_radar_msgs::BoundingBox& box)
 {
   // Find the bounding box dimensions:
   Eigen::Vector3d min_point =

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 project(ainstein_radar_drivers)
 
@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   can_msgs
   socketcan_bridge
-  pcl_ros
   tf2
   tf2_ros
   ainstein_radar_msgs
@@ -58,6 +57,7 @@ add_dependencies(k79_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_
 target_link_libraries(k79_node ${catkin_LIBRARIES})
 
 add_library(k79_nodelet src/k79_nodelet.cpp src/radar_interface_k79.cpp src/radar_driver_k79.cpp)
+add_dependencies(k79_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(k79_nodelet ${catkin_LIBRARIES})
 
 add_executable(k79_3d_node src/k79_3d_node.cpp src/radar_interface_k79_3d.cpp)
@@ -65,6 +65,7 @@ add_dependencies(k79_3d_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(k79_3d_node ${catkin_LIBRARIES})
 
 add_library(k79_3d_nodelet src/k79_3d_nodelet.cpp src/radar_interface_k79_3d.cpp)
+add_dependencies(k79_3d_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(k79_3d_nodelet ${catkin_LIBRARIES})
 
 add_executable(t79_node src/t79_node.cpp src/radar_interface_t79.cpp)

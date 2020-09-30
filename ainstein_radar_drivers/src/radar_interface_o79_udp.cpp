@@ -47,7 +47,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
-  msg_ptr_tracked_boxes_( new jsk_recognition_msgs::BoundingBoxArray ),
+  msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
   msg_ptr_tracked_targets_cart_( new geometry_msgs::PoseArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
@@ -88,7 +88,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
 
   // Advertise the O79 tracked object bounding boxes:
-  pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 10 );
+  pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
 
 
   // Advertise the O79 tracked object bounding boxes:

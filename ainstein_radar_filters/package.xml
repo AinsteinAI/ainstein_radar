@@ -18,7 +18,6 @@
   <depend>ainstein_radar_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>nodelet</depend>
-  <depend>jsk_recognition_msgs</depend>
   <depend>tf2_eigen</depend>
   <depend>tf2_sensor_msgs</depend>
 

@@ -90,7 +90,7 @@ public:
 
     pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>("tracked", 1);
 
-    pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>("boxes", 1);
+    pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>("boxes", 1);
 
     tracking_filter_.initialize();
 
@@ -151,7 +151,7 @@ public:
           msg_targets.targets.push_back(target);
         }
 
-        jsk_recognition_msgs::BoundingBox box;
+        ainstein_radar_msgs::BoundingBox box;
         ainstein_radar_filters::utilities::getTargetsBoundingBox(msg_targets, box);
 
         msg_tracked_boxes_.boxes.push_back(box);
@@ -208,7 +208,7 @@ private:
 
   ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
   std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
-  jsk_recognition_msgs::BoundingBoxArray msg_tracked_boxes_;
+  ainstein_radar_msgs::BoundingBoxArray msg_tracked_boxes_;
 };
 
 int main(int argc, char** argv)

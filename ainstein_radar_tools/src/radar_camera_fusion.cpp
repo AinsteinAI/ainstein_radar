@@ -94,7 +94,7 @@ namespace ainstein_radar_tools
     sub_image_ = it_.subscribeCamera( "camera_topic", 1, &RadarCameraFusion::imageCallback, this );
 
     pub_image_ = it_private_.advertise( "image_out", 1 );
-    pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
+    pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 1 );
 
     has_radar_boxes_ = false;
     nh_private_.param( "use_object_width_for_bbox", use_object_width_for_bbox_, false );
@@ -115,7 +115,7 @@ namespace ainstein_radar_tools
     targets_msg_ = targets;
   }
   
-  void RadarCameraFusion::radarBboxCallback( const jsk_recognition_msgs::BoundingBoxArray& bboxes )
+  void RadarCameraFusion::radarBboxCallback( const ainstein_radar_msgs::BoundingBoxArray& bboxes )
   {
     // Store the radar bounding box array for processing in the next image callback
     radar_boxes_msg_ = bboxes;
@@ -250,7 +250,7 @@ namespace ainstein_radar_tools
 	    // Set the 3d bounding box geometry
 	    if( has_radar_boxes_ )
 	      {
-		jsk_recognition_msgs::BoundingBox box_3d = radar_boxes_msg_.boxes.at( ind_min_range );
+		ainstein_radar_msgs::BoundingBox box_3d = radar_boxes_msg_.boxes.at( ind_min_range );
 		
 		// Project the image coordinates bbox corners to 3d rays in camera frame
 		cv::Point3d cam_bbox_top_left = cam_model_.projectPixelTo3dRay( uv_bbox_top_left );
@@ -357,7 +357,7 @@ namespace ainstein_radar_tools
 		// Render the textbox
 		cv::rectangle( marker_overlay, text_box_origin + cv::Point2d( 0, -i * max_text_size.height ),
 			       text_origin + cv::Point2d( max_text_size.width, -(i + 1) * max_text_size.height ),
-			       text_box_color, CV_FILLED);
+			       text_box_color, cv::FILLED);
 
 		// Render the text inside the above textbox
 		cv::putText( marker_overlay, text_labels.at( i ), text_origin + cv::Point2d( 0, -i * max_text_size.height),

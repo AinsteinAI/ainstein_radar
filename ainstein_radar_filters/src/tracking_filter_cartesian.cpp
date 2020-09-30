@@ -46,7 +46,7 @@ namespace ainstein_radar_filters
 
     pub_poses_tracked_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 1 );
 
-    pub_bounding_boxes_ = nh_private_.advertise<jsk_recognition_msgs::BoundingBoxArray>( "boxes", 1 );
+    pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 1 );
     
     // Reserve space for the maximum number of target Kalman Filters:
     filters_.reserve( TrackingFilterCartesian::max_tracked_targets );
@@ -258,7 +258,7 @@ namespace ainstein_radar_filters
     mutex_.unlock();
   }
 
-  jsk_recognition_msgs::BoundingBox TrackingFilterCartesian::getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets )
+  ainstein_radar_msgs::BoundingBox TrackingFilterCartesian::getBoundingBox( const ainstein_radar_msgs::RadarTarget& tracked_target, const ainstein_radar_msgs::RadarTargetArray& targets )
   {
     // Find the bounding box dimensions:
     Eigen::Vector3d min_point = Eigen::Vector3d( std::numeric_limits<double>::infinity(),
@@ -293,7 +293,7 @@ namespace ainstein_radar_filters
     box_pose.translation() = min_point + ( 0.5 * ( max_point - min_point ) );
 
     // Form the box message:
-    jsk_recognition_msgs::BoundingBox box;
+    ainstein_radar_msgs::BoundingBox box;
 
     box.header.stamp = targets.header.stamp;
     box.header.frame_id = targets.header.frame_id;
