@@ -11,7 +11,9 @@
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_msgs/BoundingBoxArray.h>
 #include <ainstein_radar_drivers/radar_driver_o79_udp.h>
+#include <ainstein_radar_filters/data_conversions.h>
 #include <geometry_msgs/PoseArray.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
 
@@ -84,7 +86,9 @@ private:
   void publishRadarInfo( void );
   
   std::string frame_id_;
-
+  bool publish_raw_cloud_;
+  bool publish_tracked_cloud_;
+  
   std::unique_ptr<ainstein_radar_drivers::RadarDriverO79UDP> driver_;
   
   bool is_running_;
@@ -95,12 +99,16 @@ private:
   ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_raw_;
   ros::Publisher pub_radar_data_tracked_;
+  ros::Publisher pub_cloud_raw_;
+  ros::Publisher pub_cloud_tracked_;
   ros::Publisher pub_radar_info_;
   ros::Publisher pub_bounding_boxes_;
   ros::Publisher pub_tracked_targets_cart_;
   
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
-  boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;      
+  boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;
+  boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_raw_;
+  boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_tracked_;
   boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
   boost::shared_ptr<ainstein_radar_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
   boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_;

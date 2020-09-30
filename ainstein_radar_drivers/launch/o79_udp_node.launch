@@ -1,10 +1,13 @@
 <launch>
 
   <node name="o79_udp" pkg="ainstein_radar_drivers" type="o79_udp_node" output="screen" required="true" >
+    <param name="frame_id" value="map" />
     <param name="host_ip" value="10.0.0.75" />
     <param name="host_port" value="1024" />
     <param name="radar_ip" value="10.0.0.10" />
     <param name="radar_port" value="7" />
+    <param name="publish_raw_cloud" value="true" />
+    <param name="publish_tracked_cloud" value="false" />
   </node>
 
 </launch>

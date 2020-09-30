@@ -47,6 +47,8 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
+  cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
+  cloud_msg_ptr_tracked_( new sensor_msgs::PointCloud2 ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
   msg_ptr_tracked_targets_cart_( new geometry_msgs::PoseArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
@@ -68,6 +70,10 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Get the radar data frame ID:
   nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
 
+  // Get whether to publish ROS point cloud messages:
+  nh_private_.param( "publish_raw_cloud", publish_raw_cloud_, false );  
+  nh_private_.param( "publish_tracked_cloud", publish_tracked_cloud_, false );  
+  
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
@@ -87,9 +93,17 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 tracked targets data:
   pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
 
+  // Advertise the O79 raw point cloud:
+  pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
+
+  // Advertise the O79 tracked point cloud:
+  pub_cloud_tracked_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/tracked", 10 );
+
+  // Advertise the O79 tracked targets data:
+  pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
+
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
-
 
   // Advertise the O79 tracked object bounding boxes:
   pub_tracked_targets_cart_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
@@ -139,9 +153,17 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		{
 		  radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
 		}
-	      
+
 	      // Publish the raw target data:
 	      pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+
+	      // Optionally publish raw detections as ROS point cloud:
+	      if( publish_raw_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
+		  pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
+		}
+	      
 	    }
 
 	  if( targets_tracked.size() > 0 )
@@ -153,9 +175,17 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		{
 		  radar_data_msg_ptr_tracked_->targets.push_back( targetToROSMsg( t ) );
 		}
-	  
+
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+
+	      // Optionally publish tracked detections as ROS point cloud:
+	      if( publish_tracked_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_tracked_, *cloud_msg_ptr_tracked_ );
+		  pub_cloud_tracked_.publish( cloud_msg_ptr_tracked_ );
+		}
+	
 	    }
 
 	  if( bounding_boxes.size() > 0 )
