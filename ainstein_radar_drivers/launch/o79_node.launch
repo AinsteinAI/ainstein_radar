@@ -5,5 +5,8 @@
 
   <!-- Run the O79 UDP node for Ethernet output -->
   <include file="$(find ainstein_radar_drivers)/launch/o79_udp_node.launch" />
+
+  <!-- Run the O79 TCP configuration node for parameter modification and logging -->
+  <node name="o79_config" pkg="ainstein_radar_drivers" type="o79_config_node" />
   
 </launch>
