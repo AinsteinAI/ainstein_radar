@@ -39,7 +39,7 @@ class TrackingFilterROS
 {
 public:
   TrackingFilterROS(const ros::NodeHandle& node_handle, const ros::NodeHandle& node_handle_private,
-                    double publish_frequency)
+                    double publish_frequency, double filter_speed_diff)
     : nh_(node_handle), nh_private_(node_handle_private)
   {
     // Set up dynamic reconfigure:
@@ -48,6 +48,7 @@ public:
     dyn_config_server_.setCallback(f);
 
     publish_freq_ = publish_frequency;
+    filter_speed_diff_ = filter_speed_diff;
   }
 
   ~TrackingFilterROS()
@@ -110,33 +111,43 @@ public:
     double dt;
     while (ros::ok() && !ros::isShuttingDown())
     {
-      // Add tracked targets for filters which have been running for specified time:
+      // Get tracked object targets from filter:
       msg_tracked_targets_.targets.clear();
       msg_tracked_targets_.header.stamp = ros::Time::now();
 
       std::vector<ainstein_radar_filters::RadarTarget> tracked_objects;
       tracking_filter_.getTrackedObjects(tracked_objects);
-      for (int i = 0; i < tracked_objects.size(); ++i)
-      {
-        ainstein_radar_msgs::RadarTarget t;
-        t.target_id = i;
-        t.range = tracked_objects.at(i).range;
-        t.speed = tracked_objects.at(i).speed;
-        t.azimuth = tracked_objects.at(i).azimuth;
-        t.elevation = tracked_objects.at(i).elevation;
 
-        msg_tracked_targets_.targets.push_back(t);
-      }
-
-      pub_radar_data_tracked_.publish(msg_tracked_targets_);
-
-      // Get targets associated with alive filters and publish bounding boxes:
+      // Get targets associated with alive filters:
       msg_tracked_boxes_.boxes.clear();
       msg_tracked_boxes_.header.stamp = ros::Time::now();
 
       std::vector<std::vector<ainstein_radar_filters::RadarTarget>> tracked_object_targets;
       tracking_filter_.getTrackedObjectTargets(tracked_object_targets);
 
+      // Fill the tracked object targets message, optionally filtering, then publish:
+      for (int i = 0; i < tracked_objects.size(); ++i)
+      {
+        double mean_speed = std::accumulate(tracked_object_targets.at(i).begin(), tracked_object_targets.at(i).end(), 0.0,
+        [] (double sum, const ainstein_radar_filters::RadarTarget &t) {return sum + t.speed;});
+        mean_speed = mean_speed / tracked_object_targets.at(i).size();
+
+        if (std::abs(tracked_objects.at(i).speed - mean_speed) <= filter_speed_diff_)
+        {
+          ainstein_radar_msgs::RadarTarget t;
+          t.target_id = i;
+          t.range = tracked_objects.at(i).range;
+          t.speed = tracked_objects.at(i).speed;
+          t.azimuth = tracked_objects.at(i).azimuth;
+          t.elevation = tracked_objects.at(i).elevation;
+
+          msg_tracked_targets_.targets.push_back(t);
+        } 
+      }
+
+      pub_radar_data_tracked_.publish(msg_tracked_targets_);
+
+      // Compute bounding boxes for each tracked object and publish:
       for (const auto& targets : tracked_object_targets)
       {
         ainstein_radar_msgs::RadarTargetArray msg_targets;
@@ -205,6 +216,7 @@ private:
   ainstein_radar_filters::TrackingFilter tracking_filter_;
   std::unique_ptr<std::thread> publish_thread_;
   double publish_freq_;
+  double filter_speed_diff_;
 
   ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
   std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
@@ -227,7 +239,8 @@ int main(int argc, char** argv)
 
   // Create node to publish tracked targets:
   double publish_freq = node_handle_private.param("publish_freq", 20.0);
-  TrackingFilterROS tracking_filter_ros(node_handle, node_handle_private, publish_freq);
+  double filter_speed_diff = node_handle_private.param("filter_speed_diff", 1.0);
+  TrackingFilterROS tracking_filter_ros(node_handle, node_handle_private, publish_freq, filter_speed_diff);
 
   tracking_filter_ros.initialize();
 
