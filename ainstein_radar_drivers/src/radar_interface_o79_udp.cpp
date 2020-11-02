@@ -176,7 +176,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      radar_data_msg_ptr_tracked_->targets.clear();
 	      for( const auto &t : targets_tracked )
 		{
-		  radar_data_msg_ptr_tracked_->targets.push_back( targetToROSMsg( t ) );
+			if (t.id >= 0)
+			{
+				radar_data_msg_ptr_tracked_->targets.push_back( targetToROSMsg( t ) );
+			}
 		}
 
 	      // Publish the tracked target data:
