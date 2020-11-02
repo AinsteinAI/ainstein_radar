@@ -283,6 +283,13 @@ namespace ainstein_radar_drivers
 
 		targets.push_back( target );
 	      }
+      if( targets.size() == 0 )
+      {
+        // no targets were received; push back some dummy data so that an
+        // empty target frame will be sent
+        target.id = -1;
+        targets.push_back( target );
+      }
 	  }
 	else if( buffer_[0] == RadarDriverO79UDP::msg_id_bounding_boxes )
 	  {

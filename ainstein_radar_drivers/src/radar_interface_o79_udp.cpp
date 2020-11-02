@@ -151,7 +151,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      radar_data_msg_ptr_raw_->targets.clear();
 	      for( const auto &t : targets_raw )
 		{
-		  radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+			if (t.id >= 0)
+			{
+		  	radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+			}
 		}
 
 	      // Publish the raw target data:
@@ -163,7 +166,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
 		  pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
 		}
-	      
+
 	    }
 
 	  if( targets_tracked.size() > 0 )
