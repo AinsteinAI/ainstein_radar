@@ -79,14 +79,10 @@ namespace ainstein_radar_drivers
 	else if( msg.data[0]==0xFF && msg.data[1]==0xFF && msg.data[2]==0xFF && msg.data[3]==0xFF )
 	  {
 	    ROS_DEBUG( "received stop frame from radar" );
-	    if( radar_data_msg_ptr_raw_->targets.size() > 0 )
-	      {
-		pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-	      }
-	    if( radar_data_msg_ptr_tracked_->targets.size() > 0 )
-	      {
-		pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
-	      }
+      // Publish raw and tracked frames even if no targets are received so that the display will
+      // clear if there are no targets
+		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+		  pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
 	  }
 	// Parse out raw target data messages:
 	else if( msg.data[0] == 0x00 )
