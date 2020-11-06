@@ -1,6 +1,6 @@
 !!python/object/new:dynamic_reconfigure.encoding.Config
 dictitems:
-  filter_min_time: 1.0
+  filter_min_time: 2.0
   filter_timeout: 0.5
   filter_update_rate: 5
   filter_val_gate_thresh: 1.923
@@ -17,9 +17,9 @@ dictitems:
       kf_init_elev_stdev: 1.0
       kf_init_range_stdev: 1.0
       kf_init_speed_stdev: 2.0
-      kf_q_azim_stdev: 20.0
-      kf_q_elev_stdev: 20.0
-      kf_q_speed_stdev: 5.0
+      kf_q_azim_stdev: 5.0
+      kf_q_elev_stdev: 5.0
+      kf_q_speed_stdev: 0.1
       kf_r_azim_stdev: 20.0
       kf_r_elev_stdev: 20.0
       kf_r_range_stdev: 1.0
@@ -35,9 +35,9 @@ dictitems:
   kf_init_elev_stdev: 1.0
   kf_init_range_stdev: 1.0
   kf_init_speed_stdev: 2.0
-  kf_q_azim_stdev: 20.0
-  kf_q_elev_stdev: 20.0
-  kf_q_speed_stdev: 5.0
+  kf_q_azim_stdev: 5.0
+  kf_q_elev_stdev: 5.0
+  kf_q_speed_stdev: 0.1
   kf_r_azim_stdev: 20.0
   kf_r_elev_stdev: 20.0
   kf_r_range_stdev: 1.0

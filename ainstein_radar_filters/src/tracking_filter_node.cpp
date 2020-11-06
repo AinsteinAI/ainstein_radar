@@ -39,7 +39,7 @@ class TrackingFilterROS
 {
 public:
   TrackingFilterROS(const ros::NodeHandle& node_handle, const ros::NodeHandle& node_handle_private,
-                    double publish_frequency, double filter_speed_diff)
+                    double publish_frequency, bool use_speed_filter, double filter_speed_diff)
     : nh_(node_handle), nh_private_(node_handle_private)
   {
     // Set up dynamic reconfigure:
@@ -49,6 +49,7 @@ public:
 
     publish_freq_ = publish_frequency;
     filter_speed_diff_ = filter_speed_diff;
+    use_speed_filter_ = use_speed_filter;
   }
 
   ~TrackingFilterROS()
@@ -132,17 +133,31 @@ public:
         [] (double sum, const ainstein_radar_filters::RadarTarget &t) {return sum + t.speed;});
         mean_speed = mean_speed / tracked_object_targets.at(i).size();
 
-        if (std::abs(tracked_objects.at(i).speed - mean_speed) <= filter_speed_diff_)
-        {
-          ainstein_radar_msgs::RadarTarget t;
-          t.target_id = i;
-          t.range = tracked_objects.at(i).range;
-          t.speed = tracked_objects.at(i).speed;
-          t.azimuth = tracked_objects.at(i).azimuth;
-          t.elevation = tracked_objects.at(i).elevation;
-
-          msg_tracked_targets_.targets.push_back(t);
-        } 
+	if (use_speed_filter_)
+	  {
+	    if (std::abs(tracked_objects.at(i).speed - mean_speed) <= filter_speed_diff_)
+	      {
+		ainstein_radar_msgs::RadarTarget t;
+		t.target_id = i;
+		t.range = tracked_objects.at(i).range;
+		t.speed = tracked_objects.at(i).speed;
+		t.azimuth = tracked_objects.at(i).azimuth;
+		t.elevation = tracked_objects.at(i).elevation;
+		
+		msg_tracked_targets_.targets.push_back(t);
+	      } 
+	  }
+	else
+	  {
+	    ainstein_radar_msgs::RadarTarget t;
+	    t.target_id = i;
+	    t.range = tracked_objects.at(i).range;
+	    t.speed = tracked_objects.at(i).speed;
+	    t.azimuth = tracked_objects.at(i).azimuth;
+	    t.elevation = tracked_objects.at(i).elevation;
+	    
+	    msg_tracked_targets_.targets.push_back(t);
+	  }
       }
 
       pub_radar_data_tracked_.publish(msg_tracked_targets_);
@@ -216,6 +231,7 @@ private:
   ainstein_radar_filters::TrackingFilter tracking_filter_;
   std::unique_ptr<std::thread> publish_thread_;
   double publish_freq_;
+  bool use_speed_filter_;
   double filter_speed_diff_;
 
   ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
@@ -239,8 +255,9 @@ int main(int argc, char** argv)
 
   // Create node to publish tracked targets:
   double publish_freq = node_handle_private.param("publish_freq", 20.0);
+  bool use_speed_filter = node_handle_private.param("use_speed_filter", false);
   double filter_speed_diff = node_handle_private.param("filter_speed_diff", 1.0);
-  TrackingFilterROS tracking_filter_ros(node_handle, node_handle_private, publish_freq, filter_speed_diff);
+  TrackingFilterROS tracking_filter_ros(node_handle, node_handle_private, publish_freq, use_speed_filter, filter_speed_diff);
 
   tracking_filter_ros.initialize();
 
