@@ -41,6 +41,8 @@ set(SRC_FILES
   src/radar_target_array_visual.cpp
   src/radar_info_display.cpp
   src/radar_info_visual.cpp
+  src/bounding_box_array_display.cpp
+  src/bounding_box_array_visual.cpp
 )
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
