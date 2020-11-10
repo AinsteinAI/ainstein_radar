@@ -41,6 +41,7 @@ namespace ainstein_radar_rviz_plugins
     // Color method "defines".
     static const int COLOR_METHOD_FLAT = 0;
     static const int COLOR_METHOD_COLLISION_TIME = 1;
+    static const int COLOR_METHOD_SNR = 2;
 
   protected:
     // Initialize class members.

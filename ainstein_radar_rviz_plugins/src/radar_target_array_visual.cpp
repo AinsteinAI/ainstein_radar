@@ -145,60 +145,89 @@ void RadarTargetArrayVisual::setFrameOrientation( const Ogre::Quaternion& orient
 // Color is passed through to the Shape object.
   void RadarTargetArrayVisual::setColor( int color_method, float r, float g, float b, float a )
 {
-  // Flat coloring:
-  if( color_method == RadarTargetArrayDisplay::COLOR_METHOD_FLAT )
+  switch( color_method )
+  {
+  case RadarTargetArrayDisplay::COLOR_METHOD_FLAT: // Flat coloring
     {
-      for( auto& shape : radar_target_visuals_ )
-	{
-	  shape.pos.setColor( Ogre::ColourValue( r, g, b, a) );
-	  shape.speed.setColor( Ogre::ColourValue( r, g, b, a) );
-	}
+    for( auto& shape : radar_target_visuals_ )
+	  { 
+	    shape.pos.setColor( Ogre::ColourValue( r, g, b, a ) );
+	    shape.speed.setColor( Ogre::ColourValue( r, g, b, a ) );
+	  }
     }
-  else if( color_method == RadarTargetArrayDisplay::COLOR_METHOD_COLLISION_TIME ) // Collision time-based coloring
-    {
-      // Compute the color based on time to collision:
-      Ogre::ColourValue red = Ogre::ColourValue( 1.0, 0.0, 0.0, 1.0 );
-      Ogre::ColourValue yellow = Ogre::ColourValue( 1.0, 1.0, 0.0, 1.0 );
-      Ogre::ColourValue green = Ogre::ColourValue( 0.0, 1.0, 0.0, 1.0 );
-      double min_time = 2.0;
-      double max_time = 10.0;
-      double total_time = max_time - min_time;
+    break;
+  
+  case RadarTargetArrayDisplay::COLOR_METHOD_COLLISION_TIME: // Collision time-based coloring
+    {  
+    // Compute the color based on time to collision:
+    Ogre::ColourValue red = Ogre::ColourValue( 1.0, 0.0, 0.0, 1.0 );
+    Ogre::ColourValue yellow = Ogre::ColourValue( 1.0, 1.0, 0.0, 1.0 );
+    Ogre::ColourValue green = Ogre::ColourValue( 0.0, 1.0, 0.0, 1.0 );
+    double min_time = 2.0;
+    double max_time = 10.0;
+    double total_time = max_time - min_time;
 
-      for( auto& shape : radar_target_visuals_ )
-	{
-	  double collision_time = shape.t.range / -shape.t.speed;
+    for( auto& shape : radar_target_visuals_ )
+	  {
+	    double collision_time = shape.t.range / -shape.t.speed;
 
-	  // Objects moving away are at an infinite collision time:
-	  if( collision_time < 0.0 )
+	    // Objects moving away are at an infinite collision time:
+	    if( collision_time < 0.0 )
 	    {
 	      collision_time = max_time;
 	    }
 
-	  // Bound the collision time:
-	  collision_time = std::min( std::max( collision_time, min_time ), max_time );
+	    // Bound the collision time:
+	    collision_time = std::min( std::max( collision_time, min_time ), max_time );
 	  
-	  Ogre::ColourValue color;
-	  if( collision_time < min_time + 0.5 * total_time )
+	    Ogre::ColourValue color;
+	    if( collision_time < min_time + 0.5 * total_time )
 	    {
 	      color.r = yellow.r + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.r - yellow.r );
 	      color.g = yellow.g + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.g - yellow.g );
 	      color.b = yellow.b + ( 1.0 - ( ( collision_time - min_time ) / ( 0.5 * total_time ) ) ) * ( red.b - yellow.b );
 	    }
-	  else
+	    else
 	    {
 	      color.r = green.r + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.r - green.r );
 	      color.g = green.g + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.g - green.g );
 	      color.b = green.b + ( 1.0 - ( ( collision_time - min_time ) / total_time ) ) * ( yellow.b - green.b );
 	    }
       
-	  shape.pos.setColor( color );
-	  shape.speed.setColor( color );
-	}
+	    shape.pos.setColor( color );
+	    shape.speed.setColor( color );
+	  }
     }
-  else
+    break;
+
+  case RadarTargetArrayDisplay::COLOR_METHOD_SNR: // SNR-based coloring
     {
-      ROS_ERROR_STREAM( "Invalid color method passed to setColor." );
+    // Get the min and max SNR for the current scan to scale coloring:
+    auto min_max_itr = std::minmax_element( radar_target_visuals_.begin(), radar_target_visuals_.end(),
+      []( const RadarTargetVisual& a, const RadarTargetVisual& b )
+      {
+        return a.t.snr < b.t.snr;
+      } );
+
+    double snr_min = min_max_itr.first->t.snr;
+    double snr_max = min_max_itr.second->t.snr;
+        
+    Ogre::ColourValue rgba_min = Ogre::ColourValue( 1.0, 1.0, 1.0, 1.0 );
+    Ogre::ColourValue rgba_max = Ogre::ColourValue( r, g, b, a );
+
+    for( auto& shape : radar_target_visuals_ )
+	  { 
+      double snr_scale = ( shape.t.snr - snr_min ) / ( snr_max - snr_min );
+	    shape.pos.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
+	    shape.speed.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
+	  }
     }
+    break;
+
+  default:
+      ROS_ERROR_STREAM( "Invalid color method passed to setColor." );
+      break;
+  }
 }
 
 // Scale is passed through to the Shape object.
