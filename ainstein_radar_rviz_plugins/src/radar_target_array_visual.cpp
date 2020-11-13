@@ -202,25 +202,34 @@ void RadarTargetArrayVisual::setFrameOrientation( const Ogre::Quaternion& orient
 
   case RadarTargetArrayDisplay::COLOR_METHOD_SNR: // SNR-based coloring
     {
-    // Get the min and max SNR for the current scan to scale coloring:
-    auto min_max_itr = std::minmax_element( radar_target_visuals_.begin(), radar_target_visuals_.end(),
-      []( const RadarTargetVisual& a, const RadarTargetVisual& b )
-      {
-        return a.t.snr < b.t.snr;
-      } );
+    // Handle degenerate single-target case:
+    if( radar_target_visuals_.size() == 1 )
+    {
+      radar_target_visuals_.back().pos.setColor( Ogre::ColourValue( r, g, b, a ) );
+      radar_target_visuals_.back().speed.setColor( Ogre::ColourValue( r, g, b, a ) );
+    }
+    else
+    { 
+      // Get the min and max SNR for the current scan to scale coloring:
+      auto min_max_itr = std::minmax_element( radar_target_visuals_.begin(), radar_target_visuals_.end(),
+        []( const RadarTargetVisual& a, const RadarTargetVisual& b )
+        {
+          return a.t.snr < b.t.snr;
+        } );
 
-    double snr_min = min_max_itr.first->t.snr;
-    double snr_max = min_max_itr.second->t.snr;
-        
-    Ogre::ColourValue rgba_min = Ogre::ColourValue( 1.0, 1.0, 1.0, 1.0 );
-    Ogre::ColourValue rgba_max = Ogre::ColourValue( r, g, b, a );
+      double snr_min = min_max_itr.first->t.snr;
+      double snr_max = min_max_itr.second->t.snr;
+          
+      Ogre::ColourValue rgba_min = Ogre::ColourValue( 1.0, 1.0, 1.0, 1.0 );
+      Ogre::ColourValue rgba_max = Ogre::ColourValue( r, g, b, a );
 
-    for( auto& shape : radar_target_visuals_ )
-	  { 
-      double snr_scale = ( shape.t.snr - snr_min ) / ( snr_max - snr_min );
-	    shape.pos.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
-	    shape.speed.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
-	  }
+      for( auto& shape : radar_target_visuals_ )
+      { 
+        double snr_scale = ( shape.t.snr - snr_min ) / ( snr_max - snr_min );
+        shape.pos.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
+        shape.speed.setColor( rgba_min + snr_scale * ( rgba_max - rgba_min ) );
+      }
+    } 
     }
     break;
 
