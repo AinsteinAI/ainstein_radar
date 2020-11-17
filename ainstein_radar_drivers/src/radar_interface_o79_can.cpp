@@ -28,7 +28,10 @@
 
 namespace ainstein_radar_drivers
 {
-  
+    
+  const double RadarInterfaceO79CAN::msg_range_res = 0.01;
+  const double RadarInterfaceO79CAN::msg_speed_res = 0.005;
+
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
 					      ros::NodeHandle node_handle_private ) :
     RadarInterface<can_msgs::Frame>( node_handle,
@@ -91,20 +94,20 @@ namespace ainstein_radar_drivers
 	
 	    // Extract the target ID and data from the message:
 	    ainstein_radar_msgs::RadarTarget target;
-	    target.target_id = msg.data[0];
-	    target.snr = msg.data[1];
+	    target.target_id = static_cast<uint8_t>( msg.data[0] );
+	    target.snr = static_cast<uint8_t>( msg.data[1] );
 
-	    // Range scaling is 0.1m per count:
-	    target.range = (uint16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 10.0;
+	    // Range scaling is 0.01m per count:
+	    target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
 
-	    // Speed scaling is 0.01m/s per count, +ve AWAY from radar, -ve TOWARDS:
-	    target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) * 0.045;
+	    // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
+	    target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
 
 	    // Azimuth angle scaling is 1 deg per count: 
-	    target.azimuth = (int8_t)( msg.data[6] );
+	    target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
 
 	    // Elevation angle scaling is 1 deg per count: 
-	    target.elevation = (int8_t)( msg.data[7] );
+	    target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
 
 	    radar_data_msg_ptr_raw_->targets.push_back( target );
 	  }
@@ -115,20 +118,20 @@ namespace ainstein_radar_drivers
 
 	    // Extract the target ID and data from the message:
 	    ainstein_radar_msgs::RadarTarget target;
-	    target.target_id = msg.data[0];
-	    target.snr = msg.data[1];
+	    target.target_id = static_cast<uint8_t>( msg.data[0] );
+	    target.snr = static_cast<uint8_t>( msg.data[1] );
 
 	    // Range scaling is 0.01m per count:
-	    target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 10.0;
+	    target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
 
-	    // Speed scaling is 0.01m/s per count, +ve AWAY from radar, -ve TOWARDS:
-	    target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) * 0.045;
+	    // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
+	    target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
 
 	    // Azimuth angle scaling is 1 deg per count: 
-	    target.azimuth = (int8_t)( msg.data[6] );
+	    target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
 
 	    // Elevation angle scaling is 1 deg per count: 
-	    target.elevation = (int8_t)( msg.data[7] );
+	    target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
 
 	    radar_data_msg_ptr_tracked_->targets.push_back( target );
 	  }

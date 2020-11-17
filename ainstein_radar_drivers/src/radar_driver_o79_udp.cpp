@@ -60,6 +60,9 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 0x02;
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 0x04;
   
+  const double RadarDriverO79UDP::msg_range_res = 0.01;
+  const double RadarDriverO79UDP::msg_speed_res = 0.005;
+
   RadarDriverO79UDP::RadarDriverO79UDP( std::string host_ip_address, int host_port,
 		  std::string radar_ip_address, int radar_port ) :
     host_ip_addr_( host_ip_address ),
@@ -236,23 +239,15 @@ namespace ainstein_radar_drivers
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets + RadarDriverO79UDP::msg_header_len;
 
 		    target.id = i;
-		    target.azimuth =  static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) );
-		    target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
-
-		    // Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
-		    // Note that 65 is the highest speed moving towards, hence the manipulation below.
-		    if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
-		      {
-			target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
-		      }
-		    else // MOVING TOWARDS RADAR
-		      {
-			target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
-		      }
-
-		    target.elevation = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
-		    target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
-
+		    
+		    target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+		    target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) | 
+											   static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+		    target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) | 
+											   static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );		    		    
+		    target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 5] ) );
+		    target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+		    
 		    targets_tracked.push_back( target );
 		  }
         if( targets_tracked.size() == 0 )
@@ -271,23 +266,15 @@ namespace ainstein_radar_drivers
 		offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
 
 		target.id = i;
-		target.azimuth =  static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) );
-		target.range = static_cast<uint8_t>( buffer_[offset + 2] ) * 0.116;   // 1 count = 0.1 m
-
-		// Speed is 0-127, with 0-64 negative (moving away) and 65-127 positive (moving towards).
-		// Note that 65 is the highest speed moving towards, hence the manipulation below.
-		if( static_cast<uint8_t>( buffer_[offset + 3] ) <= 64 ) // MOVING AWAY FROM RADAR
-		  {
-		    target.speed = static_cast<uint8_t>( buffer_[offset + 3] ) * 0.045; // 1 count = 0.045 m/s
-		  }
-		else // MOVING TOWARDS RADAR
-		  {
-		    target.speed = ( static_cast<uint8_t>( buffer_[offset + 3] ) - 127 ) * 0.045; // 1 count = 0.045 m/s
-		  }
-
-		target.elevation = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
-		target.snr =  static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<uint16_t>( buffer_[offset + 6] & 0xff ) );
-
+		
+		target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+		target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) | 
+										       static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+		target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) | 
+										       static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );		    		    
+		target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 5] ) );
+		target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+		    
 		targets.push_back( target );
 	      }
       if( targets.size() == 0 )
