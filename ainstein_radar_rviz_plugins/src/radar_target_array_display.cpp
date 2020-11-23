@@ -55,6 +55,7 @@ namespace ainstein_radar_rviz_plugins
 							  this, SLOT( updateColorAndAlpha() ) ) );    
     color_method_property_->addOptionStd( "Flat", RadarTargetArrayDisplay::COLOR_METHOD_FLAT );
     color_method_property_->addOptionStd( "Collision Time", RadarTargetArrayDisplay::COLOR_METHOD_COLLISION_TIME );
+    color_method_property_->addOptionStd( "SNR", RadarTargetArrayDisplay::COLOR_METHOD_SNR );
     
     alpha_property_.reset( new rviz::FloatProperty( "Alpha", 1.0,
 					      "Marker opacity. 0 is fully transparent, 1 is fully opaque.",

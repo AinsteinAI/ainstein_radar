@@ -60,6 +60,9 @@ namespace ainstein_radar_drivers
     static constexpr double ELEVATION_RES = 0.0;
     static constexpr double ELEVATION_ACC = 0.0;
 
+    static const double msg_range_res;
+    static const double msg_speed_res;
+    
   private:
     void publishRadarInfo( void );
     
