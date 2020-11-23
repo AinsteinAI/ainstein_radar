@@ -29,11 +29,11 @@
 
 #include "ainstein_radar_filters/radar_target_array_speed_filter.h"
 
-class NodeletRadarTargetArraySpeedFilter : public nodelet::Nodelet
+class RadarTargetArraySpeedFilterNodelet : public nodelet::Nodelet
 {
 public:
-  NodeletRadarTargetArraySpeedFilter( void ) {}
-  ~NodeletRadarTargetArraySpeedFilter( void ) {}
+  RadarTargetArraySpeedFilterNodelet( void ) {}
+  ~RadarTargetArraySpeedFilterNodelet( void ) {}
   
   virtual void onInit( void )
   {
@@ -44,4 +44,4 @@ private:
   std::unique_ptr<ainstein_radar_filters::RadarTargetArraySpeedFilter> radar_speed_filter_ptr_;
 };
 
-PLUGINLIB_EXPORT_CLASS( NodeletRadarTargetArraySpeedFilter, nodelet::Nodelet )
+PLUGINLIB_EXPORT_CLASS( RadarTargetArraySpeedFilterNodelet, nodelet::Nodelet )

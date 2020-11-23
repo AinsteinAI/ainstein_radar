@@ -29,11 +29,11 @@
 
 #include "ainstein_radar_filters/radar_target_array_to_point_cloud.h"
 
-class NodeletRadarTargetArrayToPointCloud : public nodelet::Nodelet
+class RadarTargetArrayToPointCloudNodelet : public nodelet::Nodelet
 {
 public:
-  NodeletRadarTargetArrayToPointCloud( void ) {}
-  ~NodeletRadarTargetArrayToPointCloud( void ) {}
+  RadarTargetArrayToPointCloudNodelet( void ) {}
+  ~RadarTargetArrayToPointCloudNodelet( void ) {}
   
   virtual void onInit( void )
   {
@@ -44,4 +44,4 @@ private:
   std::unique_ptr<ainstein_radar_filters::RadarTargetArrayToPointCloud> radar_to_pcl_ptr_;
 };
 
-PLUGINLIB_EXPORT_CLASS( NodeletRadarTargetArrayToPointCloud, nodelet::Nodelet )
+PLUGINLIB_EXPORT_CLASS( RadarTargetArrayToPointCloudNodelet, nodelet::Nodelet )

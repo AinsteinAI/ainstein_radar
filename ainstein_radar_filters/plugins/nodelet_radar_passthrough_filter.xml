@@ -1,7 +1,7 @@
-<library path="libradar_passthrough_filter_nodelet">
-  <class name="ainstein_radar_filters/radar_passthrough_filter_nodelet" type="NodeletRadarPassthroughFilter" base_class_type="nodelet::Nodelet">
+<library path="lib/libradar_passthrough_filter_nodelet">
+  <class name="ainstein_radar_filters/RadarPassthroughFilterNodelet" type="RadarPassthroughFilterNodelet" base_class_type="nodelet::Nodelet">
     <description>
-      RadarTargetArray passthrough filter nodelet.
+      Nodelet which implements PCL-like passthrough filtering for the ainstein_radar_msgs/RadarTargetArray message type.
     </description>
   </class>
 </library>

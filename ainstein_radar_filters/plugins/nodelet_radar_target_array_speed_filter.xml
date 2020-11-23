@@ -1,0 +1,7 @@
+<library path="lib/libradar_target_array_speed_filter_nodelet">
+  <class name="ainstein_radar_filters/RadarTargetArraySpeedFilterNodelet" type="RadarTargetArraySpeedFilterNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet which filters targets from ainstein_radar_msgs/RadarTargetArray messages using a specified velocity source.
+    </description>
+  </class>
+</library>

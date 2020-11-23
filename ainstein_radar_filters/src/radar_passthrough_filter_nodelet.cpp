@@ -29,11 +29,11 @@
 
 #include "ainstein_radar_filters/radar_passthrough_filter.h"
 
-class NodeletRadarPassthroughFilter : public nodelet::Nodelet
+class RadarPassthroughFilterNodelet : public nodelet::Nodelet
 {
 public:
-  NodeletRadarPassthroughFilter( void ) {}
-  ~NodeletRadarPassthroughFilter( void ) {}
+  RadarPassthroughFilterNodelet( void ) {}
+  ~RadarPassthroughFilterNodelet( void ) {}
   
   virtual void onInit( void )
   {
@@ -44,4 +44,4 @@ private:
   std::unique_ptr<ainstein_radar_filters::RadarPassthroughFilter> radar_passthrough_filter_ptr_;
 };
 
-PLUGINLIB_EXPORT_CLASS( NodeletRadarPassthroughFilter, nodelet::Nodelet )
+PLUGINLIB_EXPORT_CLASS( RadarPassthroughFilterNodelet, nodelet::Nodelet )
