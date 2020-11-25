@@ -46,6 +46,10 @@ namespace ainstein_radar_drivers
     
     static const double msg_range_res;
     static const double msg_speed_res;
+    static const double msg_cart_pos_res;
+    static const double msg_cart_vel_res;
+    static const double msg_bbox_pos_res;
+    static const double msg_bbox_dim_res;
     
   private:
     std::string host_ip_addr_;

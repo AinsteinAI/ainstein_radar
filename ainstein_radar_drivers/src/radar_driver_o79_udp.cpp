@@ -62,6 +62,10 @@ namespace ainstein_radar_drivers
   
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
+  const double RadarDriverO79UDP::msg_cart_pos_res = 0.01;
+  const double RadarDriverO79UDP::msg_cart_vel_res = 0.005;
+  const double RadarDriverO79UDP::msg_bbox_pos_res = 0.01;
+  const double RadarDriverO79UDP::msg_bbox_dim_res = 0.1;
 
   RadarDriverO79UDP::RadarDriverO79UDP( std::string host_ip_address, int host_port,
 		  std::string radar_ip_address, int radar_port ) :
@@ -293,13 +297,14 @@ namespace ainstein_radar_drivers
 
 		// Compute box pose (identity orientation, geometric center is position):
 		box.pose.linear() = Eigen::Matrix3d::Identity();
-		box.pose.translation().x() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ) * 0.1; 
-		box.pose.translation().y() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ) * 0.1; 
-		box.pose.translation().z() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1; 
+		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
+												     static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ); 
+		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ); 
+		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ); 
 
-		box.dimensions.x() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 6] ) * 0.1 );
-		box.dimensions.y() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 7] ) * 0.1 );
-		box.dimensions.z() = std::max( 0.1, static_cast<uint8_t>( buffer_[offset + 8] ) * 0.1);
+		box.dimensions.x() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 6] ) );
+		box.dimensions.y() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 7] ) );
+		box.dimensions.z() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 8] ) );
 
 		bounding_boxes.push_back( box );
 	      }
@@ -319,13 +324,17 @@ namespace ainstein_radar_drivers
 		    // Offset per target includes header
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets_cart + RadarDriverO79UDP::msg_header_len;
 
-		    target_cart.pos.x() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ) * 0.1; 
-		    target_cart.pos.y() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ) * 0.1; 
-		    target_cart.pos.z() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ) * 0.1; 
+		    target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
+												     static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ); 
+		    target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) |
+												     static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ); 
+		    target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) |
+												     static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ); 
 
-		    target_cart.vel.x() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 6] & 0xff ) ) * 0.1; 
-		    target_cart.vel.y() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 8] & 0xff ) ) * 0.1; 
-		    target_cart.vel.z() = static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 10] & 0xff ) ) * 0.1; 
+		    target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) |
+												     static_cast<int16_t>( buffer_[offset + 6] & 0xff ) ); 
+		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 8] & 0xff ) ); 
+		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 10] & 0xff ) ); 
 
 		    targets_tracked_cart.push_back( target_cart );
 		  }
