@@ -2,6 +2,7 @@
 #define RADAR_TARGET_ARRAY_SPEED_FILTER_H_
 
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
@@ -17,6 +18,7 @@ public:
   ~RadarTargetArraySpeedFilter(){}
 
   void radarVelCallback( const geometry_msgs::Twist &msg );     
+  void radarVelStampedCallback( const geometry_msgs::TwistStamped &msg );     
   void radarDataCallback( const ainstein_radar_msgs::RadarTargetArray &msg );
 
   double solveForAngle( double x, double y, double z );
@@ -30,6 +32,7 @@ private:
   ros::Publisher pub_radar_data_;
 
   ros::Subscriber sub_radar_vel_;
+  ros::Subscriber sub_radar_vel_stamped_;
   bool is_vel_available_;
   Eigen::Vector3d vel_world_;
   

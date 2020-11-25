@@ -41,7 +41,10 @@ RadarTargetArraySpeedFilter::RadarTargetArraySpeedFilter( ros::NodeHandle node_h
   sub_radar_vel_ = nh_.subscribe( "radar_vel", 10,
 				  &RadarTargetArraySpeedFilter::radarVelCallback,
 				  this );
-  
+  sub_radar_vel_stamped_ = nh_.subscribe( "radar_vel", 10,
+					  &RadarTargetArraySpeedFilter::radarVelStampedCallback,
+					  this );
+    
   pub_radar_data_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "radar_out", 10 );
 
   // Get parameters:
@@ -75,6 +78,13 @@ void RadarTargetArraySpeedFilter::radarVelCallback( const geometry_msgs::Twist &
 {
   // Get the radar linear velocity in world frame:
   tf2::fromMsg( msg.linear, vel_world_ );
+  is_vel_available_ = true;
+}
+  
+void RadarTargetArraySpeedFilter::radarVelStampedCallback( const geometry_msgs::TwistStamped &msg )
+{
+  // Get the radar linear velocity in world frame:
+  tf2::fromMsg( msg.twist.linear, vel_world_ );
   is_vel_available_ = true;
 }
 
