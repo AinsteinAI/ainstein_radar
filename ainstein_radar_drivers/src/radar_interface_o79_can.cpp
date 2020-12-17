@@ -28,17 +28,17 @@
 
 namespace ainstein_radar_drivers
 {
-    
+
   const double RadarInterfaceO79CAN::msg_range_res = 0.01;
   const double RadarInterfaceO79CAN::msg_speed_res = 0.005;
 
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
-					      ros::NodeHandle node_handle_private ) :
+        ros::NodeHandle node_handle_private ) :
     RadarInterface<can_msgs::Frame>( node_handle,
-				     node_handle_private,
-				     ros::this_node::getName(),
-				     "received_messages",
-				     "sent_messages" ),
+       node_handle_private,
+       ros::this_node::getName(),
+       "received_messages",
+       "sent_messages" ),
     radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
   {
     // Store the radar data frame ID:
@@ -47,14 +47,14 @@ namespace ainstein_radar_drivers
 
     // Convert the CAN ID string to an int:
     can_id_ = std::stoul( can_id_str_, nullptr, 16 );
-    
+
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
-    
+
     // Set up the CAN frame message:
     can_frame_msg_.header.frame_id = "0";
     can_frame_msg_.is_rtr = false;
@@ -63,87 +63,79 @@ namespace ainstein_radar_drivers
     can_frame_msg_.dlc = 8;
   }
 
+  unsigned int targets_to_come = 0;
+  unsigned int targets_received = 0;
+  unsigned short target_type = 2;
+  unsigned short can_protocol = 0;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     if( msg.id == can_id_ )
       {
-	// Parse out start of frame messages:
-	if( msg.data[4]==0xFF && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
-	  {
-	    ROS_DEBUG( "received start frame from radar" );
-	    // clear radar data message arrays here
-	    radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-	    radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+        // Parse out start of frame messages:
+        if( (msg.data[4]==0x00 || msg.data[4]==0x01) && msg.data[5]==0x01 && msg.data[6]==0xFF && msg.data[7]==0xFF )
+          {
+            ROS_DEBUG( "received start frame from radar" );
+            // clear radar data message arrays here
+            radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
+            radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
 
-	    radar_data_msg_ptr_raw_->targets.clear();
-	    radar_data_msg_ptr_tracked_->targets.clear();
-	  }
-	// Parse out end of frame messages:
-	else if( msg.data[0]==0xFF && msg.data[1]==0xFF && msg.data[2]==0xFF && msg.data[3]==0xFF )
-	  {
-	    ROS_DEBUG( "received stop frame from radar" );
-      // Publish raw and tracked frames even if no targets are received so that the display will
-      // clear if there are no targets
-		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-		  pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
-	  }
-	// Parse out raw target data messages:
-	else if( msg.data[0] == 0x00 )
-	  {
-	    ROS_DEBUG( "received raw target from radar" );
-	
-	    // Extract the target ID and data from the message:
-	    ainstein_radar_msgs::RadarTarget target;
-	    target.target_id = static_cast<uint8_t>( msg.data[0] );
-	    target.snr = static_cast<uint8_t>( msg.data[1] );
+            radar_data_msg_ptr_raw_->targets.clear();
+            radar_data_msg_ptr_tracked_->targets.clear();
+            targets_to_come = (msg.data[2] << 8) | msg.data[3];
+            target_type = msg.data[4];
+            can_protocol = msg.data[5];
+            targets_received = 0;
+            ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
+          }
+        // Parse out raw target data messages:
+        else if( targets_to_come > 0 )
+          {
+            ROS_DEBUG( "received target from radar" );
 
-	    // Range scaling is 0.01m per count:
-	    target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+            // Extract the target ID and data from the message:
+            ainstein_radar_msgs::RadarTarget target;
+            target.target_id = static_cast<uint8_t>( msg.data[0] );
+            target.snr = static_cast<uint8_t>( msg.data[1] );
 
-	    // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
-	    target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+            // Range scaling is 0.01m per count:
+            target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
 
-	    // Azimuth angle scaling is 1 deg per count: 
-	    target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
+            // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
+            target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
 
-	    // Elevation angle scaling is 1 deg per count: 
-	    target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
+            // Azimuth angle scaling is 1 deg per count:
+            target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
 
-	    radar_data_msg_ptr_raw_->targets.push_back( target );
-	  }
-	// Parse out tracked target data messages:
-	else if( msg.data[0] == 0x01 )
-	  {
-	    ROS_DEBUG( "received tracked target from radar" );
+            // Elevation angle scaling is 1 deg per count:
+            target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
 
-	    // Extract the target ID and data from the message:
-	    ainstein_radar_msgs::RadarTarget target;
-	    target.target_id = static_cast<uint8_t>( msg.data[0] );
-	    target.snr = static_cast<uint8_t>( msg.data[1] );
+            if (target_type == 0x00)
+              {
+                radar_data_msg_ptr_raw_->targets.push_back( target );
+              }
+            else if( target_type == 0x01)
+              {
+                radar_data_msg_ptr_tracked_->targets.push_back( target );
+              }
+            targets_received++;
+          }
+        else
+          {
+            ROS_DEBUG( "received message with unknown id: %02x", msg.id );
+          }
 
-	    // Range scaling is 0.01m per count:
-	    target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
-
-	    // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
-	    target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
-
-	    // Azimuth angle scaling is 1 deg per count: 
-	    target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
-
-	    // Elevation angle scaling is 1 deg per count: 
-	    target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
-
-	    radar_data_msg_ptr_tracked_->targets.push_back( target );
-	  }
-	else
-	  {
-	    ROS_DEBUG( "received message with unknown id: %02x", msg.id );
-	  }
+        if(targets_received >= targets_to_come)
+          {
+            pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+	          pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+            targets_received = 0;
+            targets_to_come = 0;
+          }
       }
   }
 
   void RadarInterfaceO79CAN::publishRadarInfo( void )
-  {    
+  {
     // Advertise the O79 sensor info (LATCHED):
     pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
 
@@ -153,10 +145,10 @@ namespace ainstein_radar_drivers
 
     radar_info_msg_ptr_->update_rate = UPDATE_RATE;
     radar_info_msg_ptr_->max_num_targets = MAX_NUM_TARGETS;
-  
+
     radar_info_msg_ptr_->range_min = RANGE_MIN;
     radar_info_msg_ptr_->range_max = RANGE_MAX;
-  
+
     radar_info_msg_ptr_->speed_min = SPEED_MIN;
     radar_info_msg_ptr_->speed_max = SPEED_MAX;
 
@@ -168,7 +160,7 @@ namespace ainstein_radar_drivers
 
     radar_info_msg_ptr_->range_resolution = RANGE_RES;
     radar_info_msg_ptr_->range_accuracy = RANGE_ACC;
-  
+
     radar_info_msg_ptr_->speed_resolution = SPEED_RES;
     radar_info_msg_ptr_->speed_accuracy = SPEED_ACC;
 
@@ -177,7 +169,7 @@ namespace ainstein_radar_drivers
 
     radar_info_msg_ptr_->elevation_resolution = ELEVATION_RES;
     radar_info_msg_ptr_->elevation_accuracy = ELEVATION_ACC;
-  
+
     // Publish the RadarInfo message once since it's latched:
     pub_radar_info_.publish( radar_info_msg_ptr_ );
   }
