@@ -63,10 +63,11 @@ namespace ainstein_radar_drivers
     can_frame_msg_.dlc = 8;
   }
 
-  unsigned int targets_to_come = 0;
+  int targets_to_come = -1;
   unsigned int targets_received = 0;
-  unsigned short target_type = 2;
+  int target_type = -1;
   unsigned short can_protocol = 0;
+  const ros::Duration t_raw_timeout = ros::Duration(1.0);
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     if( msg.id == can_id_ )
@@ -109,11 +110,11 @@ namespace ainstein_radar_drivers
             // Elevation angle scaling is 1 deg per count:
             target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
 
-            if (target_type == 0x00)
+            if ( target_type == 0x00 )
               {
                 radar_data_msg_ptr_raw_->targets.push_back( target );
               }
-            else if( target_type == 0x01)
+            else if( target_type == 0x01 )
               {
                 radar_data_msg_ptr_tracked_->targets.push_back( target );
               }
@@ -124,12 +125,21 @@ namespace ainstein_radar_drivers
             ROS_DEBUG( "received message with unknown id: %02x", msg.id );
           }
 
-        if(targets_received >= targets_to_come)
+        if( targets_received == targets_to_come )
           {
-            pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-	          pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+            if( ( target_type == 0 ) || ( ( ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout ) )
+              {
+                // if we get a tracked frame, and it's been a while since we got a
+                // raw frame, publish an empty raw frame to clear the display
+                pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+              }
+            else if( target_type == 1 )
+              {
+                pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+              }
             targets_received = 0;
-            targets_to_come = 0;
+            targets_to_come = -1;
+            target_type = -1;
           }
       }
   }
