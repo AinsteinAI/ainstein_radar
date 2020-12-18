@@ -66,14 +66,13 @@ namespace ainstein_radar_drivers
   int targets_to_come = -1;
   unsigned int targets_received = 0;
   int target_type = -1;
-  unsigned short can_protocol = 0;
   const ros::Duration t_raw_timeout = ros::Duration(1.0);
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     if( msg.id == can_id_ )
       {
         // Parse out start of frame messages:
-        if( (msg.data[4]==0x00 || msg.data[4]==0x01) && msg.data[5]==0x01 && msg.data[6]==0xFF && msg.data[7]==0xFF )
+        if( (msg.data[4]==0x00 || msg.data[4]==0x01) && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
           {
             ROS_DEBUG( "received start frame from radar" );
             // clear radar data message arrays here
@@ -84,7 +83,6 @@ namespace ainstein_radar_drivers
             radar_data_msg_ptr_tracked_->targets.clear();
             targets_to_come = (msg.data[2] << 8) | msg.data[3];
             target_type = msg.data[4];
-            can_protocol = msg.data[5];
             targets_received = 0;
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
