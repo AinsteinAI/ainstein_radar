@@ -12,12 +12,12 @@
 
 namespace ainstein_radar_drivers
 {
-  
+
   class RadarDriverO79UDP {
 
   public:
     RadarDriverO79UDP( std::string host_ip_address, int host_port,
-		    std::string radar_ip_address, int radar_port );         
+		    std::string radar_ip_address, int radar_port );
     ~RadarDriverO79UDP( void );
 
     bool connect( void );
@@ -25,7 +25,7 @@ namespace ainstein_radar_drivers
 			 std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
 			 std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
 			 std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart );
-  
+
     static const std::string connect_cmd_str;
     static const unsigned int connect_res_len;
 
@@ -38,19 +38,19 @@ namespace ainstein_radar_drivers
     static const unsigned int msg_len_tracked_targets_cart;
 
     static const unsigned int msg_header_len;
-
+    static const unsigned int msg_type_byte;
     static const unsigned int msg_id_raw_targets;
     static const unsigned int msg_id_tracked_targets;
     static const unsigned int msg_id_bounding_boxes;
     static const unsigned int msg_id_tracked_targets_cart;
-    
+
     static const double msg_range_res;
     static const double msg_speed_res;
     static const double msg_cart_pos_res;
     static const double msg_cart_vel_res;
     static const double msg_bbox_pos_res;
     static const double msg_bbox_dim_res;
-    
+
   private:
     std::string host_ip_addr_;
     int host_port_;
