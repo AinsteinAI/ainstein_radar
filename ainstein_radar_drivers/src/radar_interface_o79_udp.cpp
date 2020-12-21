@@ -50,7 +50,8 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
   cloud_msg_ptr_tracked_( new sensor_msgs::PointCloud2 ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
-  msg_ptr_tracked_targets_cart_( new geometry_msgs::PoseArray ),
+  msg_ptr_tracked_targets_cart_pose_( new geometry_msgs::PoseArray ),
+  msg_ptr_tracked_targets_cart_vel_( new ainstein_radar_msgs::TwistArray ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -78,7 +79,8 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
   msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
-  msg_ptr_tracked_targets_cart_->header.frame_id = frame_id_;
+  msg_ptr_tracked_targets_cart_pose_->header.frame_id = frame_id_;
+  msg_ptr_tracked_targets_cart_vel_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
   publishRadarInfo();
@@ -105,8 +107,11 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
 
-  // Advertise the O79 tracked object bounding boxes:
-  pub_tracked_targets_cart_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
+  // Advertise the O79 tracked object poses:
+  pub_tracked_targets_cart_pose_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
+
+  // Advertise the O79 tracked object velocities:
+  pub_tracked_targets_cart_vel_ = nh_private_.advertise<ainstein_radar_msgs::TwistArray>( "velocities", 10 );
 
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
@@ -211,11 +216,21 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	  if( targets_tracked_cart.size() > 0 )
 	    {
-	      // Fill in the tracked PoseArray message from the received targets:
-	      msg_ptr_tracked_targets_cart_->header.stamp = ros::Time::now();
-	      msg_ptr_tracked_targets_cart_->poses.clear();
+	      // Fill in the tracked PoseArray and TwistArray messages from the received targets:
+	      msg_ptr_tracked_targets_cart_pose_->header.stamp = ros::Time::now();
+	      msg_ptr_tracked_targets_cart_pose_->poses.clear();
+	      msg_ptr_tracked_targets_cart_vel_->header.stamp = ros::Time::now();
+	      msg_ptr_tracked_targets_cart_vel_->velocities.clear();
 	      for( const auto &t : targets_tracked_cart )
 		{
+		  // Fill the velocity message:
+		  geometry_msgs::Twist twist_msg;
+		  twist_msg.linear.x = t.vel.x();
+		  twist_msg.linear.y = t.vel.y();
+		  twist_msg.linear.z = t.vel.z();
+		  msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
+		  
+		  // Fill the pose message:
 		  Eigen::Affine3d pose_eigen;
 		  pose_eigen.translation() = t.pos;
 
@@ -238,11 +253,11 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  geometry_msgs::Pose pose_msg;
 		  pose_msg = tf2::toMsg( pose_eigen );
 
-		  msg_ptr_tracked_targets_cart_->poses.push_back( pose_msg );
+		  msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
 		}
 	  
 	      // Publish the tracked target data:
-	      pub_tracked_targets_cart_.publish( msg_ptr_tracked_targets_cart_ );
+	      pub_tracked_targets_cart_pose_.publish( msg_ptr_tracked_targets_cart_pose_ );
 	    }
 
 	} 
