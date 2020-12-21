@@ -20,6 +20,7 @@ add_message_files(
   RadarTargetStamped.msg
   BoundingBox.msg
   BoundingBoxArray.msg
+  TwistArray.msg
   )
 
 generate_messages(
