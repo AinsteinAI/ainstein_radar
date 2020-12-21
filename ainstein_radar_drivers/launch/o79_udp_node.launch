@@ -1,17 +1,40 @@
 <launch>
   <!-- declare args to be passed in -->
   <arg name="radar_ip_arg" default="10.0.0.10"/>
+  <arg name="radar_port_arg" default="7" />
   <arg name="host_ip_arg" default="10.0.0.75"/>
   <arg name="host_port_arg" default="1024" />
-
+  <arg name="publish_raw_cloud" default="true" />
+  <arg name="publish_tracked_cloud" default="false" />
+  <arg name="export_raw_cloud" default="false" />
+  <arg name="export_tracked_cloud" default="false" />
+  
   <node name="o79_udp" pkg="ainstein_radar_drivers" type="o79_udp_node" output="screen" required="true" >
     <param name="frame_id" value="map" />
+    <param name="radar_ip" value="$(arg radar_ip_arg)" />
+    <param name="radar_port" value="$(arg radar_port_arg)" />
     <param name="host_ip" value="$(arg host_ip_arg)" />
     <param name="host_port" value="$(arg host_port_arg)" />
-    <param name="radar_ip" value="$(arg radar_ip_arg)" />
-    <param name="radar_port" value="7" />
-    <param name="publish_raw_cloud" value="true" />
-    <param name="publish_tracked_cloud" value="false" />
+    <param name="publish_raw_cloud" value="$(arg publish_raw_cloud)" />
+    <param name="publish_tracked_cloud" value="$(arg publish_tracked_cloud)" />
   </node>
 
+  <!-- Export raw targets PointCloud2 to PCD files (publish_raw_cloud must be true) -->
+  <group if="$(arg export_raw_cloud)">
+    <node name="pcl_to_pcd_raw" pkg="pcl_ros" type="pointcloud_to_pcd" output="screen" >
+      <remap from="input" to="/o79_udp/cloud/raw" />
+      <param name="fixed_frame" value="map" />
+      <param name="prefix" value="./o79_udp_raw/o79_udp_raw_" />
+    </node>
+  </group>
+
+  <!-- Export tracked targets PointCloud2 to PCD files (publish_tracked_cloud must be true)  -->
+  <group if="$(arg export_tracked_cloud)">
+    <node name="pcl_to_pcd_tracked" pkg="pcl_ros" type="pointcloud_to_pcd" output="screen" >
+      <remap from="input" to="/o79_udp/cloud/tracked" />
+      <param name="fixed_frame" value="map" />
+      <param name="prefix" value="./o79_udp_tracked/o79_udp_tracked_" />
+    </node>
+  </group>  
+  
 </launch>
