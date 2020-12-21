@@ -48,10 +48,10 @@ namespace ainstein_radar_drivers
   const std::string RadarDriverO79UDP::run_cmd_str = std::string( "run" );
 
   const unsigned int RadarDriverO79UDP::max_msg_len = 3000; // maximum length in bytes
-  const unsigned int RadarDriverO79UDP::msg_len_raw_targets = 8; // 8 bytes per raw target
-  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // 8 bytes per raw target
-  const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // 9 bytes per bounding box
-  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 12; // 12 bytes per Cartesian tracked target
+  const unsigned int RadarDriverO79UDP::msg_len_raw_targets = 8; // bytes per raw target
+  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // bytes per raw target
+  const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // bytes per bounding box
+  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 13; // bytes per Cartesian tracked target
 
   const unsigned int RadarDriverO79UDP::msg_header_len = 8; // 8 byte header per message
   const unsigned int RadarDriverO79UDP::msg_type_byte = 4;
@@ -323,19 +323,21 @@ namespace ainstein_radar_drivers
 		    // Offset per target includes header
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets_cart + RadarDriverO79UDP::msg_header_len;
 
-		    target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 1] & 0xff ) );
-		    target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );
-		    target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+        target_cart.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
 
-		    target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 6] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 7] & 0xff ) );
-		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 8] & 0xff ) << 8 ) |
-                              static_cast<int16_t>( buffer_[offset + 9] & 0xff ) );
-		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 10] & 0xff ) << 8 ) |
-                              static_cast<int16_t>( buffer_[offset + 11] & 0xff ) );
+		    target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
+												      static_cast<int16_t>( buffer_[offset + 2] & 0xff ) );
+		    target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) |
+												      static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
+		    target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) |
+												      static_cast<int16_t>( buffer_[offset + 6] & 0xff ) );
+
+		    target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) |
+												      static_cast<int16_t>( buffer_[offset + 8] & 0xff ) );
+		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) |
+                              static_cast<int16_t>( buffer_[offset + 10] & 0xff ) );
+		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) |
+                              static_cast<int16_t>( buffer_[offset + 12] & 0xff ) );
 
 		    targets_tracked_cart.push_back( target_cart );
 		  }

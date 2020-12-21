@@ -10,7 +10,7 @@ namespace ainstein_radar_drivers
   {
   public:
 
-  RadarTargetCartesian( Eigen::Vector3d &pos,
+  RadarTargetCartesian( int id, Eigen::Vector3d &pos,
 			Eigen::Vector3d &vel ) :
     pos( pos ),
     vel( vel )
@@ -18,13 +18,14 @@ namespace ainstein_radar_drivers
     }
     RadarTargetCartesian( void )
     {
+      id = 0;
       pos.setZero();
       vel.setZero();
       }
     ~RadarTargetCartesian( void )
       {
       }
-
+    int id;
     Eigen::Vector3d pos;
     Eigen::Vector3d vel;
   };
