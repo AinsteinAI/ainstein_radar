@@ -22,7 +22,7 @@ namespace ainstein_radar_drivers
     // Start and stop not required, currently autostarts
     void startRadar( void ) { return; };
     void stopRadar( void ) { return; };
-    
+
     // Radar output message IDs
     static const uint16_t RADAR_START_FRAME = 0x420;
     static const uint16_t RADAR_STOP_FRAME = 0x480;
@@ -30,8 +30,8 @@ namespace ainstein_radar_drivers
     static const uint16_t RADAR_TRACKED_TARGET = 0x490;
 
     // Misc. message IDs
-    static const uint16_t RESERVED = 0xff; 
-      
+    static const uint16_t RESERVED = 0xff;
+
     // Radar specifications (copied from K79, placeholders):
     static constexpr double UPDATE_RATE = 10.0;
     static constexpr int MAX_NUM_TARGETS = 1000;
@@ -62,22 +62,24 @@ namespace ainstein_radar_drivers
 
     static const double msg_range_res;
     static const double msg_speed_res;
-    
+    static const double msg_pos_res;
+    static const double msg_vel_res;
+
   private:
     void publishRadarInfo( void );
-    
+
     void dataMsgCallback( const can_msgs::Frame &msg );
-  
+
     can_msgs::Frame can_frame_msg_;
-  
+
     unsigned int can_id_;
     std::string frame_id_;
     std::string can_id_str_;
-    
+
     ros::Publisher pub_radar_info_;
-    boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;      
+    boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
 };
-  
+
 } // namespace ainstein_drivers
 
 #endif // RADAR_INTERFACE_O79_CAN_H_

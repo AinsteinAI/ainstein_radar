@@ -25,12 +25,16 @@
 */
 
 #include "ainstein_radar_drivers/radar_interface_o79_can.h"
+#include  "ainstein_radar_drivers/radar_target_cartesian.h"
+#include <tf2_eigen/tf2_eigen.h>
 
 namespace ainstein_radar_drivers
 {
 
   const double RadarInterfaceO79CAN::msg_range_res = 0.01;
   const double RadarInterfaceO79CAN::msg_speed_res = 0.005;
+  const double RadarInterfaceO79CAN::msg_pos_res = 0.01;
+  const double RadarInterfaceO79CAN::msg_vel_res = 0.005;
 
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
         ros::NodeHandle node_handle_private ) :
@@ -51,6 +55,7 @@ namespace ainstein_radar_drivers
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
+    msg_ptr_tracked_targets_cart_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
@@ -67,23 +72,41 @@ namespace ainstein_radar_drivers
   unsigned int targets_received = 0;
   int target_type = -1;
   const ros::Duration t_raw_timeout = ros::Duration(1.0);
+  /* declare the Cartesian targets as global because each one spans two messages */
+  std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_cart;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     if( msg.id == can_id_ )
       {
         // Parse out start of frame messages:
-        if( (msg.data[4]==0x00 || msg.data[4]==0x01) && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
+        if( (msg.data[4]==0x00 || msg.data[4]==0x01 || msg.data[4]==0x04) \
+            && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
           {
             ROS_DEBUG( "received start frame from radar" );
+            target_type = msg.data[4];
+            targets_received = 0;
+            targets_to_come = (msg.data[2] << 8) | msg.data[3];
+
             // clear radar data message arrays here
             radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
             radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
 
-            radar_data_msg_ptr_raw_->targets.clear();
-            radar_data_msg_ptr_tracked_->targets.clear();
-            targets_to_come = (msg.data[2] << 8) | msg.data[3];
-            target_type = msg.data[4];
-            targets_received = 0;
+            if( target_type == 0 || target_type == 1 )
+              {
+                // Targets in spherical coordinates
+
+                radar_data_msg_ptr_raw_->targets.clear();
+                radar_data_msg_ptr_tracked_->targets.clear();
+              }
+            else if( target_type == 4 )
+              {
+                // Targets in Cartesian Coordinates
+                msg_ptr_tracked_targets_cart_->header.stamp = ros::Time::now();
+                msg_ptr_tracked_targets_cart_->poses.clear();
+                gtarget_cart.clear();
+
+              }
+            std::cout << "receiving " << targets_to_come << "type " << target_type << std::endl;
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
         // Parse out raw target data messages:
@@ -91,32 +114,81 @@ namespace ainstein_radar_drivers
           {
             ROS_DEBUG( "received target from radar" );
 
-            // Extract the target ID and data from the message:
-            ainstein_radar_msgs::RadarTarget target;
-            target.target_id = static_cast<uint8_t>( msg.data[0] );
-            target.snr = static_cast<uint8_t>( msg.data[1] );
-
-            // Range scaling is 0.01m per count:
-            target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
-
-            // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
-            target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
-
-            // Azimuth angle scaling is 1 deg per count:
-            target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
-
-            // Elevation angle scaling is 1 deg per count:
-            target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
-
-            if ( target_type == 0x00 )
+            if( target_type == 0 || target_type == 1 )
               {
-                radar_data_msg_ptr_raw_->targets.push_back( target );
+                // Extract the target ID and data from the message:
+                ainstein_radar_msgs::RadarTarget target;
+                target.target_id = static_cast<uint8_t>( msg.data[0] );
+                target.snr = static_cast<uint8_t>( msg.data[1] );
+
+                // Range scaling is 0.01m per count:
+                target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+
+                // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
+                target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+
+                // Azimuth angle scaling is 1 deg per count:
+                target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
+
+                // Elevation angle scaling is 1 deg per count:
+                target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
+
+                if ( target_type == 0 )
+                  {
+                    radar_data_msg_ptr_raw_->targets.push_back( target );
+                  }
+                else if( target_type == 1 )
+                  {
+                    radar_data_msg_ptr_tracked_->targets.push_back( target );
+                  }
+                targets_received++;
               }
-            else if( target_type == 0x01 )
+            else if( target_type == 4 )
               {
-                radar_data_msg_ptr_tracked_->targets.push_back( target );
+                if( msg.data[1] == 0 )
+                {
+                  /* position message; add a new entry to the vector of targets */
+                  ainstein_radar_drivers::RadarTargetCartesian tc;
+                  tc.id = static_cast<uint8_t>( msg.data[0] );
+                  tc.pos.x() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+                  tc.pos.y() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+                  tc.pos.z() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                  gtarget_cart.push_back(tc);
+                  std::cout << "Position frame parsed " << std::endl;
+
+                }
+                else if( msg.data[1] == 1 )
+                  {
+                    targets_received++;
+                    if( gtarget_cart.size() > 0 )
+                      {
+                      if( gtarget_cart.back().id == msg.data[0] )
+                        {
+                          gtarget_cart.back().vel.x() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+
+                          gtarget_cart.back().vel.y() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+
+                          gtarget_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                          std::cout << "Velocity frame parsed " << std::endl;
+                        }
+                      else
+                        {
+                          std::cout << "WARNING >> no matching position frame found " << std::endl;
+                        }
+                      }
+                    else
+                      {
+                        std::cout << "WARNING >> no position frames in memory " << std::endl;
+                      }
+                  }
               }
-            targets_received++;
+
           }
         else
           {
@@ -134,6 +206,38 @@ namespace ainstein_radar_drivers
             else if( target_type == 1 )
               {
                 pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+              }
+            else if( target_type == 4 )
+              {
+                for( const auto &t : gtarget_cart )
+                  {
+                    Eigen::Affine3d pose_eigen;
+                    pose_eigen.translation() = t.pos;
+
+                    // Compute the pose assuming the +x direction is the current
+                    // estimated Cartesian velocity direction
+                    Eigen::Matrix3d rot_mat;
+                    if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
+                      {
+                        rot_mat = Eigen::Matrix3d::Identity();
+                      }
+                    else
+                      {
+                        rot_mat.col( 0 ) = t.vel / t.vel.norm();
+                        rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+                        rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+                      }
+
+                    pose_eigen.linear() = rot_mat;
+
+                    geometry_msgs::Pose pose_msg;
+                    pose_msg = tf2::toMsg( pose_eigen );
+
+                    msg_ptr_tracked_targets_cart_->poses.push_back( pose_msg );
+                  }
+                // Publish the tracked target data:
+                pub_tracked_targets_cart_.publish( msg_ptr_tracked_targets_cart_ );
+                std::cout << "Cartesian frame published " << std::endl;
               }
             targets_received = 0;
             targets_to_come = -1;
