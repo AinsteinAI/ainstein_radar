@@ -229,7 +229,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  twist_msg.linear.y = t.vel.y();
 		  twist_msg.linear.z = t.vel.z();
 		  msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
-		  
+
+		  // Publish the tracked Cartesian velocities:
+		  pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
+
 		  // Fill the pose message:
 		  Eigen::Affine3d pose_eigen;
 		  pose_eigen.translation() = t.pos;
@@ -256,7 +259,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
 		}
 	  
-	      // Publish the tracked target data:
+	      // Publish the tracked Cartesian poses:
 	      pub_tracked_targets_cart_pose_.publish( msg_ptr_tracked_targets_cart_pose_ );
 	    }
 
