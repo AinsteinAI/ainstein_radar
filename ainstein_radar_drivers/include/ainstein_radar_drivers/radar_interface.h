@@ -6,6 +6,7 @@
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_msgs/RadarAlarmArray.h>
 #include <geometry_msgs/PoseArray.h>
+#include <ainstein_radar_msgs/TwistArray.h>
 
 namespace ainstein_radar_drivers
 {
@@ -32,7 +33,8 @@ public:
     radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
     radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
     radar_data_msg_ptr_alarms_( new ainstein_radar_msgs::RadarAlarmArray ),
-    msg_ptr_tracked_targets_cart_( new geometry_msgs::PoseArray )
+    msg_ptr_tracked_targets_cart_pose_( new geometry_msgs::PoseArray ),
+    msg_ptr_tracked_targets_cart_vel_( new ainstein_radar_msgs::TwistArray )
     {
         // Set up the subscriber to receive radar data:
         sub_data_msg_ = nh_.subscribe( data_msg_topic, 10,
@@ -51,9 +53,11 @@ public:
         pub_radar_data_alarms_ = nh_private_.advertise<ainstein_radar_msgs::RadarAlarmArray>( "alarms",
 											      10 );
 
-        // Advertise the O79 tracked object bounding boxes:
-        pub_tracked_targets_cart_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
+        // Advertise the O79 tracked object poses:
+        pub_tracked_targets_cart_pose_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
 
+        // Advertise the O79 tracked object velocities:
+        pub_tracked_targets_cart_vel_ = nh_private_.advertise<ainstein_radar_msgs::TwistArray>( "velocities", 10 );
         // Sleep for a little to make sure messages are being advertised before we start sending:
         ros::Duration( 1.0 ).sleep();
 
@@ -79,14 +83,16 @@ protected:
     ros::Publisher pub_radar_data_raw_;
     ros::Publisher pub_radar_data_tracked_;
     ros::Publisher pub_radar_data_alarms_;
-    ros::Publisher pub_tracked_targets_cart_;
+    ros::Publisher pub_tracked_targets_cart_pose_;
+    ros::Publisher pub_tracked_targets_cart_vel_;
 
     ros::Subscriber sub_data_msg_;
 
     boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;
     boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;
     boost::shared_ptr<ainstein_radar_msgs::RadarAlarmArray> radar_data_msg_ptr_alarms_;
-    boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_;
+    boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_pose_;
+    boost::shared_ptr<ainstein_radar_msgs::TwistArray> msg_ptr_tracked_targets_cart_vel_;
 };
 
 } // namespace ainstein_radar_drivers
