@@ -55,7 +55,8 @@ namespace ainstein_radar_drivers
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
-    msg_ptr_tracked_targets_cart_->header.frame_id = frame_id_;
+    msg_ptr_tracked_targets_cart_pose_->header.frame_id = frame_id_;
+    msg_ptr_tracked_targets_cart_vel_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
@@ -101,12 +102,13 @@ namespace ainstein_radar_drivers
             else if( target_type == 4 )
               {
                 // Targets in Cartesian Coordinates
-                msg_ptr_tracked_targets_cart_->header.stamp = ros::Time::now();
-                msg_ptr_tracked_targets_cart_->poses.clear();
+                msg_ptr_tracked_targets_cart_pose_->header.stamp = ros::Time::now();
+                msg_ptr_tracked_targets_cart_pose_->poses.clear();
+                msg_ptr_tracked_targets_cart_vel_->header.stamp = ros::Time::now();
+                msg_ptr_tracked_targets_cart_vel_->velocities.clear();
                 gtarget_cart.clear();
 
               }
-            std::cout << "receiving " << targets_to_come << "type " << target_type << std::endl;
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
         // Parse out raw target data messages:
@@ -157,8 +159,6 @@ namespace ainstein_radar_drivers
                   tc.pos.z() = RadarInterfaceO79CAN::msg_pos_res * \
                                static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
                   gtarget_cart.push_back(tc);
-                  std::cout << "Position frame parsed " << std::endl;
-
                 }
                 else if( msg.data[1] == 1 )
                   {
@@ -175,7 +175,6 @@ namespace ainstein_radar_drivers
 
                           gtarget_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
                                                         static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
-                          std::cout << "Velocity frame parsed " << std::endl;
                         }
                       else
                         {
@@ -211,6 +210,14 @@ namespace ainstein_radar_drivers
               {
                 for( const auto &t : gtarget_cart )
                   {
+                    // Fill the velocity message:
+                    geometry_msgs::Twist twist_msg;
+                    twist_msg.linear.x = t.vel.x();
+                    twist_msg.linear.y = t.vel.y();
+                    twist_msg.linear.z = t.vel.z();
+                    msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
+
+                    // Fill the pose message:
                     Eigen::Affine3d pose_eigen;
                     pose_eigen.translation() = t.pos;
 
@@ -233,11 +240,12 @@ namespace ainstein_radar_drivers
                     geometry_msgs::Pose pose_msg;
                     pose_msg = tf2::toMsg( pose_eigen );
 
-                    msg_ptr_tracked_targets_cart_->poses.push_back( pose_msg );
+                    msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
                   }
                 // Publish the tracked target data:
-                pub_tracked_targets_cart_.publish( msg_ptr_tracked_targets_cart_ );
-                std::cout << "Cartesian frame published " << std::endl;
+                pub_tracked_targets_cart_pose_.publish( msg_ptr_tracked_targets_cart_pose_ );
+                pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
+
               }
             targets_received = 0;
             targets_to_come = -1;
