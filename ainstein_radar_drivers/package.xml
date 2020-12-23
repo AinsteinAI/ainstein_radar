@@ -27,8 +27,6 @@
   <exec_depend>message_runtime</exec_depend>
 
   <export>
-    <nodelet plugin="${prefix}/plugins/nodelet_k79.xml" />
-    <nodelet plugin="${prefix}/plugins/nodelet_k79_3d.xml" />
   </export>
 
 </package>
