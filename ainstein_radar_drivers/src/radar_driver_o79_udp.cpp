@@ -296,10 +296,12 @@ namespace ainstein_radar_drivers
 
 		// Compute box pose (identity orientation, geometric center is position):
 		box.pose.linear() = Eigen::Matrix3d::Identity();
-		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 0] & 0xff ) );
-		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) );
-		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
+		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+												         static_cast<int16_t>( buffer_[offset + 1] & 0xff ) );
+		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                 static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );
+		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                 static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
 
 		box.dimensions.x() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 6] ) );
 		box.dimensions.y() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 7] ) );
