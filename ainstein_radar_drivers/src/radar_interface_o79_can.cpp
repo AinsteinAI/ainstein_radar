@@ -72,7 +72,7 @@ namespace ainstein_radar_drivers
   int targets_to_come = -1;
   unsigned int targets_received = 0;
   int target_type = -1;
-  const ros::Duration t_raw_timeout = ros::Duration(1.0);
+  const ros::Duration t_raw_timeout = ros::Duration(0.4);
   /* declare the Cartesian targets as global because each one spans two messages */
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_cart;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
@@ -89,14 +89,17 @@ namespace ainstein_radar_drivers
             targets_to_come = (msg.data[2] << 8) | msg.data[3];
 
             // clear radar data message arrays here
-            radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-            radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
-
-            if( target_type == 0 || target_type == 1 )
+            if( target_type == 0 )
               {
-                // Targets in spherical coordinates
-
+                // raw point cloud in spherical coordinates
+                radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
                 radar_data_msg_ptr_raw_->targets.clear();
+
+              }
+            else if( target_type == 1 )
+              {
+                // tracked targets in spherical coordinates
+                radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
                 radar_data_msg_ptr_tracked_->targets.clear();
               }
             else if( target_type == 4 )
@@ -200,7 +203,9 @@ namespace ainstein_radar_drivers
               {
                 // if we get a tracked frame, and it's been a while since we got a
                 // raw frame, publish an empty raw frame to clear the display
+                radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
                 pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+                radar_data_msg_ptr_raw_->targets.clear(); // clear the targets after sending so we can send an empty frame later
               }
             else if( target_type == 1 )
               {
