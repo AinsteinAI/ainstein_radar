@@ -38,6 +38,33 @@ namespace ainstein_radar_filters
       elevation = std::asin( p.z() / range );
     }
 
+    static Eigen::Matrix3d velocityToRotation( const Eigen::Vector3d& vel )
+    {
+      // Compute the pose assuming the +x direction is the current estimated Cartesian
+      // velocity direction:                         
+      Eigen::Matrix3d rot_mat;
+      if( vel.norm() < 1e-3 ) // handle degenerate case of near-zero velocity               
+	{
+	  rot_mat = Eigen::Matrix3d::Identity();
+	}
+      else
+	{
+	  rot_mat.col( 0 ) = vel / vel.norm();
+	  rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+	  rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+	}
+
+      return rot_mat;
+    }
+
+    static geometry_msgs::Pose posVelToPose( const Eigen::Vector3d& pos, const Eigen::Vector3d& vel )
+    {
+      Eigen::Affine3d pose_eigen;
+      pose_eigen.translation() = pos;
+      pose_eigen.linear() = velocityToRotation( vel );
+      return tf2::toMsg( pose_eigen );
+    }
+    
     static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget& target,
 				       PointRadarTarget& pcl_point )
     {

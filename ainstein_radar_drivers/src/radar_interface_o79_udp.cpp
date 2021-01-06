@@ -48,12 +48,9 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_( node_handle ),
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
-  radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTargetArray ),
-  cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
-  cloud_msg_ptr_tracked_( new sensor_msgs::PointCloud2 ),
+  radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
-  msg_ptr_tracked_targets_cart_pose_( new geometry_msgs::PoseArray ),
-  msg_ptr_tracked_targets_cart_vel_( new ainstein_radar_msgs::TwistArray ),
+  cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -75,14 +72,11 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Get whether to publish ROS point cloud messages:
   nh_private_.param( "publish_raw_cloud", publish_raw_cloud_, false );
-  nh_private_.param( "publish_tracked_cloud", publish_tracked_cloud_, false );
 
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
   msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
-  msg_ptr_tracked_targets_cart_pose_->header.frame_id = frame_id_;
-  msg_ptr_tracked_targets_cart_vel_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
   publishRadarInfo();
@@ -95,25 +89,13 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
 
   // Advertise the O79 tracked targets data:
-  pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
-
-  // Advertise the O79 raw point cloud:
-  pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
-
-  // Advertise the O79 tracked point cloud:
-  pub_cloud_tracked_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/tracked", 10 );
-
-  // Advertise the O79 tracked targets data:
-  pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/tracked", 10 );
-
+  pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTrackedObjectArray>( "objects", 10 );
+  
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
 
-  // Advertise the O79 tracked object poses:
-  pub_tracked_targets_cart_pose_ = nh_private_.advertise<geometry_msgs::PoseArray>( "poses", 10 );
-
-  // Advertise the O79 tracked object velocities:
-  pub_tracked_targets_cart_vel_ = nh_private_.advertise<ainstein_radar_msgs::TwistArray>( "velocities", 10 );
+  // Advertise the O79 raw point cloud:
+  pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
 
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
@@ -158,10 +140,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      radar_data_msg_ptr_raw_->targets.clear();
 	      for( const auto &t : targets_raw )
 		{
-			if (t.id >= 0)
-			{
-		  	radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
-			}
+		  if (t.id >= 0)
+		    {
+		      radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+		    }
 		}
 
 	      // Publish the raw target data:
@@ -173,50 +155,44 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
 		  pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
 		}
-
 	    }
 
 	  if( targets_tracked.size() > 0 )
 	    {
 	      // Fill in the tracked RadarTargetArray message from the received targets:
 	      radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
-	      radar_data_msg_ptr_tracked_->targets.clear();
+	      radar_data_msg_ptr_tracked_->objects.clear();
+
+	      ainstein_radar_msgs::RadarTrackedObject obj;
 	      for( const auto &t : targets_tracked )
 		{
-			if (t.id >= 0)
-			{
-				radar_data_msg_ptr_tracked_->targets.push_back( targetToROSMsg( t ) );
-			}
+		  if ( t.id >= 0 )
+		    {
+		      obj = targetToObjectROSMsg( t );
+		      radar_data_msg_ptr_tracked_->objects.push_back( obj );
+		    }
 		}
 
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
 
-	      // Optionally publish tracked detections as ROS point cloud:
-	      if( publish_tracked_cloud_ )
-		{
-		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_tracked_, *cloud_msg_ptr_tracked_ );
-		  pub_cloud_tracked_.publish( cloud_msg_ptr_tracked_ );
-		}
-
 		// Publish an empty raw frame if sufficient time has passed since a real one was received
 		// This clears the rviz display if no points are detected and the radar is running
 		if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
 		{
-			radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-			radar_data_msg_ptr_raw_->targets.clear();
-			// Publish the raw target data:
-			pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-
-			// Optionally publish raw detections as ROS point cloud:
-			if( publish_raw_cloud_ )
-			{
-				ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-				pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-			}
-
+		  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
+		  radar_data_msg_ptr_raw_->targets.clear();
+		  
+		  // Publish the raw target data:
+		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+			
+		  // Optionally publish raw detections as ROS point cloud:
+		  if( publish_raw_cloud_ )
+		    {
+		      ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
+		      pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
+		    } 
 		}
-
 	    }
 
 	  if( bounding_boxes.size() > 0 )
@@ -236,53 +212,41 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	  if( targets_tracked_cart.size() > 0 )
 	    {
-	      // Fill in the tracked PoseArray and TwistArray messages from the received targets:
-	      msg_ptr_tracked_targets_cart_pose_->header.stamp = ros::Time::now();
-	      msg_ptr_tracked_targets_cart_pose_->poses.clear();
-	      msg_ptr_tracked_targets_cart_vel_->header.stamp = ros::Time::now();
-	      msg_ptr_tracked_targets_cart_vel_->velocities.clear();
+	      // Fill in the RadarTrackedObjectArray message from the received Cartesian targets
+	      // using the same object message as for spherical data (only one type of tracked
+	      // object data will be active at once):
+	      radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_tracked_->objects.clear();
+
+	      ainstein_radar_msgs::RadarTrackedObject obj_msg;
 	      for( const auto &t : targets_tracked_cart )
 		{
-		  // Fill the velocity message:
-		  geometry_msgs::Twist twist_msg;
-		  twist_msg.linear.x = t.vel.x();
-		  twist_msg.linear.y = t.vel.y();
-		  twist_msg.linear.z = t.vel.z();
-		  msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
+		  // Convert Cartesian object to spherical target:
+		  obj_msg.target.target_id = 0;
+		  obj_msg.target.snr = 100.0;
+		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.pos,
+										  obj_msg.target.range,
+										  obj_msg.target.azimuth,
+										  obj_msg.target.elevation );
+		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.vel,
+										  obj_msg.target.speed,
+										  obj_msg.target.azimuth,
+										  obj_msg.target.elevation );
+		  
+		  // Fill in the pose information:
+		  obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
 
-		  // Publish the tracked Cartesian velocities:
-		  pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
+		  // Fill in the velocity information:
+		  obj_msg.velocity.linear.x = t.vel.x();
+		  obj_msg.velocity.linear.y = t.vel.y();
+		  obj_msg.velocity.linear.z = t.vel.z();
 
-		  // Fill the pose message:
-		  Eigen::Affine3d pose_eigen;
-		  pose_eigen.translation() = t.pos;
-
-		  // Compute the pose assuming the +x direction is the current
-		  // estimated Cartesian velocity direction
-		  Eigen::Matrix3d rot_mat;
-		  if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
-		    {
-		      rot_mat = Eigen::Matrix3d::Identity();
-		    }
-		  else
-		    {
-		      rot_mat.col( 0 ) = t.vel / t.vel.norm();
-		      rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
-		      rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
-		    }
-
-		  pose_eigen.linear() = rot_mat;
-
-		  geometry_msgs::Pose pose_msg;
-		  pose_msg = tf2::toMsg( pose_eigen );
-
-		  msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
+		  radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
 		}
 
-	      // Publish the tracked Cartesian poses:
-	      pub_tracked_targets_cart_pose_.publish( msg_ptr_tracked_targets_cart_pose_ );
+	      // Publish the tracked target data:
+	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
 	    }
-
 	}
 
       // Check whether the data loop should still be running:
