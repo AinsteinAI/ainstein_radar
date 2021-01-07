@@ -23,6 +23,7 @@ add_message_files(
   RadarTrackedObjectStamped.msg
   BoundingBox.msg
   BoundingBoxArray.msg
+  BoundingBoxStamped.msg
   TwistArray.msg
   )
 
