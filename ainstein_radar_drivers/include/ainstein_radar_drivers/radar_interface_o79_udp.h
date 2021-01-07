@@ -50,22 +50,27 @@ public:
 
     // Convert spherical coordinates to 3d pos and vel and then pose msg:
     Eigen::Vector3d pos, vel;
-    ainstein_radar_filters::data_conversions::sphericalToCartesian( t.range, t.azimuth, t.elevation, pos );
-    ainstein_radar_filters::data_conversions::sphericalToCartesian( t.speed, t.azimuth, t.elevation, vel );
+    ainstein_radar_filters::data_conversions::sphericalToCartesian( t.range, ( M_PI / 180.0 ) * t.azimuth, ( M_PI / 180.0 ) * t.elevation, pos );
+    ainstein_radar_filters::data_conversions::sphericalToCartesian( t.speed, ( M_PI / 180.0 ) * t.azimuth, ( M_PI / 180.0 ) * t.elevation, vel );
     obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( pos, vel );
 
     // Fill in the velocity information:
     obj_msg.velocity.linear.x = vel.x();
     obj_msg.velocity.linear.y = vel.y();
     obj_msg.velocity.linear.z = vel.z();
+
+    // Fill in dummy bounding box information:
+    obj_msg.box.pose = obj_msg.pose;
+    obj_msg.box.dimensions.x = 0.01;
+    obj_msg.box.dimensions.y = 0.01;
+    obj_msg.box.dimensions.z = 0.01;
     
     return obj_msg;
   }
 
-  ainstein_radar_msgs::BoundingBox boundingBoxToROSMsg( const ainstein_radar_drivers::BoundingBox &b, std::string frame_id_str )
+  ainstein_radar_msgs::BoundingBox boundingBoxToROSMsg( const ainstein_radar_drivers::BoundingBox &b )
   {
     ainstein_radar_msgs::BoundingBox box;
-    box.header.frame_id = frame_id_str;
     box.pose = tf2::toMsg( b.pose );
     box.dimensions.x = b.dimensions.x();
     box.dimensions.y = b.dimensions.y();
