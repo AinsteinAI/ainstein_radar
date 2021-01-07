@@ -159,18 +159,15 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	  if( targets_tracked.size() > 0 )
 	    {
-	      // Fill in the tracked RadarTargetArray message from the received targets:
+      	      // Fill in the tracked RadarTargetArray message from the received targets:
 	      radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
 	      radar_data_msg_ptr_tracked_->objects.clear();
-
+	      
 	      ainstein_radar_msgs::RadarTrackedObject obj;
 	      for( const auto &t : targets_tracked )
 		{
-		  if ( t.id >= 0 )
-		    {
-		      obj = targetToObjectROSMsg( t );
-		      radar_data_msg_ptr_tracked_->objects.push_back( obj );
-		    }
+		  obj = targetToObjectROSMsg( t );
+		  radar_data_msg_ptr_tracked_->objects.push_back( obj );
 		}
 
 	      // Publish the tracked target data:
@@ -203,7 +200,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      for( const auto &b : bounding_boxes )
 		{
-		  msg_ptr_tracked_boxes_->boxes.push_back( boundingBoxToROSMsg( b, frame_id_ ) );
+		  msg_ptr_tracked_boxes_->boxes.push_back( boundingBoxToROSMsg( b ) );
 		}
 
 	      // Publish the tracked target data:
@@ -224,14 +221,19 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  // Convert Cartesian object to spherical target:
 		  obj_msg.target.target_id = 0;
 		  obj_msg.target.snr = 100.0;
+		  double azim, elev;
 		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.pos,
 										  obj_msg.target.range,
-										  obj_msg.target.azimuth,
-										  obj_msg.target.elevation );
+										  azim,
+										  elev );
+		  obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
+		  obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
 		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.vel,
 										  obj_msg.target.speed,
-										  obj_msg.target.azimuth,
-										  obj_msg.target.elevation );
+										  azim,
+										  elev );
+		  obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
+		  obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
 		  
 		  // Fill in the pose information:
 		  obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
@@ -240,7 +242,13 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		  obj_msg.velocity.linear.x = t.vel.x();
 		  obj_msg.velocity.linear.y = t.vel.y();
 		  obj_msg.velocity.linear.z = t.vel.z();
-
+		  
+		  // Fill in dummy bounding box information:
+		  obj_msg.box.pose = obj_msg.pose;
+		  obj_msg.box.dimensions.x = 0.01;
+		  obj_msg.box.dimensions.y = 0.01;
+		  obj_msg.box.dimensions.z = 0.01;
+    
 		  radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
 		}
 
