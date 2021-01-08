@@ -45,8 +45,8 @@ public:
   {
     ainstein_radar_msgs::RadarTrackedObject obj_msg;
     
-    // Pass through the spherical target information:
-    obj_msg.target = targetToROSMsg( t );
+    // Pass through the target ID:
+    obj_msg.id = t.id;
 
     // Convert spherical coordinates to 3d pos and vel and then pose msg:
     Eigen::Vector3d pos, vel;

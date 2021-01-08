@@ -222,22 +222,8 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		    {
 		      // Only populate the values if there's a valid tid, otherwise the intent is to publish an empty frame to clear the display
 
-		      // Convert Cartesian object to spherical target:
-		      obj_msg.target.target_id = 0;
-		      obj_msg.target.snr = 100.0;
-		      double azim, elev;
-		      ainstein_radar_filters::data_conversions::cartesianToSpherical( t.pos,
-										      obj_msg.target.range,
-										      azim,
-										      elev );
-		      obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
-		      obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
-		      ainstein_radar_filters::data_conversions::cartesianToSpherical( t.vel,
-										      obj_msg.target.speed,
-										      azim,
-										      elev );
-		      obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
-		      obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
+		      // Pass the target ID through to the object ID:
+		      obj_msg.id = t.id;
 		  
 		      // Fill in the pose information:
 		      obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
