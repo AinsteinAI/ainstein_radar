@@ -26,6 +26,8 @@ namespace ainstein_radar_rviz_plugins
     rviz::Shape pos;
     rviz::Arrow vel;
     rviz::Shape box;
+
+    int id;
   };
 
 } // namespace ainstein_radar_rviz_plugins

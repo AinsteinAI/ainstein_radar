@@ -39,6 +39,7 @@ public:
   
 private:
   std::vector<RadarTrackedObjectVisual> radar_tracked_object_visuals_;
+  std::map<int, Ogre::ColourValue> obj_id_colors_;
   
   Ogre::SceneNode* frame_node_;
 
