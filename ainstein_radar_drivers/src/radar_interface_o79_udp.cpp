@@ -218,22 +218,8 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      ainstein_radar_msgs::RadarTrackedObject obj_msg;
 	      for( const auto &t : targets_tracked_cart )
 		{
-		  // Convert Cartesian object to spherical target:
-		  obj_msg.target.target_id = 0;
-		  obj_msg.target.snr = 100.0;
-		  double azim, elev;
-		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.pos,
-										  obj_msg.target.range,
-										  azim,
-										  elev );
-		  obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
-		  obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
-		  ainstein_radar_filters::data_conversions::cartesianToSpherical( t.vel,
-										  obj_msg.target.speed,
-										  azim,
-										  elev );
-		  obj_msg.target.azimuth = ( 180.0 / M_PI ) * azim;
-		  obj_msg.target.elevation = ( 180.0 / M_PI ) * elev;
+		  // Pass the target ID through to the object ID:
+		  obj_msg.id = t.id;
 		  
 		  // Fill in the pose information:
 		  obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
