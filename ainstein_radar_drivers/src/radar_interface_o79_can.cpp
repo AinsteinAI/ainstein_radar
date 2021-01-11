@@ -55,8 +55,6 @@ namespace ainstein_radar_drivers
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
-    msg_ptr_tracked_targets_cart_pose_->header.frame_id = frame_id_;
-    msg_ptr_tracked_targets_cart_vel_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
@@ -100,17 +98,14 @@ namespace ainstein_radar_drivers
               {
                 // tracked targets in spherical coordinates
                 radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
-                radar_data_msg_ptr_tracked_->targets.clear();
+                radar_data_msg_ptr_tracked_->objects.clear();
               }
             else if( target_type == 4 )
               {
-                // Targets in Cartesian Coordinates
-                msg_ptr_tracked_targets_cart_pose_->header.stamp = ros::Time::now();
-                msg_ptr_tracked_targets_cart_pose_->poses.clear();
-                msg_ptr_tracked_targets_cart_vel_->header.stamp = ros::Time::now();
-                msg_ptr_tracked_targets_cart_vel_->velocities.clear();
+                // tracked targets in Cartesian coordinates
+                radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+                radar_data_msg_ptr_tracked_->objects.clear();
                 gtarget_cart.clear();
-
               }
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
@@ -119,7 +114,7 @@ namespace ainstein_radar_drivers
           {
             ROS_DEBUG( "received target from radar" );
 
-            if( target_type == 0 || target_type == 1 )
+            if( target_type == 0 )
               {
                 // Extract the target ID and data from the message:
                 ainstein_radar_msgs::RadarTarget target;
@@ -138,14 +133,31 @@ namespace ainstein_radar_drivers
                 // Elevation angle scaling is 1 deg per count:
                 target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
 
-                if ( target_type == 0 )
-                  {
-                    radar_data_msg_ptr_raw_->targets.push_back( target );
-                  }
-                else if( target_type == 1 )
-                  {
-                    radar_data_msg_ptr_tracked_->targets.push_back( target );
-                  }
+		radar_data_msg_ptr_raw_->targets.push_back( target );
+                targets_received++;
+              }
+            else if( target_type == 1 )
+              {
+                // Extract the target ID and data from the message:
+                ainstein_radar_drivers::RadarTarget target;
+                target.id = static_cast<uint8_t>( msg.data[0] );
+                target.snr = static_cast<uint8_t>( msg.data[1] );
+
+                // Range scaling is 0.01m per count:
+                target.range = RadarInterfaceO79CAN::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+
+                // Speed scaling is 0.005m/s per count, +ve AWAY from radar, -ve TOWARDS:
+                target.speed = RadarInterfaceO79CAN::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+
+                // Azimuth angle scaling is 1 deg per count:
+                target.azimuth = static_cast<double>( static_cast<int8_t>( msg.data[6] ) );
+
+                // Elevation angle scaling is 1 deg per count:
+                target.elevation = static_cast<double>( static_cast<int8_t>( msg.data[7] ) );
+
+		// Convert from spherical coordinates tracked target to tracked object, push back:
+		ainstein_radar_msgs::RadarTrackedObject obj = utilities::targetToObjectROSMsg( target );
+		radar_data_msg_ptr_tracked_->objects.push_back( obj );
                 targets_received++;
               }
             else if( target_type == 4 )
@@ -213,44 +225,37 @@ namespace ainstein_radar_drivers
               }
             else if( target_type == 4 )
               {
-                for( const auto &t : gtarget_cart )
+		// Fill in the RadarTrackedObjectArray message from the received Cartesian targets
+		// using the same object message as for spherical data (only one type of tracked
+		// object data will be active at once):
+		radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+		radar_data_msg_ptr_tracked_->objects.clear();
+
+		ainstein_radar_msgs::RadarTrackedObject obj_msg;
+		for( const auto &t : gtarget_cart )
                   {
-                    // Fill the velocity message:
-                    geometry_msgs::Twist twist_msg;
-                    twist_msg.linear.x = t.vel.x();
-                    twist_msg.linear.y = t.vel.y();
-                    twist_msg.linear.z = t.vel.z();
-                    msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
+		    // Pass the target ID through to the object ID:
+		    obj_msg.id = t.id;
+		    
+		    // Fill in the pose information:
+		    obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
 
-                    // Fill the pose message:
-                    Eigen::Affine3d pose_eigen;
-                    pose_eigen.translation() = t.pos;
-
-                    // Compute the pose assuming the +x direction is the current
-                    // estimated Cartesian velocity direction
-                    Eigen::Matrix3d rot_mat;
-                    if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
-                      {
-                        rot_mat = Eigen::Matrix3d::Identity();
-                      }
-                    else
-                      {
-                        rot_mat.col( 0 ) = t.vel / t.vel.norm();
-                        rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
-                        rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
-                      }
-
-                    pose_eigen.linear() = rot_mat;
-
-                    geometry_msgs::Pose pose_msg;
-                    pose_msg = tf2::toMsg( pose_eigen );
-
-                    msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
-                  }
-                // Publish the tracked target data:
-                pub_tracked_targets_cart_pose_.publish( msg_ptr_tracked_targets_cart_pose_ );
-                pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
-
+		    // Fill in the velocity information:
+		    obj_msg.velocity.linear.x = t.vel.x();
+		    obj_msg.velocity.linear.y = t.vel.y();
+		    obj_msg.velocity.linear.z = t.vel.z();
+		  
+		    // Fill in dummy bounding box information:
+		    obj_msg.box.pose = obj_msg.pose;
+		    obj_msg.box.dimensions.x = 0.01;
+		    obj_msg.box.dimensions.y = 0.01;
+		    obj_msg.box.dimensions.z = 0.01;
+    
+		    radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
+		  }
+		
+		// Publish the tracked target data:
+		pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
               }
             targets_received = 0;
             targets_to_come = -1;

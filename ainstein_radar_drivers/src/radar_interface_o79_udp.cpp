@@ -142,7 +142,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		{
 		  if (t.id >= 0)
 		    {
-		      radar_data_msg_ptr_raw_->targets.push_back( targetToROSMsg( t ) );
+		      radar_data_msg_ptr_raw_->targets.push_back( utilities::targetToROSMsg( t ) );
 		    }
 		}
 
@@ -166,7 +166,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      ainstein_radar_msgs::RadarTrackedObject obj;
 	      for( const auto &t : targets_tracked )
 		{
-		  obj = targetToObjectROSMsg( t );
+		  obj = utilities::targetToObjectROSMsg( t );
 		  radar_data_msg_ptr_tracked_->objects.push_back( obj );
 		}
 
@@ -200,7 +200,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      for( const auto &b : bounding_boxes )
 		{
-		  msg_ptr_tracked_boxes_->boxes.push_back( boundingBoxToROSMsg( b ) );
+		  msg_ptr_tracked_boxes_->boxes.push_back( utilities::boundingBoxToROSMsg( b ) );
 		}
 
 	      // Publish the tracked target data:
