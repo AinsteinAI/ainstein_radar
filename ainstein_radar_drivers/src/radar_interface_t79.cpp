@@ -165,7 +165,7 @@ namespace ainstein_radar_drivers
         radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
 
         radar_data_msg_ptr_raw_->targets.clear();
-        radar_data_msg_ptr_tracked_->targets.clear();
+        radar_data_msg_ptr_tracked_->objects.clear();
       }
     // Parse out end of frame messages:
     else if( msg.id == ( RadarInterfaceT79::RADAR_STOP_FRAME + can_id_ ) )
@@ -204,15 +204,17 @@ namespace ainstein_radar_drivers
         ROS_DEBUG( "received tracked target from radar with CAN ID %d", can_id_ );
 
         // Extract the target ID and data from the message:
-        ainstein_radar_msgs::RadarTarget target;
-        target.target_id = msg.data[0];
+        ainstein_radar_drivers::RadarTarget target;
+        target.id = msg.data[0];
         target.snr = msg.data[1];
         target.range = (int16_t)( ( msg.data[2] << 8 ) + msg.data[3] ) / 100.0;
         target.speed = (int16_t)( ( msg.data[4] << 8 ) + msg.data[5] ) / 100.0;
         target.azimuth = (int16_t)( ( msg.data[6] << 8 ) + msg.data[7] ) / 100.0 * -1;
         target.elevation = 0.0;
 
-        radar_data_msg_ptr_tracked_->targets.push_back( target );
+	// Convert the spherical target to a tracked object and push back:
+	ainstein_radar_msgs::RadarTrackedObject obj = utilities::targetToObjectROSMsg( target );    
+	radar_data_msg_ptr_tracked_->objects.push_back( obj );
       }
     else
       {
