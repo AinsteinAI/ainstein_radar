@@ -243,40 +243,63 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      msg_ptr_tracked_targets_cart_vel_->velocities.clear();
 	      for( const auto &t : targets_tracked_cart )
 		{
-		  // Fill the velocity message:
-		  geometry_msgs::Twist twist_msg;
-		  twist_msg.linear.x = t.vel.x();
-		  twist_msg.linear.y = t.vel.y();
-		  twist_msg.linear.z = t.vel.z();
-		  msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
+			if( t.id >= 0)
+			{
+				// Only populate the values if there's a valid tid, otherwise the intent is to publish an empty frame to clear the display
 
-		  // Publish the tracked Cartesian velocities:
-		  pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
+			  // Fill the velocity message:
+			  geometry_msgs::Twist twist_msg;
+			  twist_msg.linear.x = t.vel.x();
+			  twist_msg.linear.y = t.vel.y();
+			  twist_msg.linear.z = t.vel.z();
+			  msg_ptr_tracked_targets_cart_vel_->velocities.push_back( twist_msg );
 
-		  // Fill the pose message:
-		  Eigen::Affine3d pose_eigen;
-		  pose_eigen.translation() = t.pos;
+			  // Publish the tracked Cartesian velocities:
+			  pub_tracked_targets_cart_vel_.publish( msg_ptr_tracked_targets_cart_vel_ );
 
-		  // Compute the pose assuming the +x direction is the current
-		  // estimated Cartesian velocity direction
-		  Eigen::Matrix3d rot_mat;
-		  if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
-		    {
-		      rot_mat = Eigen::Matrix3d::Identity();
-		    }
-		  else
-		    {
-		      rot_mat.col( 0 ) = t.vel / t.vel.norm();
-		      rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
-		      rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
-		    }
+			  // Fill the pose message:
+			  Eigen::Affine3d pose_eigen;
+			  pose_eigen.translation() = t.pos;
 
-		  pose_eigen.linear() = rot_mat;
+			  // Compute the pose assuming the +x direction is the current
+			  // estimated Cartesian velocity direction
+			  Eigen::Matrix3d rot_mat;
+			  if( t.vel.norm() < 1e-3 ) // handle degenerate case of zero velocity
+			    {
+			      rot_mat = Eigen::Matrix3d::Identity();
+			    }
+			  else
+			    {
+			      rot_mat.col( 0 ) = t.vel / t.vel.norm();
+			      rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
+			      rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
+			    }
 
-		  geometry_msgs::Pose pose_msg;
-		  pose_msg = tf2::toMsg( pose_eigen );
+			  pose_eigen.linear() = rot_mat;
 
-		  msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
+			  geometry_msgs::Pose pose_msg;
+			  pose_msg = tf2::toMsg( pose_eigen );
+
+			  msg_ptr_tracked_targets_cart_pose_->poses.push_back( pose_msg );
+			}
+		}
+
+		// Publish an empty raw frame if sufficient time has passed since a real one was received
+		// This clears the rviz display if no points are detected and the radar is running
+		if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
+		{
+			radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
+			radar_data_msg_ptr_raw_->targets.clear();
+
+			// Publish the raw target data:
+			pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
+
+			// Optionally publish raw detections as ROS point cloud:
+			if( publish_raw_cloud_ )
+				{
+					ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
+					pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
+				}
 		}
 
 	      // Publish the tracked Cartesian poses:

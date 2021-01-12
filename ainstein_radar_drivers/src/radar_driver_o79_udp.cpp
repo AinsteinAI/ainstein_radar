@@ -343,6 +343,14 @@ namespace ainstein_radar_drivers
 
 		    targets_tracked_cart.push_back( target_cart );
 		  }
+
+      if( targets_tracked_cart.size() == 0 )
+      {
+        // no targets were received; push back some dummy data so that an
+        // empty target frame will be sent
+        target_cart.id = -1;
+        targets_tracked_cart.push_back( target_cart );
+      }
 	      }
 
 	  }
