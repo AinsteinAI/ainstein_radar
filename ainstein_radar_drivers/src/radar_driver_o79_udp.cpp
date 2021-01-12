@@ -1,26 +1,26 @@
 /*
   Copyright <2018-2020> <Ainstein, Inc.>
 
-  Redistribution and use in source and binary forms, with or without modification, are permitted 
+  Redistribution and use in source and binary forms, with or without modification, are permitted
   provided that the following conditions are met:
 
-  1. Redistributions of source code must retain the above copyright notice, this list of 
+  1. Redistributions of source code must retain the above copyright notice, this list of
   conditions and the following disclaimer.
 
-  2. Redistributions in binary form must reproduce the above copyright notice, this list of 
-  conditions and the following disclaimer in the documentation and/or other materials provided 
+  2. Redistributions in binary form must reproduce the above copyright notice, this list of
+  conditions and the following disclaimer in the documentation and/or other materials provided
   with the distribution.
 
-  3. Neither the name of the copyright holder nor the names of its contributors may be used to 
+  3. Neither the name of the copyright holder nor the names of its contributors may be used to
   endorse or promote products derived from this software without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
-  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-  FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
-  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+  FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
@@ -44,22 +44,23 @@ namespace ainstein_radar_drivers
 
   const std::string RadarDriverO79UDP::connect_cmd_str = std::string( "connect" );
   const unsigned int RadarDriverO79UDP::connect_res_len = 18;
-  
+
   const std::string RadarDriverO79UDP::run_cmd_str = std::string( "run" );
 
   const unsigned int RadarDriverO79UDP::max_msg_len = 3000; // maximum length in bytes
-  const unsigned int RadarDriverO79UDP::msg_len_raw_targets = 8; // 8 bytes per raw target
-  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // 8 bytes per raw target
-  const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // 9 bytes per bounding box
-  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 12; // 12 bytes per Cartesian tracked target
-  
+  const unsigned int RadarDriverO79UDP::msg_len_raw_targets = 8; // bytes per raw target
+  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // bytes per raw target
+  const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // bytes per bounding box
+  const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 13; // bytes per Cartesian tracked target
+
   const unsigned int RadarDriverO79UDP::msg_header_len = 8; // 8 byte header per message
+  const unsigned int RadarDriverO79UDP::msg_type_byte = 4;
 
   const unsigned int RadarDriverO79UDP::msg_id_raw_targets = 0x00;
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets = 0x01;
   const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 0x02;
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 0x04;
-  
+
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
   const double RadarDriverO79UDP::msg_cart_pos_res = 0.01;
@@ -123,7 +124,7 @@ namespace ainstein_radar_drivers
 	std::cout << "Failed to set socket timeout: " << std::strerror( errno ) << std::endl;
 	return false;
       }
-    
+
     // Explicitly bind the host UDP socket:
     res = bind( sockfd_, ( struct sockaddr * )( &sockaddr_ ), sizeof( sockaddr_ ) );
     if( res < 0 )
@@ -177,7 +178,7 @@ namespace ainstein_radar_drivers
 	    return false;
 	  }
       }
-  
+
     return true;
   }
 
@@ -191,13 +192,13 @@ namespace ainstein_radar_drivers
     targets_tracked.clear();
     bounding_boxes.clear();
     targets_tracked_cart.clear();
-    
+
     // Received message length:
     int msg_len;
 
     // Received message data length (excluding header):
     int msg_data_len;
-    
+
     // Structures to store where the UDP message came from:
     struct sockaddr_storage src_addr;
     socklen_t src_addr_len = sizeof( src_addr );
@@ -219,7 +220,7 @@ namespace ainstein_radar_drivers
 
 	// Compute length of actual data for checking payload size:
 	msg_data_len = msg_len - RadarDriverO79UDP::msg_header_len;
-	
+
 	// Extract the target ID and data from the message:
 	int offset;
 	ainstein_radar_drivers::RadarTarget target;
@@ -227,7 +228,7 @@ namespace ainstein_radar_drivers
 	ainstein_radar_drivers::RadarTargetCartesian target_cart;
 
 	// Check the first byte for the message type ID:
-	if( buffer_[0] == RadarDriverO79UDP::msg_id_tracked_targets )
+	if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets )
 	  {
 	    // Check data is a valid length:
 	    if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets ) != 0 )
@@ -242,16 +243,15 @@ namespace ainstein_radar_drivers
 		    // Offset per target includes header
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets + RadarDriverO79UDP::msg_header_len;
 
-		    target.id = i;
-		    
-		    target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 0] ) );
-		    target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) | 
-											   static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
-		    target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) | 
-											   static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );		    		    
-		    target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 5] ) );
-		    target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
-		    
+        target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+        target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
+        target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                               static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+        target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                               static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+        target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+        target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
 		    targets_tracked.push_back( target );
 		  }
         if( targets_tracked.size() == 0 )
@@ -263,22 +263,21 @@ namespace ainstein_radar_drivers
         }
 	      }
 	  }
-	else if( buffer_[0] == RadarDriverO79UDP::msg_id_raw_targets )
+	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets )
 	  {
 	    for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
 	      {
 		offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
 
-		target.id = i;
-		
-		target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 0] ) );
-		target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) | 
-										       static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
-		target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) | 
-										       static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );		    		    
-		target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 5] ) );
-		target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
-		    
+    target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+    target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
+    target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                           static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+    target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                           static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+    target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+    target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
 		targets.push_back( target );
 	      }
       if( targets.size() == 0 )
@@ -289,7 +288,7 @@ namespace ainstein_radar_drivers
         targets.push_back( target );
       }
 	  }
-	else if( buffer_[0] == RadarDriverO79UDP::msg_id_bounding_boxes )
+	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_bounding_boxes )
 	  {
 	    for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_bounding_boxes ); ++i )
 	      {
@@ -297,10 +296,12 @@ namespace ainstein_radar_drivers
 
 		// Compute box pose (identity orientation, geometric center is position):
 		box.pose.linear() = Eigen::Matrix3d::Identity();
-		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ); 
-		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ); 
-		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ); 
+		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+												         static_cast<int16_t>( buffer_[offset + 1] & 0xff ) );
+		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                 static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );
+		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                 static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
 
 		box.dimensions.x() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 6] ) );
 		box.dimensions.y() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 7] ) );
@@ -309,7 +310,7 @@ namespace ainstein_radar_drivers
 		bounding_boxes.push_back( box );
 	      }
 	  }
-	else if( buffer_[0] == RadarDriverO79UDP::msg_id_tracked_targets_cart )
+	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets_cart )
 	  {
 	    // Check data is a valid length:
 	    if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets_cart ) != 0 )
@@ -324,22 +325,34 @@ namespace ainstein_radar_drivers
 		    // Offset per target includes header
 		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets_cart + RadarDriverO79UDP::msg_header_len;
 
+        target_cart.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+
 		    target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 0] & 0xff ) ); 
+												      static_cast<int16_t>( buffer_[offset + 2] & 0xff ) );
 		    target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 2] & 0xff ) ); 
+												      static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
 		    target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 4] & 0xff ) ); 
+												      static_cast<int16_t>( buffer_[offset + 6] & 0xff ) );
 
 		    target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) |
-												     static_cast<int16_t>( buffer_[offset + 6] & 0xff ) ); 
-		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 8] & 0xff ) ); 
-		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) | static_cast<int16_t>( buffer_[offset + 10] & 0xff ) ); 
+												      static_cast<int16_t>( buffer_[offset + 8] & 0xff ) );
+		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) |
+                              static_cast<int16_t>( buffer_[offset + 10] & 0xff ) );
+		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) |
+                              static_cast<int16_t>( buffer_[offset + 12] & 0xff ) );
 
 		    targets_tracked_cart.push_back( target_cart );
 		  }
+
+      if( targets_tracked_cart.size() == 0 )
+      {
+        // no targets were received; push back some dummy data so that an
+        // empty target frame will be sent
+        target_cart.id = -1;
+        targets_tracked_cart.push_back( target_cart );
+      }
 	      }
-	    
+
 	  }
 	else
 	  {
