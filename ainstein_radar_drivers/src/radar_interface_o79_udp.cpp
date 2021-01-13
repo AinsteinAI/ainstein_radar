@@ -166,8 +166,11 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      ainstein_radar_msgs::RadarTrackedObject obj;
 	      for( const auto &t : targets_tracked )
 		{
-		  obj = utilities::targetToObjectROSMsg( t );
-		  radar_data_msg_ptr_tracked_->objects.push_back( obj );
+		  if ( t.id >= 0 )
+		    {
+		      obj = utilities::targetToObjectROSMsg( t );
+		      radar_data_msg_ptr_tracked_->objects.push_back( obj );
+		    }
 		}
 
 	      // Publish the tracked target data:
