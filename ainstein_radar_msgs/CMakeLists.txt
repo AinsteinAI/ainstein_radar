@@ -18,8 +18,12 @@ add_message_files(
   RadarTarget.msg
   RadarTargetArray.msg
   RadarTargetStamped.msg
+  RadarTrackedObject.msg
+  RadarTrackedObjectArray.msg
+  RadarTrackedObjectStamped.msg
   BoundingBox.msg
   BoundingBoxArray.msg
+  BoundingBoxStamped.msg
   TwistArray.msg
   )
 

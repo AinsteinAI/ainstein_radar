@@ -295,9 +295,6 @@ namespace ainstein_radar_filters
     // Form the box message:
     ainstein_radar_msgs::BoundingBox box;
 
-    box.header.stamp = targets.header.stamp;
-    box.header.frame_id = targets.header.frame_id;
-    
     box.pose = tf2::toMsg( box_pose );
     
     box.dimensions.x = max_point.x() - min_point.x();

@@ -9,11 +9,11 @@
 
 #include <ainstein_radar_msgs/RadarInfo.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_msgs/RadarTrackedObjectArray.h>
 #include <ainstein_radar_msgs/BoundingBoxArray.h>
-#include <ainstein_radar_msgs/TwistArray.h>
 #include <ainstein_radar_drivers/radar_driver_o79_udp.h>
+#include <ainstein_radar_drivers/utilities.h>
 #include <ainstein_radar_filters/data_conversions.h>
-#include <geometry_msgs/PoseArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
@@ -29,30 +29,6 @@ public:
   ~RadarInterfaceO79UDP();
 
   void mainLoop( void );
-  ainstein_radar_msgs::RadarTarget targetToROSMsg( const ainstein_radar_drivers::RadarTarget &t )
-  {
-    ainstein_radar_msgs::RadarTarget target;
-    target.target_id = t.id;
-    target.range = t.range;
-    target.speed = t.speed;
-    target.azimuth = t.azimuth;
-    target.elevation = t.elevation;
-    target.snr = t.snr;
-
-    return target;
-  }
-
-  ainstein_radar_msgs::BoundingBox boundingBoxToROSMsg( const ainstein_radar_drivers::BoundingBox &b, std::string frame_id_str )
-  {
-    ainstein_radar_msgs::BoundingBox box;
-    box.header.frame_id = frame_id_str;
-    box.pose = tf2::toMsg( b.pose );
-    box.dimensions.x = b.dimensions.x();
-    box.dimensions.y = b.dimensions.y();
-    box.dimensions.z = b.dimensions.z();
-
-    return box;
-  }
   
   // Radar specifications:
   static constexpr double UPDATE_RATE = 10.0;
@@ -88,7 +64,6 @@ private:
   
   std::string frame_id_;
   bool publish_raw_cloud_;
-  bool publish_tracked_cloud_;
   
   std::unique_ptr<ainstein_radar_drivers::RadarDriverO79UDP> driver_;
   
@@ -101,20 +76,14 @@ private:
   ros::Publisher pub_radar_data_raw_;
   ros::Publisher pub_radar_data_tracked_;
   ros::Publisher pub_cloud_raw_;
-  ros::Publisher pub_cloud_tracked_;
-  ros::Publisher pub_radar_info_;
   ros::Publisher pub_bounding_boxes_;
-  ros::Publisher pub_tracked_targets_cart_pose_;
-  ros::Publisher pub_tracked_targets_cart_vel_;
-  
+  ros::Publisher pub_radar_info_;
+
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
-  boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_tracked_;
-  boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_raw_;
-  boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_tracked_;
-  boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
+  boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_tracked_;
   boost::shared_ptr<ainstein_radar_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
-  boost::shared_ptr<geometry_msgs::PoseArray> msg_ptr_tracked_targets_cart_pose_;
-  boost::shared_ptr<ainstein_radar_msgs::TwistArray> msg_ptr_tracked_targets_cart_vel_;
+  boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_raw_;
+  boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
 };
 
 } // namespace ainstein_radar_drivers
