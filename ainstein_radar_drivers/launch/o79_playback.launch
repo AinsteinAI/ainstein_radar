@@ -1,0 +1,26 @@
+<launch>
+
+  <!-- Param required for playing back recorded data -->
+  <param name="use_sim_time" value="true" />
+
+  <!-- Load the rviz configuration -->
+  <arg name="rvizconfig_o79" default="$(find ainstein_radar_drivers)/rviz/o79.rviz" />
+
+  <!-- Run Rviz with specified configuration -->
+  <node name="rviz_o79" pkg="rviz" type="rviz" args="-d $(arg rvizconfig_o79)" />
+
+  <!-- Run the rqtbag GUI (make sure to right-click in bottom half and set to publish all) -->
+  <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
+
+  <!-- Run ROS tracking filters on recorded raw UDP data -->
+  <include file="$(find ainstein_radar_drivers)/launch/ros_tracking_filter.launch" />
+
+  <!-- Set whether to launch the online tuning GUI -->
+  <arg name="use_rqt_reconfigure" default="true" />
+
+  <group if="$(arg use_rqt_reconfigure)">
+    <!-- Run the rqt dynamic reconfiguration GUI to tune the trackers on recorded data -->
+    <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
+  </group>
+
+</launch>

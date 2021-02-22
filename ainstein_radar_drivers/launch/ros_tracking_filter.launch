@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- Filter for tracking targets based on raw targets -->
+  <node name="tracking_filter" pkg="ainstein_radar_filters" type="tracking_filter_node" output="screen" >
+    <remap from="radar_in" to="/o79_udp/targets/raw" />
+    <param name="publish_freq" value="20.0" />
+  </node>
+
+  <!-- Cartesian Filter for tracking targets based on raw targets -->
+  <node name="tracking_filter_cartesian" pkg="ainstein_radar_filters" type="tracking_filter_cartesian_node" output="screen" >
+    <remap from="radar_in" to="/o79_udp/targets/raw" />
+  </node>
+
+  <!-- Load the tracking filter parameters -->
+  <node name="tracking_dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /tracking_filter $(find ainstein_radar_filters)/params/k79_people_tracking_filter.yaml" />
+
+
+</launch>
