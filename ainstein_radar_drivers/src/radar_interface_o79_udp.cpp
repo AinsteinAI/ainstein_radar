@@ -270,6 +270,17 @@ void RadarInterfaceO79UDP::mainLoop(void)
 					}		  
 			}
 
+			// Publish an empty ground frame if sufficient time has passed since a real one was received
+	      // This clears the rviz display if no points are detected and the radar is running
+	      if ( (ros::Time::now() - radar_data_msg_ptr_ground_->header.stamp ) > t_raw_timeout )
+			{
+				radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
+				radar_data_msg_ptr_ground_->objects.clear();
+
+				// Publish the ground target data:
+				pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );	  
+			}
+
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
 	    }
@@ -307,7 +318,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 					radar_data_msg_ptr_ground_->objects.push_back( obj_msg );
 				  }		      
 		    }
-	      // Publish the tracked target data:
+	      // Publish the ground target data:
 	      pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );
 	    }
 	}
