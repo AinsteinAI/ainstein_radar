@@ -6,6 +6,7 @@
 
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_msgs/RadarTarget.h>
+#include <ainstein_radar_msgs/RadarTrackedObject.h>
 
 #define Q_VEL_STDEV 5.0
 
@@ -105,6 +106,24 @@ namespace ainstein_radar_filters
 	
 	return pose_msg;
       }
+
+    ainstein_radar_msgs::RadarTrackedObject asObjMsg( int t_id ) const
+    {
+      ainstein_radar_msgs::RadarTrackedObject obj;
+      obj.id = t_id;
+      obj.pose = ainstein_radar_filters::data_conversions::posVelToPose(pos, vel);
+      obj.velocity.linear.x = vel.x();
+      obj.velocity.linear.y = vel.y();
+      obj.velocity.linear.z = vel.z();
+
+      // Fill in dummy bounding box information
+      obj.box.pose = obj.pose;
+      obj.box.dimensions.x = 0.01;
+      obj.box.dimensions.y = 0.01;
+      obj.box.dimensions.z = 0.01;
+
+      return obj;
+    }
     };
 
   public:

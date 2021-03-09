@@ -7,7 +7,7 @@
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/radar_target_cartesian_kf.h>
 #include <ainstein_radar_filters/TrackingFilterCartesianConfig.h>
-#include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_msgs/RadarTrackedObjectArray.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
 #include <ainstein_radar_msgs/BoundingBoxArray.h>
@@ -100,9 +100,7 @@ namespace ainstein_radar_filters
     ros::Publisher pub_poses_tracked_;
     ros::Publisher pub_bounding_boxes_;
     
-    ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
-    geometry_msgs::PoseArray msg_tracked_poses_;
-    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
+    ainstein_radar_msgs::RadarTrackedObjectArray msg_tracked_objects_;
     ainstein_radar_msgs::BoundingBoxArray msg_tracked_boxes_;
 
     std::unique_ptr<std::thread> filter_update_thread_;
