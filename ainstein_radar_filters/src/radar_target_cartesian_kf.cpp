@@ -95,6 +95,11 @@ namespace ainstein_radar_filters
   {
     time_first_update_ = ros::Time::now();
     time_last_update_ = time_first_update_;
+    status_ = t_e_pre_tracked;
+    pretrack_targ_cnt_ = 1; /* start at 1 - count the filter initialization as an update */
+    pretrack_frame_cnt_ = 1; /* start at 1 - count the filter initialization as an update */
+    ext_frame_cnt_ = 0;
+
   }
 
   void RadarTargetCartesianKF::process( double dt )

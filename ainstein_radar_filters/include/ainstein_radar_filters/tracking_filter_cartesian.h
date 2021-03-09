@@ -7,6 +7,7 @@
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/radar_target_cartesian_kf.h>
 #include <ainstein_radar_filters/TrackingFilterCartesianConfig.h>
+#include <ainstein_radar_filters/common_types.h>
 #include <ainstein_radar_msgs/RadarTrackedObjectArray.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
@@ -37,9 +38,11 @@ namespace ainstein_radar_filters
     {
       // Copy the new parameter values:
       filter_update_rate_ = config.filter_update_rate;
-      filter_min_time_ = config.filter_min_time;
-      filter_timeout_ = config.filter_timeout;
       filter_val_gate_thresh_ = config.filter_val_gate_thresh;
+      pre_tracked_max_cnt_ = config.pre_tracked_max_cnt;
+	    tracked_min_cnt_ = config.tracked_min_cnt;
+	    extended_max_cnt_ = config.ext_max_cnt;
+
 
       // Set the parameters for the underlying target Kalman Filters:
       RadarTargetCartesianKF::FilterParameters kf_params;
@@ -109,6 +112,10 @@ namespace ainstein_radar_filters
     std::vector<ainstein_radar_filters::RadarTargetCartesianKF> filters_;
     std::vector<ainstein_radar_msgs::RadarTargetArray> filter_targets_;
     std::vector<int> meas_count_vec_;
+
+    int pre_tracked_max_cnt_;
+	  int tracked_min_cnt_;
+	  int extended_max_cnt_;
   };
 
 } // namespace ainstein_radar_filters
