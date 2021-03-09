@@ -116,6 +116,8 @@ namespace ainstein_radar_filters
     int pre_tracked_max_cnt_;
 	  int tracked_min_cnt_;
 	  int extended_max_cnt_;
+
+    int max_number_of_filters;
   };
 
 } // namespace ainstein_radar_filters

@@ -48,6 +48,9 @@ namespace ainstein_radar_filters
         // Reserve space for the maximum number of target Kalman Filters:
         filters_.reserve( TrackingFilterCartesian::max_tracked_targets );
 
+        // Initialize the counter that keeps track of the max number of filters running at a time
+        max_number_of_filters = 0;
+
         // Launch the periodic filter update thread:
         filter_update_thread_ = std::unique_ptr<std::thread>( new std::thread( &TrackingFilterCartesian::updateFiltersLoop,
                                         this,
@@ -262,11 +265,6 @@ namespace ainstein_radar_filters
                                 [&]( const RadarTargetCartesianKF& kf )
                                     { return ( kf.get_status() == t_e_delete_track ); } ),
                             filters_.end() );
-
-            // filters_.erase( std::remove_if( filters_.begin(),
-            //                     filters_.end(),
-            //                     [&]( const RadarTargetCartesianKF& kf ){ return ( kf.getTimeSinceUpdate() > filter_timeout_ ); } ),
-            //         filters_.end() );
         }
         //ROS_DEBUG_STREAM( "Number of filters after pruning: " << filters_.size() << std::endl );
 
@@ -291,6 +289,12 @@ namespace ainstein_radar_filters
                 // Make sure to push back an empty array of targets associated with the new filter
                 filter_targets_.push_back( arr );
             }
+        }
+
+        if( filters_.size() > max_number_of_filters )
+        {
+            max_number_of_filters = filters_.size();
+            std::cout << "Max number of filters: " << max_number_of_filters << std::endl;
         }
         // Release lock on filter state
         mutex_.unlock();
