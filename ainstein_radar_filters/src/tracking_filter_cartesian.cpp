@@ -26,6 +26,8 @@
 
 #include "ainstein_radar_filters/tracking_filter_cartesian.h"
 
+#define MAX_TARGET_ID 254
+
 namespace ainstein_radar_filters
 {
     const int TrackingFilterCartesian::max_tracked_targets = 100;
@@ -49,7 +51,9 @@ namespace ainstein_radar_filters
         filters_.reserve( TrackingFilterCartesian::max_tracked_targets );
 
         // Initialize the counter that keeps track of the max number of filters running at a time
-        max_number_of_filters = 0;
+        max_number_of_filters_ = 0;
+
+        tid_counter_ = 0;
 
         // Launch the periodic filter update thread:
         filter_update_thread_ = std::unique_ptr<std::thread>( new std::thread( &TrackingFilterCartesian::updateFiltersLoop,
@@ -104,19 +108,16 @@ namespace ainstein_radar_filters
             msg_tracked_boxes_.boxes.clear();
             
             ainstein_radar_msgs::RadarTrackedObject obj;
-            int target_id = 0;
             for( int i = 0; i < filters_.size(); ++i )
             {
                 if( filters_.at(i).get_status() == t_e_tracked 
                     || filters_.at(i).get_status() == t_e_extended )
                 {
                     // Fill the tracked targets message:
-                    obj = filters_.at(i).getState().asObjMsg(target_id);
+                    obj = filters_.at(i).getState().asObjMsg( filters_.at(i).get_tid() );
                     msg_tracked_objects_.objects.push_back( obj );
 
                     // msg_tracked_boxes_.boxes.push_back( getBoundingBox( obj, filter_targets_.at( i ) ) );
-
-                    ++target_id;
                 }
             }
 
@@ -161,38 +162,46 @@ namespace ainstein_radar_filters
             targets.header.stamp = ros::Time::now();
             targets.header.frame_id = msg.header.frame_id;
         }
-        
-        // Pass the raw detections to the filters for updating:
+
+        // Prepare for new KFs for unused measurements:
+        ainstein_radar_msgs::RadarTargetArray arr;
+        arr.header.stamp = ros::Time::now();
+        arr.header.frame_id = msg.header.frame_id;
+
         for( int i = 0; i < filters_.size(); ++i )
         {
             // Form the state-dependent measurement Jacobian:
             filters_.at( i ).updateMeasJacobian( filters_.at( i ).getState() );
+        }
 
-            ROS_DEBUG_STREAM( "Filter " << i << " State: " << filters_.at( i ) );
-            
-            ROS_DEBUG_STREAM( "Filter " << i << " Meas Cov Inv: " << filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() << std::endl );
-            for( int j = 0; j < msg.targets.size(); ++j )
+        // Iterate through points as the outer loop - pushing back new KF's as we go
+        for( int j = 0; j < msg.targets.size(); ++j )
+        {
+            ainstein_radar_msgs::RadarTarget t = msg.targets.at( j );
+            if (t.range < min_range_)
             {
-                // Only use this target if it hasn't already been used by a filter:
-                if( meas_count_vec_.at( j ) == 0 )
+                ++meas_count_vec_.at( j ); /* mark this point as used; probably unnecessary */
+            }
+            else
+            {
+                for( int i = 0; i < filters_.size(); ++i )
                 {
                     // Check whether the target should be used as measurement by this filter:
-                    ainstein_radar_msgs::RadarTarget t = msg.targets.at( j );
                     Eigen::Vector4d z = filters_.at( i ).computePredMeas( filters_.at( i ).getState() );
+                    float vel_norm = filters_.at( i ).getState().vel.norm();
                     Eigen::Vector4d y = filters_.at( i ).computeMeas( t );
-                    
+
+                    // std::cout << "Pred meas: " << z << std::endl;
+
+
                     // Compute the normalized measurement error (squared):
                     double meas_err = ( y - z ).transpose() * filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() * ( y - z );
 
-                    ROS_DEBUG_STREAM( "Target " << j << " meas_err: " << meas_err );
-                    ROS_DEBUG_STREAM( "Target " << j << ": " << std::endl << t );
                     Eigen::Vector3d target_pos;
                     data_conversions::sphericalToCartesian( t.range,
                                         ( M_PI / 180.0 ) * t.azimuth,
                                         ( M_PI / 180.0 ) * t.elevation,
                                         target_pos );
-
-                    ROS_DEBUG_STREAM( "Target " << j << " pos: " << std::endl << target_pos );
                     
                     // Allow the measurement through the validation gate based on threshold:
                     if( meas_err < filter_val_gate_thresh_ )
@@ -202,10 +211,23 @@ namespace ainstein_radar_filters
 
                         // Store the target associated with the filter:
                         filter_targets_.at( i ).targets.push_back( t );
+                        break; // don't iterate through the rest of the filters if this point has already been associated
                     }
                 }
-            }
 
+                if( meas_count_vec_.at( j ) == 0 )
+                {
+                    // this point wasn't associated with any existing filter - instantiate a new filter based on it
+                    filters_.emplace_back( msg.targets.at( j ), nh_, nh_private_ );
+                    // Make sure to push back an empty array of targets associated with the new filter
+                    filter_targets_.push_back( arr );
+                }
+            }
+        }
+        
+        // Pass the raw detections to the filters for updating:
+        for( int i = 0; i < filters_.size(); ++i )
+        {
             // Update the filter's status (state machine)
             switch (filters_.at(i).get_status())
             {
@@ -216,6 +238,14 @@ namespace ainstein_radar_filters
                     filters_.at(i).inc_pretrack_targ_cnt();
                     if( filters_.at(i).get_pretrack_targ_cnt() >= tracked_min_cnt_ )
                     {
+                        tid_counter_++;
+                        filters_.at(i).set_tid(tid_counter_);
+                        
+                        if(tid_counter_ > MAX_TARGET_ID)
+                        {
+                            tid_counter_ = 0;
+                        }
+
                         filters_.at(i).set_status(t_e_tracked);
                     }
                 }
@@ -275,26 +305,10 @@ namespace ainstein_radar_filters
         }
         ROS_DEBUG_STREAM( std::endl );
 
-        // Iterate through targets and push back new KFs for unused measurements:
-        ainstein_radar_msgs::RadarTargetArray arr;
-        arr.header.stamp = ros::Time::now();
-        arr.header.frame_id = msg.header.frame_id;
-        for( int i = 0; i < meas_count_vec_.size(); ++i )
+        if( filters_.size() > max_number_of_filters_ )
         {
-            if( meas_count_vec_.at( i ) == 0 )
-            {
-                ROS_DEBUG_STREAM( "Pushing back: " << msg.targets.at( i ) << std::endl );
-                filters_.emplace_back( msg.targets.at( i ), nh_, nh_private_ );
-                ROS_DEBUG_STREAM( "New filter state: " << filters_.back().getState() );
-                // Make sure to push back an empty array of targets associated with the new filter
-                filter_targets_.push_back( arr );
-            }
-        }
-
-        if( filters_.size() > max_number_of_filters )
-        {
-            max_number_of_filters = filters_.size();
-            std::cout << "Max number of filters: " << max_number_of_filters << std::endl;
+            max_number_of_filters_ = filters_.size();
+            ROS_DEBUG_STREAM("Max number of filters: " << max_number_of_filters_ << std::endl );
         }
         // Release lock on filter state
         mutex_.unlock();

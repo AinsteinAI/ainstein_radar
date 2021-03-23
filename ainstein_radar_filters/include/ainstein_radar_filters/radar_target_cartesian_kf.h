@@ -246,6 +246,16 @@ namespace ainstein_radar_filters
       return ext_frame_cnt_;
     }
 
+    int get_tid(void)
+    {
+      return target_id_;
+    }
+
+    void set_tid(int tid)
+    {
+      target_id_ = tid;
+    }
+
     static void setFilterParameters( const FilterParameters& params );
       
   private:
@@ -271,6 +281,8 @@ namespace ainstein_radar_filters
     int pretrack_frame_cnt_;
     int ext_frame_cnt_;
     filter_status status_;
+
+    int target_id_; 
   };
 
 } // namespace ainstein_radar_filters

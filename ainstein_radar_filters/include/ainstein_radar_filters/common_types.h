@@ -32,7 +32,7 @@ enum filter_status
 	t_e_pre_tracked,
 	t_e_tracked,
 	t_e_extended,
-    t_e_delete_track
+    	t_e_delete_track
 };
 
 #endif /* SRC_COMMON_TYPES_H_ */

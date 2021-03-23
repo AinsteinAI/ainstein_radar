@@ -38,6 +38,7 @@ namespace ainstein_radar_filters
     {
       // Copy the new parameter values:
       filter_update_rate_ = config.filter_update_rate;
+      min_range_ = config.min_range;
       filter_val_gate_thresh_ = config.filter_val_gate_thresh;
       pre_tracked_max_cnt_ = config.pre_tracked_max_cnt;
 	    tracked_min_cnt_ = config.tracked_min_cnt;
@@ -93,6 +94,7 @@ namespace ainstein_radar_filters
     // Parameters:
     dynamic_reconfigure::Server<ainstein_radar_filters::TrackingFilterCartesianConfig> dyn_config_server_;
     double filter_update_rate_;
+    double min_range_;
     double filter_min_time_;
     double filter_timeout_;
     double filter_val_gate_thresh_;
@@ -114,10 +116,12 @@ namespace ainstein_radar_filters
     std::vector<int> meas_count_vec_;
 
     int pre_tracked_max_cnt_;
-	  int tracked_min_cnt_;
-	  int extended_max_cnt_;
+    int tracked_min_cnt_;
+    int extended_max_cnt_;
 
-    int max_number_of_filters;
+    int max_number_of_filters_;
+
+    int tid_counter_;
   };
 
 } // namespace ainstein_radar_filters
