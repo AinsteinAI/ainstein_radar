@@ -41,7 +41,7 @@
 namespace ainstein_radar_drivers
 {
 
-	const ros::Duration t_raw_timeout = ros::Duration(0.4);
+	const ros::Duration t_gnd_timeout = ros::Duration(0.4);
 
 RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 					    ros::NodeHandle node_handle_private ) :
@@ -181,24 +181,6 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
-
-		// Publish an empty raw frame if sufficient time has passed since a real one was received
-		// This clears the rviz display if no points are detected and the radar is running
-		if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
-		{
-		  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-		  radar_data_msg_ptr_raw_->targets.clear();
-		  
-		  // Publish the raw target data:
-		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-			
-		  // Optionally publish raw detections as ROS point cloud:
-		  if( publish_raw_cloud_ )
-		    {
-		      ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-		      pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-		    } 
-		}
 	    }
 
 	  if( bounding_boxes.size() > 0 )
@@ -252,27 +234,9 @@ void RadarInterfaceO79UDP::mainLoop(void)
 					}		      
 			}
 
-	      // Publish an empty raw frame if sufficient time has passed since a real one was received
-	      // This clears the rviz display if no points are detected and the radar is running
-	      if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
-			{
-				radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-				radar_data_msg_ptr_raw_->targets.clear();
-
-				// Publish the raw target data:
-				pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-
-				// Optionally publish raw detections as ROS point cloud:
-				if( publish_raw_cloud_ )
-					{
-					ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-					pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-					}		  
-			}
-
-			// Publish an empty ground frame if sufficient time has passed since a real one was received
-	      // This clears the rviz display if no points are detected and the radar is running
-	      if ( (ros::Time::now() - radar_data_msg_ptr_ground_->header.stamp ) > t_raw_timeout )
+		  // Publish an empty ground frame if sufficient time has passed since a real one was received
+	      // This clears the rviz display if no ground targets are detected and the radar is running
+	      if ( (ros::Time::now() - radar_data_msg_ptr_ground_->header.stamp ) > t_gnd_timeout )
 			{
 				radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
 				radar_data_msg_ptr_ground_->objects.clear();

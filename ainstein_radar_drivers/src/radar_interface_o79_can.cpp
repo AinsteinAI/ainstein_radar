@@ -70,7 +70,7 @@ namespace ainstein_radar_drivers
   int targets_to_come = -1;
   unsigned int targets_received = 0;
   int target_type = -1;
-  const ros::Duration t_raw_timeout = ros::Duration(0.4);
+
   /* declare the Cartesian targets as global because each one spans two messages */
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_cart;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
@@ -211,13 +211,9 @@ namespace ainstein_radar_drivers
 
         if( targets_received == targets_to_come )
           {
-            if( ( target_type == 0 ) || ( ( ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout ) )
+            if( target_type == 0 )
               {
-                // if we get a tracked frame, and it's been a while since we got a
-                // raw frame, publish an empty raw frame to clear the display
-                radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
                 pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-                radar_data_msg_ptr_raw_->targets.clear(); // clear the targets after sending so we can send an empty frame later
               }
             else if( target_type == 1 )
               {
