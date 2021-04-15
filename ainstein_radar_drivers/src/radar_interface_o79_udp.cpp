@@ -41,7 +41,7 @@
 namespace ainstein_radar_drivers
 {
 
-	const ros::Duration t_raw_timeout = ros::Duration(0.4);
+	const ros::Duration t_gnd_timeout = ros::Duration(0.4);
 
 RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 					    ros::NodeHandle node_handle_private ) :
@@ -49,6 +49,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
+  radar_data_msg_ptr_ground_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
   cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
@@ -76,6 +77,7 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_ground_->header.frame_id = frame_id_;
   msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
 
   // Publish the RadarInfo message:
@@ -90,6 +92,9 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Advertise the O79 tracked targets data:
   pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTrackedObjectArray>( "objects", 10 );
+
+    // Advertise the O79 ground data:
+  pub_radar_data_ground_ = nh_private_.advertise<ainstein_radar_msgs::RadarTrackedObjectArray>( "ground", 10 );
   
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
@@ -123,11 +128,12 @@ void RadarInterfaceO79UDP::mainLoop(void)
   std::vector<ainstein_radar_drivers::RadarTarget> targets_tracked;
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
+  std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_ground_cart;
 
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart ) == false )
+      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart, targets_ground_cart) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
@@ -175,24 +181,6 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
-
-		// Publish an empty raw frame if sufficient time has passed since a real one was received
-		// This clears the rviz display if no points are detected and the radar is running
-		if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
-		{
-		  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-		  radar_data_msg_ptr_raw_->targets.clear();
-		  
-		  // Publish the raw target data:
-		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-			
-		  // Optionally publish raw detections as ROS point cloud:
-		  if( publish_raw_cloud_ )
-		    {
-		      ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-		      pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-		    } 
-		}
 	    }
 
 	  if( bounding_boxes.size() > 0 )
@@ -220,52 +208,82 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      ainstein_radar_msgs::RadarTrackedObject obj_msg;
 	      for( const auto &t : targets_tracked_cart )
-		{
-		  if( t.id >= 0)
-		    {
-		      // Only populate the values if there's a valid tid, otherwise the intent is to publish an empty frame to clear the display
+			{
+				if( t.id >= 0)
+					{
+					// Only populate the values if there's a valid tid, otherwise the intent is to publish an empty frame to clear the display
 
-		      // Pass the target ID through to the object ID:
-		      obj_msg.id = t.id;
-		  
-		      // Fill in the pose information:
-		      obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+					// Pass the target ID through to the object ID:
+					obj_msg.id = t.id;
+				
+					// Fill in the pose information:
+					obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
 
-		      // Fill in the velocity information:
-		      obj_msg.velocity.linear.x = t.vel.x();
-		      obj_msg.velocity.linear.y = t.vel.y();
-		      obj_msg.velocity.linear.z = t.vel.z();
+					// Fill in the velocity information:
+					obj_msg.velocity.linear.x = t.vel.x();
+					obj_msg.velocity.linear.y = t.vel.y();
+					obj_msg.velocity.linear.z = t.vel.z();
 
-		      // Fill in dummy bounding box information:
-		      obj_msg.box.pose = obj_msg.pose;
-		      obj_msg.box.dimensions.x = 0.01;
-		      obj_msg.box.dimensions.y = 0.01;
-		      obj_msg.box.dimensions.z = 0.01;
+					// Fill in dummy bounding box information:
+					obj_msg.box.pose = obj_msg.pose;
+					obj_msg.box.dimensions.x = 0.01;
+					obj_msg.box.dimensions.y = 0.01;
+					obj_msg.box.dimensions.z = 0.01;
 
-		      radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
-		    }		      
-		}
+					radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
+					}		      
+			}
 
-	      // Publish an empty raw frame if sufficient time has passed since a real one was received
-	      // This clears the rviz display if no points are detected and the radar is running
-	      if ( (ros::Time::now() - radar_data_msg_ptr_raw_->header.stamp ) > t_raw_timeout )
-		{
-		  radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
-		  radar_data_msg_ptr_raw_->targets.clear();
+		  // Publish an empty ground frame if sufficient time has passed since a real one was received
+	      // This clears the rviz display if no ground targets are detected and the radar is running
+	      if ( (ros::Time::now() - radar_data_msg_ptr_ground_->header.stamp ) > t_gnd_timeout )
+			{
+				radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
+				radar_data_msg_ptr_ground_->objects.clear();
 
-		  // Publish the raw target data:
-		  pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-
-		  // Optionally publish raw detections as ROS point cloud:
-		  if( publish_raw_cloud_ )
-		    {
-		      ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-		      pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-		    }		  
-		}
+				// Publish the ground target data:
+				pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );	  
+			}
 
 	      // Publish the tracked target data:
 	      pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+	    }
+
+	  if( targets_ground_cart.size() > 0 )
+	    {
+	      // Fill in the RadarTrackedObjectArray message from the received ground targets
+	      radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_ground_->objects.clear();
+
+	      ainstein_radar_msgs::RadarTrackedObject obj_msg;
+	      for( const auto &t : targets_ground_cart )
+		    {
+				if( t.id >= 0)
+				  {
+					// Only populate the values if there's a valid tid, otherwise the intent is to publish an empty frame to clear the display
+
+					// Pass the target ID through to the object ID:
+					obj_msg.id = t.id;
+				
+					// Fill in the pose information:
+					obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+
+					// Fill in the velocity information:
+					obj_msg.velocity.linear.x = t.vel.x();
+					obj_msg.velocity.linear.y = t.vel.y();
+					obj_msg.velocity.linear.z = t.vel.z();
+
+					// Fill in dummy bounding box information:
+					obj_msg.box.pose = obj_msg.pose;
+					obj_msg.box.dimensions.x = 0.01;
+					obj_msg.box.dimensions.y = 0.01;
+					obj_msg.box.dimensions.z = 0.01;
+
+					radar_data_msg_ptr_ground_->objects.push_back( obj_msg );
+				  }		      
+		    }
+	      // Publish the ground target data:
+	      pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );
 	    }
 	}
 

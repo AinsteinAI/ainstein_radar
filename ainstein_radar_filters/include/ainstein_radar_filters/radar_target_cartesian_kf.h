@@ -6,6 +6,8 @@
 
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_msgs/RadarTarget.h>
+#include <ainstein_radar_msgs/RadarTrackedObject.h>
+#include <ainstein_radar_filters/common_types.h>
 
 #define Q_VEL_STDEV 5.0
 
@@ -105,6 +107,24 @@ namespace ainstein_radar_filters
 	
 	return pose_msg;
       }
+
+    ainstein_radar_msgs::RadarTrackedObject asObjMsg( int t_id ) const
+    {
+      ainstein_radar_msgs::RadarTrackedObject obj;
+      obj.id = t_id;
+      obj.pose = ainstein_radar_filters::data_conversions::posVelToPose(pos, vel);
+      obj.velocity.linear.x = vel.x();
+      obj.velocity.linear.y = vel.y();
+      obj.velocity.linear.z = vel.z();
+
+      // Fill in dummy bounding box information
+      obj.box.pose = obj.pose;
+      obj.box.dimensions.x = 0.01;
+      obj.box.dimensions.y = 0.01;
+      obj.box.dimensions.z = 0.01;
+
+      return obj;
+    }
     };
 
   public:
@@ -181,6 +201,61 @@ namespace ainstein_radar_filters
       return ( ros::Time::now() - time_last_update_ ).toSec();
     }
 
+    void inc_pretrack_targ_cnt (void)
+    {
+      pretrack_targ_cnt_++;
+    }
+
+    void inc_pretrack_frame_cnt (void)
+    {
+      pretrack_frame_cnt_++;
+    }
+
+    void inc_ext_frame_cnt (void)
+    {
+      ext_frame_cnt_++;
+    }
+
+    void reset_ext_frame_cnt (void)
+    {
+      ext_frame_cnt_ = 1; /* start at 1 so the first frame without any targets is part of the extension */
+    }
+
+    void set_status(filter_status status)
+    {
+      status_ = status;
+    }
+
+    filter_status get_status(void) const
+    {
+      return status_;
+    }
+
+    int get_pretrack_targ_cnt (void)
+    {
+      return pretrack_targ_cnt_;
+    }
+
+    int get_pretrack_frame_cnt (void)
+    {
+      return pretrack_frame_cnt_;
+    }
+
+    int get_ext_frame_cnt (void)
+    {
+      return ext_frame_cnt_;
+    }
+
+    int get_tid(void)
+    {
+      return target_id_;
+    }
+
+    void set_tid(int tid)
+    {
+      target_id_ = tid;
+    }
+
     static void setFilterParameters( const FilterParameters& params );
       
   private:
@@ -201,6 +276,13 @@ namespace ainstein_radar_filters
     static Eigen::Matrix<double, 4, 4> R_;
 
     static Eigen::Matrix<double, 6, 6> P_init_;
+
+    int pretrack_targ_cnt_;
+    int pretrack_frame_cnt_;
+    int ext_frame_cnt_;
+    filter_status status_;
+
+    int target_id_; 
   };
 
 } // namespace ainstein_radar_filters

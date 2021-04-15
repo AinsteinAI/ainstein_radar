@@ -24,7 +24,8 @@ namespace ainstein_radar_drivers
     bool receiveTargets( std::vector<ainstein_radar_drivers::RadarTarget> &targets,
 			 std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
 			 std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
-			 std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart );
+			 std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart,
+        std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart);
 
     static const std::string connect_cmd_str;
     static const unsigned int connect_res_len;
@@ -43,6 +44,7 @@ namespace ainstein_radar_drivers
     static const unsigned int msg_id_tracked_targets;
     static const unsigned int msg_id_bounding_boxes;
     static const unsigned int msg_id_tracked_targets_cart;
+    static const unsigned int msg_id_ground_targets_cart;
 
     static const double msg_range_res;
     static const double msg_speed_res;

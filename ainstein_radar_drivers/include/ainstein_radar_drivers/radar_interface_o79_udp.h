@@ -75,12 +75,14 @@ private:
   ros::NodeHandle nh_private_;
   ros::Publisher pub_radar_data_raw_;
   ros::Publisher pub_radar_data_tracked_;
+  ros::Publisher pub_radar_data_ground_;
   ros::Publisher pub_cloud_raw_;
   ros::Publisher pub_bounding_boxes_;
   ros::Publisher pub_radar_info_;
 
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_tracked_;
+  boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_ground_;
   boost::shared_ptr<ainstein_radar_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
   boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_raw_;
   boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;

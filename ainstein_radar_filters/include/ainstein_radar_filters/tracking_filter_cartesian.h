@@ -7,7 +7,8 @@
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/radar_target_cartesian_kf.h>
 #include <ainstein_radar_filters/TrackingFilterCartesianConfig.h>
-#include <ainstein_radar_msgs/RadarTargetArray.h>
+#include <ainstein_radar_filters/common_types.h>
+#include <ainstein_radar_msgs/RadarTrackedObjectArray.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
 #include <ainstein_radar_msgs/BoundingBoxArray.h>
@@ -37,9 +38,12 @@ namespace ainstein_radar_filters
     {
       // Copy the new parameter values:
       filter_update_rate_ = config.filter_update_rate;
-      filter_min_time_ = config.filter_min_time;
-      filter_timeout_ = config.filter_timeout;
+      min_range_ = config.min_range;
       filter_val_gate_thresh_ = config.filter_val_gate_thresh;
+      pre_tracked_max_cnt_ = config.pre_tracked_max_cnt;
+	    tracked_min_cnt_ = config.tracked_min_cnt;
+	    extended_max_cnt_ = config.ext_max_cnt;
+
 
       // Set the parameters for the underlying target Kalman Filters:
       RadarTargetCartesianKF::FilterParameters kf_params;
@@ -90,6 +94,7 @@ namespace ainstein_radar_filters
     // Parameters:
     dynamic_reconfigure::Server<ainstein_radar_filters::TrackingFilterCartesianConfig> dyn_config_server_;
     double filter_update_rate_;
+    double min_range_;
     double filter_min_time_;
     double filter_timeout_;
     double filter_val_gate_thresh_;
@@ -100,9 +105,7 @@ namespace ainstein_radar_filters
     ros::Publisher pub_poses_tracked_;
     ros::Publisher pub_bounding_boxes_;
     
-    ainstein_radar_msgs::RadarTargetArray msg_tracked_targets_;
-    geometry_msgs::PoseArray msg_tracked_poses_;
-    std::vector<ainstein_radar_msgs::RadarTargetArray> msg_tracked_clusters_;
+    ainstein_radar_msgs::RadarTrackedObjectArray msg_tracked_objects_;
     ainstein_radar_msgs::BoundingBoxArray msg_tracked_boxes_;
 
     std::unique_ptr<std::thread> filter_update_thread_;
@@ -111,6 +114,14 @@ namespace ainstein_radar_filters
     std::vector<ainstein_radar_filters::RadarTargetCartesianKF> filters_;
     std::vector<ainstein_radar_msgs::RadarTargetArray> filter_targets_;
     std::vector<int> meas_count_vec_;
+
+    int pre_tracked_max_cnt_;
+    int tracked_min_cnt_;
+    int extended_max_cnt_;
+
+    int max_number_of_filters_;
+
+    int tid_counter_;
   };
 
 } // namespace ainstein_radar_filters
