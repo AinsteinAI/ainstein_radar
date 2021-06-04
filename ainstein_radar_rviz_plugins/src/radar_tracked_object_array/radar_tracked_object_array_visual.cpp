@@ -101,6 +101,25 @@ void RadarTrackedObjectArrayVisual::setMessage( const ainstein_radar_msgs::Radar
                         obj.pose.orientation.y,
                         obj.pose.orientation.z ) );
 
+    radar_tracked_object_visuals_.back().pos.setScale( Ogre::Vector3( scale_, scale_, scale_ ) );
+    
+    // If display alert is true and the object is within the specified area,
+    // then scale it for visual effect:
+    if( display_alert_ )
+    {
+      // Convert from Cartesian to spherical coordinates:
+      double range = std::sqrt( std::pow( obj.pose.position.x, 2.0 ) +
+			 std::pow( obj.pose.position.y, 2.0 ) +
+			 std::pow( obj.pose.position.z, 2.0 ) );
+      double azimuth = std::atan2( obj.pose.position.y, obj.pose.position.x );
+      double elevation = std::asin( obj.pose.position.z / range );
+ 
+      if( range <= alert_range_max_ )
+      {
+        radar_tracked_object_visuals_.back().pos.setScale( Ogre::Vector3( alert_scale_, alert_scale_, alert_scale_ ) );
+      }
+    }
+
     // Define the velocity visual:
     double speed = std::sqrt( std::pow( obj.velocity.linear.x, 2.0 ) +
 			      std::pow( obj.velocity.linear.y, 2.0 ) +
@@ -210,10 +229,34 @@ void RadarTrackedObjectArrayVisual::setColor( int color_method, float r, float g
 // Scale is passed through to the Shape object.
 void RadarTrackedObjectArrayVisual::setScale( float scale )
 {
+  scale_ = scale;
   for( auto& v : radar_tracked_object_visuals_ )
     {
-      v.pos.setScale( Ogre::Vector3( scale, scale, scale ) );
+      v.pos.setScale( Ogre::Vector3( scale_, scale_, scale_ ) );
     }
+}
+
+void RadarTrackedObjectArrayVisual::setDisplayAlert( bool display_alert )
+{
+  display_alert_ = display_alert;
+}
+
+void RadarTrackedObjectArrayVisual::setAlertScale( float alert_scale )
+{
+  alert_scale_ = alert_scale;
+
+  if( display_alert_ )
+  {
+    for( auto& v : radar_tracked_object_visuals_ )
+      {
+        v.pos.setScale( Ogre::Vector3( alert_scale_, alert_scale_, alert_scale_ ) );
+      }
+  }
+}
+
+void RadarTrackedObjectArrayVisual::setAlertRangeMax( float alert_range_max )
+{
+  alert_range_max_ = alert_range_max;
 }
 
 } // namespace ainstein_radar_rviz_plugins

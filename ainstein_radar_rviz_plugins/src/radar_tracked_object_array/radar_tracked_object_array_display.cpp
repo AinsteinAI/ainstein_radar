@@ -55,7 +55,26 @@ namespace ainstein_radar_rviz_plugins
 							  this, SLOT( updateColorAndAlpha() ) ) );    
     color_method_property_->addOptionStd( "Flat", RadarTrackedObjectArrayDisplay::COLOR_METHOD_FLAT );
     color_method_property_->addOptionStd( "Object ID", RadarTrackedObjectArrayDisplay::COLOR_METHOD_OBJECT_ID );
-    
+
+    // Determines whether to alert the user when objects cross within the defined area:
+    display_alert_property_.reset( new rviz::BoolProperty( "Display Alert", false,
+							   "Toggles display of object alert for defined area.",
+							   this, SLOT( updateDisplayAlert() ) ) );
+
+    display_alert_options_property_.reset( new rviz::Property( "Alert Options", QVariant(),
+				    "Display alert options.",
+				    this, 0 ) );
+
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Alert Scale", 1.0,
+						  "Object scale to be used when alert is active.",
+						  this, SLOT( updateAlertScale() ) ) );
+
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Max Range", 2.0,
+						  "Maximum range of alert area.",
+						  this, SLOT( updateAlertRangeMax() ) ) );
+
+    display_alert_options_property_->hide();
+        
     alpha_property_.reset( new rviz::FloatProperty( "Alpha", 1.0,
 						    "Object opacity. 0 is fully transparent, 1 is fully opaque.",
 						    this, SLOT( updateColorAndAlpha() ) ) );    
@@ -85,7 +104,12 @@ void RadarTrackedObjectArrayDisplay::onInitialize()
   // Create the RadarTrackedObjectArray visual:
   visual_.reset( new RadarTrackedObjectArrayVisual( context_->getSceneManager(), scene_node_ ) );
 
+  // Initialize display options:
   updateObjectShape();
+  updateScale();
+  updateDisplayAlert();
+  updateAlertScale();
+  updateAlertRangeMax();
 }
 
 // Clear the visuals by deleting their objects.
@@ -94,7 +118,41 @@ void RadarTrackedObjectArrayDisplay::reset()
   MFDClass::reset();
 }
 
-  // Set the current color and alpha values for each visual.
+  // Show options specific to display alert when enabled.
+void RadarTrackedObjectArrayDisplay::updateDisplayAlert()
+{
+  visual_->setDisplayAlert( display_alert_property_->getBool() );
+
+  if( display_alert_property_->getBool() )
+  {
+    display_alert_options_property_->show();
+    display_alert_options_property_->expand();
+  }
+  else
+  {
+    display_alert_options_property_->hide();
+  }
+}
+
+// Set the alert scale value for each visual.
+void RadarTrackedObjectArrayDisplay::updateAlertScale()
+{
+  // Set targets scale:
+  float scale = static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Alert Scale" ) )->getFloat();
+  
+  visual_->setAlertScale( scale );
+}
+
+// Set the alert area maximum range.
+void RadarTrackedObjectArrayDisplay::updateAlertRangeMax()
+{
+  // Set targets scale:
+  float range_max = static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Range" ) )->getFloat();
+  
+  visual_->setAlertRangeMax( range_max );
+}
+
+// Set the current color and alpha values for each visual.
 void RadarTrackedObjectArrayDisplay::updateColorAndAlpha()
 {
   // Set targets color and alpha:
@@ -154,9 +212,6 @@ void RadarTrackedObjectArrayDisplay::processMessage( const ainstein_radar_msgs::
   color = color_property_->getOgreColor();
   color_method = color_method_property_->getOptionInt();
   visual_->setColor( color_method, color.r, color.g, color.b, alpha );
-
-  scale = scale_property_->getFloat();
-  visual_->setScale( scale );
 
   shape = shape_property_->getOptionInt();
   visual_->setObjectShape( shape );

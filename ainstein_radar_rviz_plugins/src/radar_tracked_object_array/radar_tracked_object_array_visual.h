@@ -34,7 +34,12 @@ public:
   {
     obj_shape_type_ = static_cast<rviz::Shape::Type>( type );
   }
-    
+
+  // Set whether to display an alert when the object is within a specified area:
+  void setDisplayAlert( bool display_alert );
+  void setAlertScale( float alert_scale );
+  void setAlertRangeMax( float alert_range_max );
+
   static const int max_radar_tracked_object_visuals;
   
 private:
@@ -47,6 +52,14 @@ private:
 
   // Shape to use for position rendering:
   rviz::Shape::Type obj_shape_type_;
+
+  // Nominal tracked object shape scale (size):
+  float scale_;
+
+  // Determined whether to display the object alert:
+  bool display_alert_;
+  float alert_scale_;
+  float alert_range_max_;
 };
  
 } // namespace ainstein_radar_rviz_plugins

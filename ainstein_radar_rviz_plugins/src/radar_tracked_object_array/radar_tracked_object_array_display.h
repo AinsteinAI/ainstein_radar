@@ -50,6 +50,9 @@ namespace ainstein_radar_rviz_plugins
 
     // These Qt slots get connected to signals indicating changes in the user-editable properties.
     private Q_SLOTS:
+      void updateDisplayAlert();
+      void updateAlertScale();
+      void updateAlertRangeMax();
       void updateColorAndAlpha();
       void updateScale();
       void updateObjectShape();
@@ -64,6 +67,8 @@ namespace ainstein_radar_rviz_plugins
       // User-editable property variables.
       std::unique_ptr<rviz::ColorProperty> color_property_;
       std::unique_ptr<rviz::EnumProperty> color_method_property_;
+      std::unique_ptr<rviz::BoolProperty> display_alert_property_;
+      std::unique_ptr<rviz::Property> display_alert_options_property_;
       std::unique_ptr<rviz::FloatProperty> alpha_property_;
       std::unique_ptr<rviz::FloatProperty> scale_property_;
       std::unique_ptr<rviz::EnumProperty> shape_property_;
