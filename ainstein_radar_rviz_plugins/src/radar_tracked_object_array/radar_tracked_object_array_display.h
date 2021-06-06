@@ -52,7 +52,10 @@ namespace ainstein_radar_rviz_plugins
     private Q_SLOTS:
       void updateDisplayAlert();
       void updateAlertScale();
+      void updateAlertRangeMin();
       void updateAlertRangeMax();
+      void updateAlertElevMin();
+      void updateAlertElevMax();
       void updateColorAndAlpha();
       void updateScale();
       void updateObjectShape();
