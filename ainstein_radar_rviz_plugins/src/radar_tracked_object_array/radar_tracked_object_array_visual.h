@@ -38,7 +38,10 @@ public:
   // Set whether to display an alert when the object is within a specified area:
   void setDisplayAlert( bool display_alert );
   void setAlertScale( float alert_scale );
+  void setAlertRangeMin( float alert_range_min );
   void setAlertRangeMax( float alert_range_max );
+  void setAlertElevMin( float alert_elev_min );
+  void setAlertElevMax( float alert_elev_max );
 
   static const int max_radar_tracked_object_visuals;
   
@@ -59,7 +62,10 @@ private:
   // Determined whether to display the object alert:
   bool display_alert_;
   float alert_scale_;
+  float alert_range_min_;
   float alert_range_max_;
+  float alert_elev_min_;
+  float alert_elev_max_;
 };
  
 } // namespace ainstein_radar_rviz_plugins

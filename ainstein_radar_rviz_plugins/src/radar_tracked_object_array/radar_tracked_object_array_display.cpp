@@ -69,9 +69,21 @@ namespace ainstein_radar_rviz_plugins
 						  "Object scale to be used when alert is active.",
 						  this, SLOT( updateAlertScale() ) ) );
 
-    display_alert_options_property_->addChild( new rviz::FloatProperty( "Max Range", 2.0,
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Min Range", 0.0,
+						  "Minimum range of alert area.",
+						  this, SLOT( updateAlertRangeMin() ) ) );
+
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Max Range", 100.0,
 						  "Maximum range of alert area.",
 						  this, SLOT( updateAlertRangeMax() ) ) );
+
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Min Elevation", -90.0,
+						  "Minimum elevation of alert area.",
+						  this, SLOT( updateAlertElevMin() ) ) );
+
+    display_alert_options_property_->addChild( new rviz::FloatProperty( "Max Elevation", 90.0,
+						  "Maximum elevation of alert area.",
+						  this, SLOT( updateAlertElevMax() ) ) );
 
     display_alert_options_property_->hide();
         
@@ -109,7 +121,10 @@ void RadarTrackedObjectArrayDisplay::onInitialize()
   updateScale();
   updateDisplayAlert();
   updateAlertScale();
+  updateAlertRangeMin();
   updateAlertRangeMax();
+  updateAlertElevMin();
+  updateAlertElevMax();
 }
 
 // Clear the visuals by deleting their objects.
@@ -143,13 +158,49 @@ void RadarTrackedObjectArrayDisplay::updateAlertScale()
   visual_->setAlertScale( scale );
 }
 
+// Set the alert area minimum range.
+void RadarTrackedObjectArrayDisplay::updateAlertRangeMin()
+{
+  // Set min range, checking that it is no greater than the current max range:
+  float range_min = std::min( static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Min Range" ) )->getFloat(),
+			      static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Range" ) )->getFloat() );
+  display_alert_options_property_->subProp( "Min Range" )->setValue( range_min );
+
+  visual_->setAlertRangeMin( range_min );
+}
+
+  
 // Set the alert area maximum range.
 void RadarTrackedObjectArrayDisplay::updateAlertRangeMax()
 {
-  // Set targets scale:
-  float range_max = static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Range" ) )->getFloat();
+  // Set max range, checking that it is no less than the current min range:
+  float range_max = std::max( static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Min Range" ) )->getFloat(),
+			      static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Range" ) )->getFloat() );
+  display_alert_options_property_->subProp( "Max Range" )->setValue( range_max );
   
   visual_->setAlertRangeMax( range_max );
+}
+
+// Set the alert area minimum elevation.
+void RadarTrackedObjectArrayDisplay::updateAlertElevMin()
+{
+  // Set min elevation, checking that it is no greater than the current max elevation:
+  float elev_min = std::min( static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Min Elevation" ) )->getFloat(),
+			     static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Elevation" ) )->getFloat() );
+  display_alert_options_property_->subProp( "Min Elevation" )->setValue( elev_min );
+  
+  visual_->setAlertElevMin( elev_min );
+}
+
+// Set the alert area maximum elevation.
+void RadarTrackedObjectArrayDisplay::updateAlertElevMax()
+{
+  // Set max elevation, checking that it is no less than the current min elevation:
+  float elev_max = std::max( static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Min Elevation" ) )->getFloat(),
+			     static_cast<rviz::FloatProperty*>( display_alert_options_property_->subProp( "Max Elevation" ) )->getFloat() );
+  display_alert_options_property_->subProp( "Max Elevation" )->setValue( elev_max );
+    
+  visual_->setAlertElevMax( elev_max );
 }
 
 // Set the current color and alpha values for each visual.
