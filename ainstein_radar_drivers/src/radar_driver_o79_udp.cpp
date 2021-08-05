@@ -61,6 +61,7 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 0x02;
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 0x04;
   const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 0x05;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 0x06;
 
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
@@ -210,165 +211,190 @@ namespace ainstein_radar_drivers
     msg_len = recvfrom( sockfd_, ( char* )buffer_, RadarDriverO79UDP::max_msg_len, MSG_WAITALL, ( struct sockaddr *)( &src_addr ), &src_addr_len );
 
     if( msg_len < 0 )
-      {
-	std::cout << "Failed to read data: " << std::strerror( errno ) << std::endl;
-	return false;
-      }
+    {
+      std::cout << "Failed to read data: " << std::strerror( errno ) << std::endl;
+      return false;
+    }
     else
+    {
+      // Extract the sender's IP address:
+      struct sockaddr_in* sin = ( struct sockaddr_in* )&src_addr;
+      unsigned char* src_ip = ( unsigned char* )( &sin->sin_addr.s_addr );
+      // printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
+
+      // Compute length of actual data for checking payload size:
+      msg_data_len = msg_len - RadarDriverO79UDP::msg_header_len;
+
+      // Extract the target ID and data from the message:
+      int offset;
+      ainstein_radar_drivers::RadarTarget target;
+      ainstein_radar_drivers::BoundingBox box;
+      ainstein_radar_drivers::RadarTargetCartesian target_cart;
+      ainstein_radar_drivers::RadarTargetCartesian target_cart_ground;
+
+      // Check the first byte for the message type ID:
+      if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets )
       {
-	// Extract the sender's IP address:
-	struct sockaddr_in* sin = ( struct sockaddr_in* )&src_addr;
-	unsigned char* src_ip = ( unsigned char* )( &sin->sin_addr.s_addr );
-	// printf("source IP: %d.%d.%d.%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3]);
+        // Check data is a valid length:
+        if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets ) != 0 )
+        {
+            std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+            return false;
+        }
+        else
+        {
+          for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_tracked_targets ); ++i )
+          {
+            // Offset per target includes header
+            offset = i * RadarDriverO79UDP::msg_len_tracked_targets + RadarDriverO79UDP::msg_header_len;
 
-	// Compute length of actual data for checking payload size:
-	msg_data_len = msg_len - RadarDriverO79UDP::msg_header_len;
+            target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+            target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
 
-	// Extract the target ID and data from the message:
-	int offset;
-	ainstein_radar_drivers::RadarTarget target;
-	ainstein_radar_drivers::BoundingBox box;
-	ainstein_radar_drivers::RadarTargetCartesian target_cart;
-  ainstein_radar_drivers::RadarTargetCartesian target_cart_ground;
+            targets_tracked.push_back( target );
+          }
+          if( targets_tracked.size() == 0 )
+          {
+            // no targets were received; push back some dummy data so that an
+            // empty target frame will be sent
+            target.id = -1;
+            targets_tracked.push_back( target );
+          }
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets )
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
 
-	// Check the first byte for the message type ID:
-	if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets )
-	  {
-	    // Check data is a valid length:
-	    if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets ) != 0 )
-	      {
-		std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
-		return false;
-	      }
-	    else
-	      {
-		for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_tracked_targets ); ++i )
-		  {
-		    // Offset per target includes header
-		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets + RadarDriverO79UDP::msg_header_len;
+            target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+            target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
 
-        target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
-        target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
-        target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
-                                                                               static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
-        target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
-                                                                               static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
-        target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
-        target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
-
-		    targets_tracked.push_back( target );
-		  }
-        if( targets_tracked.size() == 0 )
+            targets.push_back( target );
+        }
+        if( targets.size() == 0 )
         {
           // no targets were received; push back some dummy data so that an
           // empty target frame will be sent
           target.id = -1;
-          targets_tracked.push_back( target );
+          targets.push_back( target );
         }
-	      }
-	  }
-	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets )
-	  {
-	    for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
-	      {
-		offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
-
-    target.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
-    target.snr = static_cast<double>( static_cast<uint8_t>( buffer_[offset + 1] ) );
-    target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
-                                                                           static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
-    target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
-                                                                           static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
-    target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
-    target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
-
-		targets.push_back( target );
-	      }
-      if( targets.size() == 0 )
-      {
-        // no targets were received; push back some dummy data so that an
-        // empty target frame will be sent
-        target.id = -1;
-        targets.push_back( target );
       }
-	  }
-	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_bounding_boxes )
-	  {
-	    for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_bounding_boxes ); ++i )
-	      {
-		offset = i * RadarDriverO79UDP::msg_len_bounding_boxes + RadarDriverO79UDP::msg_header_len;
-
-		// Compute box pose (identity orientation, geometric center is position):
-		box.pose.linear() = Eigen::Matrix3d::Identity();
-		box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
-												         static_cast<int16_t>( buffer_[offset + 1] & 0xff ) );
-		box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
-                                 static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );
-		box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
-                                 static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
-
-		box.dimensions.x() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 6] ) );
-		box.dimensions.y() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 7] ) );
-		box.dimensions.z() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 8] ) );
-
-		bounding_boxes.push_back( box );
-	      }
-	  }
-	else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets_cart )
-	  {
-	    // Check data is a valid length:
-	    if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets_cart ) != 0 )
-	      {
-		std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
-		return false;
-	      }
-	    else
-	      {
-		for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_tracked_targets_cart ); ++i )
-		  {
-		    // Offset per target includes header
-		    offset = i * RadarDriverO79UDP::msg_len_tracked_targets_cart + RadarDriverO79UDP::msg_header_len;
-
-        target_cart.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
-
-		    target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 2] & 0xff ) );
-		    target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
-		    target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 6] & 0xff ) );
-
-		    target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) |
-												      static_cast<int16_t>( buffer_[offset + 8] & 0xff ) );
-		    target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) |
-                              static_cast<int16_t>( buffer_[offset + 10] & 0xff ) );
-		    target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) |
-                              static_cast<int16_t>( buffer_[offset + 12] & 0xff ) );
-
-		    targets_tracked_cart.push_back( target_cart );
-		  }
-
-      if( targets_tracked_cart.size() == 0 )
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr )
       {
-        // no targets were received; push back some dummy data so that an
-        // empty target frame will be sent
-        target_cart.id = -1;
-        targets_tracked_cart.push_back( target_cart );
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
+
+            target.id = 0;
+            target.snr = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                                static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
+            targets.push_back( target );
+        }
+        if( targets.size() == 0 )
+        {
+          // no targets were received; push back some dummy data so that an
+          // empty target frame will be sent
+          target.id = -1;
+          targets.push_back( target );
+        }
       }
-	      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_bounding_boxes )
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_bounding_boxes ); ++i )
+        {
+          offset = i * RadarDriverO79UDP::msg_len_bounding_boxes + RadarDriverO79UDP::msg_header_len;
 
-	  }
+          // Compute box pose (identity orientation, geometric center is position):
+          box.pose.linear() = Eigen::Matrix3d::Identity();
+          box.pose.translation().x() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                        static_cast<int16_t>( buffer_[offset + 1] & 0xff ) );
+          box.pose.translation().y() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                        static_cast<int16_t>( buffer_[offset + 3] & 0xff ) );
+          box.pose.translation().z() = RadarDriverO79UDP::msg_bbox_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                        static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
 
-  else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_ground_targets_cart )
-	  {
-	    // Check data is a valid length:
-	    if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets_cart ) != 0 )
-	      {
-          std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
-          return false;
-	      }
-	    else
-	      {
+          box.dimensions.x() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 6] ) );
+          box.dimensions.y() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 7] ) );
+          box.dimensions.z() = std::max( RadarDriverO79UDP::msg_bbox_dim_res, RadarDriverO79UDP::msg_bbox_dim_res * static_cast<uint8_t>( buffer_[offset + 8] ) );
+
+          bounding_boxes.push_back( box );
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets_cart )
+      {
+        // Check data is a valid length:
+        if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets_cart ) != 0 )
+        {
+            std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+            return false;
+        }
+        else
+        {
+          for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_tracked_targets_cart ); ++i )
+          {
+            // Offset per target includes header
+            offset = i * RadarDriverO79UDP::msg_len_tracked_targets_cart + RadarDriverO79UDP::msg_header_len;
+
+            target_cart.id = static_cast<int>( static_cast<uint8_t>( buffer_[offset + 0] ) );
+
+            target_cart.pos.x() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 1] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 2] & 0xff ) );
+            target_cart.pos.y() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 3] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 4] & 0xff ) );
+            target_cart.pos.z() = RadarDriverO79UDP::msg_cart_pos_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 5] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 6] & 0xff ) );
+
+            target_cart.vel.x() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 7] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 8] & 0xff ) );
+            target_cart.vel.y() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 9] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 10] & 0xff ) );
+            target_cart.vel.z() = RadarDriverO79UDP::msg_cart_vel_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 11] & 0xff ) << 8 ) |
+                                  static_cast<int16_t>( buffer_[offset + 12] & 0xff ) );
+
+            targets_tracked_cart.push_back( target_cart );
+          }
+
+          if( targets_tracked_cart.size() == 0 )
+          {
+            // no targets were received; push back some dummy data so that an
+            // empty target frame will be sent
+            target_cart.id = -1;
+            targets_tracked_cart.push_back( target_cart );
+          }
+        }
+
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_ground_targets_cart )
+      {
+        // Check data is a valid length:
+        if( ( msg_data_len % RadarDriverO79UDP::msg_len_tracked_targets_cart ) != 0 )
+        {
+            std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+            return false;
+        }
+        else
+        {
           for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_tracked_targets_cart ); ++i )
             {
               // Offset per target includes header
@@ -392,14 +418,13 @@ namespace ainstein_radar_drivers
 
               targets_ground_cart.push_back( target_cart_ground );
             }
-	      }
-	  }
-	else
-	  {
-	    std::cout << "WARNING >> Message received with invalid ID." << std::endl;
-	  }
+        }
       }
-
+      else
+        {
+          std::cout << "WARNING >> Message received with invalid ID." << std::endl;
+        }
+    }
     return true;
   }
 
