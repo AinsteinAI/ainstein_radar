@@ -45,6 +45,7 @@ namespace ainstein_radar_drivers
     static const unsigned int msg_id_bounding_boxes;
     static const unsigned int msg_id_tracked_targets_cart;
     static const unsigned int msg_id_ground_targets_cart;
+    static const unsigned int msg_id_raw_targets_16bit_pwr;
 
     static const double msg_range_res;
     static const double msg_speed_res;
