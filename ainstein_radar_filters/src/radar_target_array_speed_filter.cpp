@@ -41,7 +41,7 @@ RadarTargetArraySpeedFilter::RadarTargetArraySpeedFilter( ros::NodeHandle node_h
   sub_radar_vel_ = nh_.subscribe( "radar_vel", 10,
 				  &RadarTargetArraySpeedFilter::radarVelCallback,
 				  this );
-  sub_radar_vel_stamped_ = nh_.subscribe( "radar_vel", 10,
+  sub_radar_vel_stamped_ = nh_.subscribe( "radar_vel_stamped", 10,
 					  &RadarTargetArraySpeedFilter::radarVelStampedCallback,
 					  this );
     

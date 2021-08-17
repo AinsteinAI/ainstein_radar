@@ -76,7 +76,7 @@ target_link_libraries(radar_passthrough_filter_node ${catkin_LIBRARIES} ${PCL_LI
 
 add_library(radar_passthrough_filter_nodelet src/radar_passthrough_filter_nodelet.cpp src/radar_passthrough_filter.cpp)
 add_dependencies(radar_passthrough_filter_nodelet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
-target_link_libraries(radar_passthrough_filter_nodelet ${catkin_LIBRARIES})
+target_link_libraries(radar_passthrough_filter_nodelet ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(radar_combine_filter_node src/radar_combine_filter_node.cpp src/radar_combine_filter.cpp)
 add_dependencies(radar_combine_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
