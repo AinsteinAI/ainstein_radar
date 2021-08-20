@@ -24,6 +24,7 @@ generate_dynamic_reconfigure_options(
   cfg/TrackingFilterCartesian.cfg
   cfg/PassthroughFilter.cfg
   cfg/CombineFilter.cfg
+  cfg/PointCloudDebug.cfg
   )
 
 catkin_package(INCLUDE_DIRS include)
@@ -82,6 +83,10 @@ add_executable(radar_combine_filter_node src/radar_combine_filter_node.cpp src/r
 add_dependencies(radar_combine_filter_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(radar_combine_filter_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(point_cloud_debug_node src/point_cloud_debug_node.cpp src/point_cloud_debug.cpp)
+add_dependencies(point_cloud_debug_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
+target_link_libraries(point_cloud_debug_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 install(TARGETS
   radar_target_array_speed_filter_node
   radar_target_array_speed_filter_nodelet
@@ -95,6 +100,7 @@ install(TARGETS
   radar_passthrough_filter_node
   radar_passthrough_filter_nodelet
   radar_combine_filter_node
+  point_cloud_debug_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
