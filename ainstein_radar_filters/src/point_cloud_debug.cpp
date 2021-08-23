@@ -34,6 +34,8 @@ namespace ainstein_radar_filters
         sub_radar_data_raw_ = nh_.subscribe("radar_in", 1,
                                             &PointCloudDebug::radarTargetArrayCallback,
                                             this );
+        print_header_ = true;
+        frame_count_ = 0;
     }
 
     void PointCloudDebug::radarTargetArrayCallback ( const ainstein_radar_msgs::RadarTargetArray& msg )
@@ -44,10 +46,19 @@ namespace ainstein_radar_filters
 
         if(print_debug_)
         {
-            std::cout << "Radar Point Cloud Frame " << msg.header.frame_id << " recevied at t = " << ros::Time::now() << std::endl;
-            
-            bool header_printed = false;
+            if(print_timestamp_)
+            {
+                std::cout << "Radar Point Cloud Frame " << msg.header.frame_id << " recevied at t = " << ros::Time::now() << std::endl;
+            }
 
+            if( print_header_ )
+            {
+                print_header_ = false;
+                // Space the header to display nicely with the data in the terminal
+                std::cout << "Power\tRange\tVel\tAzi\tEle\tFrameNo" << std::endl;
+            }
+
+            std::string delim = "\t";
             // Iterate through points - printing point data as we go
             for( int j = 0; j < msg.targets.size(); ++j )
             {
@@ -58,15 +69,11 @@ namespace ainstein_radar_filters
                     t.elevation >= low_elevation_limit_deg_ && t.elevation <= high_elevation_limit_deg_ &&
                     t.snr >= low_power_limit_ && t.snr <= high_power_limit_ )
                 {
-                    if( !header_printed )
-                    {
-                        header_printed = true;
-                        std::cout << "Range (m), Velocity (m/s), Azimuth (deg), Elevation (deg), Power" << std::endl;
-                    }
-
-                    std::cout << t.range << ", " << t.speed << ", " << t.azimuth << ", " << t.elevation << ", " << t.snr << std::endl;
+                    std::cout << t.snr << delim << t.range << delim << t.speed << delim << t.azimuth << delim << t.elevation << delim << frame_count_ << std::endl;
                 }
             }
         }
+
+        frame_count_++;
     }
 }

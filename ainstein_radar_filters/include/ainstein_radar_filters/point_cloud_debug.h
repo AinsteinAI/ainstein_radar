@@ -64,6 +64,9 @@ namespace ainstein_radar_filters
         double high_elevation_limit_deg_;
         double low_power_limit_;
         double high_power_limit_;
+
+        bool print_header_;
+        uint32_t frame_count_;
     };
 }
 
