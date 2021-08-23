@@ -13,7 +13,7 @@
   <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
 
   <!-- Run ROS tracking filters on recorded raw UDP data -->
-  <include file="$(find ainstein_radar_drivers)/launch/ros_tracking_filter.launch" />
+  <!-- <include file="$(find ainstein_radar_drivers)/launch/ros_tracking_filter.launch" /> -->
 
   <!-- Set whether to launch the online tuning GUI -->
   <arg name="use_rqt_reconfigure" default="true" />
@@ -22,5 +22,8 @@
     <!-- Run the rqt dynamic reconfiguration GUI to tune the trackers on recorded data -->
     <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
   </group>
+
+    <!-- Run ROS point cloud debug node on recorded raw UDP data -->
+  <include file="$(find ainstein_radar_filters)/launch/o79_single_point_cloud_debug.launch" />
 
 </launch>

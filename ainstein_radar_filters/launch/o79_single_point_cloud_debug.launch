@@ -1,0 +1,12 @@
+<launch>
+    
+  <!-- Debugging for UDP raw targets -->
+  <node name="pcl_debug" pkg="ainstein_radar_filters" type="point_cloud_debug_node" output="screen" >
+    <remap from="radar_in" to="/o79_udp/targets/raw" />
+    <param name="publish_freq" value="20.0" />
+  </node>
+  
+  <!-- Load parameters -->
+  <node name="pcl_debug_dynamic_reconfigure_load_left" pkg="dynamic_reconfigure" type="dynparam" args="load /pcl_debug_left $(find ainstein_radar_filters)/params/o79_pcl_debug_left.yaml" />
+
+</launch>
