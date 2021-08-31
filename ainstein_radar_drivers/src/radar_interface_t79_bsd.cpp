@@ -25,6 +25,7 @@
 */
 
 #include "ainstein_radar_drivers/radar_interface_t79_bsd.h"
+#include "ainstein_radar_drivers/utilities.h"
 
 namespace ainstein_radar_drivers
 {

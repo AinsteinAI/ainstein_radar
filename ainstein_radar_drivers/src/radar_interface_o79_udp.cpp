@@ -51,7 +51,6 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   radar_data_msg_ptr_ground_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
-  cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -70,9 +69,6 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Get the radar data frame ID:
   nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
-
-  // Get whether to publish ROS point cloud messages:
-  nh_private_.param( "publish_raw_cloud", publish_raw_cloud_, false );
 
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
@@ -98,9 +94,6 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   
   // Advertise the O79 tracked object bounding boxes:
   pub_bounding_boxes_ = nh_private_.advertise<ainstein_radar_msgs::BoundingBoxArray>( "boxes", 10 );
-
-  // Advertise the O79 raw point cloud:
-  pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
 
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
@@ -154,13 +147,6 @@ void RadarInterfaceO79UDP::mainLoop(void)
 
 	      // Publish the raw target data:
 	      pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_ );
-
-	      // Optionally publish raw detections as ROS point cloud:
-	      if( publish_raw_cloud_ )
-		{
-		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
-		  pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
-		}
 	    }
 
 	  if( targets_tracked.size() > 0 )
@@ -217,7 +203,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 					obj_msg.id = t.id;
 				
 					// Fill in the pose information:
-					obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+					obj_msg.pose = utilities::posVelToPose( t.pos, t.vel );
 
 					// Fill in the velocity information:
 					obj_msg.velocity.linear.x = t.vel.x();
@@ -266,7 +252,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
 					obj_msg.id = t.id;
 				
 					// Fill in the pose information:
-					obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+					obj_msg.pose = utilities::posVelToPose( t.pos, t.vel );
 
 					// Fill in the velocity information:
 					obj_msg.velocity.linear.x = t.vel.x();

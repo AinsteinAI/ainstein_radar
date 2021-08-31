@@ -16,6 +16,7 @@
 
   <depend>roscpp</depend>
   <depend>ainstein_radar_msgs</depend>
+  <depend>ainstein_radar_drivers</depend>
   <depend>pcl_ros</depend>
   <depend>nodelet</depend>
   <depend>tf2_eigen</depend>

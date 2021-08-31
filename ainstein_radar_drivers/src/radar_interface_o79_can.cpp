@@ -259,7 +259,7 @@ namespace ainstein_radar_drivers
                     obj_msg.id = t.id;
                     
                     // Fill in the pose information:
-                    obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+                    obj_msg.pose = utilities::posVelToPose( t.pos, t.vel );
 
                     // Fill in the velocity information:
                     obj_msg.velocity.linear.x = t.vel.x();

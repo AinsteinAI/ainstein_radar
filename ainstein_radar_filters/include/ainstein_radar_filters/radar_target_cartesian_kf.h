@@ -1,13 +1,14 @@
+
 #ifndef RADAR_TARGET_CART_KF_H_
 #define RADAR_TARGET_CART_KF_H_
 
 #include <ros/ros.h>
 #include <Eigen/Eigen>
 
-#include <ainstein_radar_filters/data_conversions.h>
+#include <ainstein_radar_drivers/utilities.h>
+#include <ainstein_radar_filters/common_types.h>
 #include <ainstein_radar_msgs/RadarTarget.h>
 #include <ainstein_radar_msgs/RadarTrackedObject.h>
-#include <ainstein_radar_filters/common_types.h>
 
 #define Q_VEL_STDEV 5.0
 
@@ -28,12 +29,12 @@ namespace ainstein_radar_filters
       FilterState( const ainstein_radar_msgs::RadarTarget& target,
 		   const Eigen::Matrix<double, 6, 6>& initial_covariance )
       {
-	data_conversions::sphericalToCartesian( target.range,
+	ainstein_radar_drivers::utilities::sphericalToCartesian( target.range,
 						( M_PI / 180.0 ) * target.azimuth,
 						( M_PI / 180.0 ) * target.elevation,
 						pos );
 
-	data_conversions::sphericalToCartesian( target.speed,
+	ainstein_radar_drivers::utilities::sphericalToCartesian( target.speed,
 						( M_PI / 180.0 ) * target.azimuth,
 						( M_PI / 180.0 ) * target.elevation,
 						vel );
@@ -79,7 +80,7 @@ namespace ainstein_radar_filters
       {
 	ainstein_radar_msgs::RadarTarget t;
 	double range, azimuth, elevation;
-	data_conversions::cartesianToSpherical( pos, range, azimuth, elevation );
+	ainstein_radar_drivers::utilities::cartesianToSpherical( pos, range, azimuth, elevation );
 
 	t.range = range;
 	t.speed = ( pos / pos.norm() ).transpose() * vel;
@@ -112,7 +113,7 @@ namespace ainstein_radar_filters
     {
       ainstein_radar_msgs::RadarTrackedObject obj;
       obj.id = t_id;
-      obj.pose = ainstein_radar_filters::data_conversions::posVelToPose(pos, vel);
+      obj.pose = ainstein_radar_drivers::utilities::posVelToPose(pos, vel);
       obj.velocity.linear.x = vel.x();
       obj.velocity.linear.y = vel.y();
       obj.velocity.linear.z = vel.z();
@@ -176,7 +177,7 @@ namespace ainstein_radar_filters
     Eigen::Vector4d computeMeas( const ainstein_radar_msgs::RadarTarget& target )
     {
       Eigen::Vector3d pos;
-      data_conversions::sphericalToCartesian( target.range,
+      ainstein_radar_drivers::utilities::sphericalToCartesian( target.range,
 					      ( M_PI / 180.0 ) * target.azimuth,
 					      ( M_PI / 180.0 ) * target.elevation,
 					      pos );

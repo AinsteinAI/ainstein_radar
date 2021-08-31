@@ -17,6 +17,7 @@ tf2_ros
 image_transport
 image_geometry 
 ainstein_radar_msgs
+ainstein_radar_drivers
 ainstein_radar_filters
 vision_msgs
 )

@@ -198,7 +198,7 @@ namespace ainstein_radar_filters
                     double meas_err = ( y - z ).transpose() * filters_.at( i ).computeMeasCov( filters_.at( i ).getState() ).inverse() * ( y - z );
 
                     Eigen::Vector3d target_pos;
-                    data_conversions::sphericalToCartesian( t.range,
+		    ainstein_radar_drivers::utilities::sphericalToCartesian( t.range,
                                         ( M_PI / 180.0 ) * t.azimuth,
                                         ( M_PI / 180.0 ) * t.elevation,
                                         target_pos );

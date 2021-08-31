@@ -5,8 +5,6 @@
 
 #include "ainstein_radar_drivers/radar_interface.h"
 #include "ainstein_radar_drivers/config_t79_bsd.h"
-#include <ainstein_radar_filters/data_conversions.h>
-#include <ainstein_radar_drivers/utilities.h>
 
 namespace ainstein_radar_drivers
 {

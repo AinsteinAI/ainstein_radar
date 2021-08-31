@@ -4,7 +4,6 @@
 #include <ros/ros.h>
 
 #include <ainstein_radar_msgs/RadarTargetArray.h>
-#include <ainstein_radar_filters/data_conversions.h>
 
 namespace ainstein_radar_filters
 {

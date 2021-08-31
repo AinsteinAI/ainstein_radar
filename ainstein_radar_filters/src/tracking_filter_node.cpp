@@ -24,10 +24,10 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <ainstein_radar_drivers/utilities.h>
 #include <ainstein_radar_filters/data_conversions.h>
 #include <ainstein_radar_filters/tracking_filter.h>
 #include <ainstein_radar_filters/TrackingFilterConfig.h>
-#include <ainstein_radar_filters/utilities.h>
 #include <ainstein_radar_msgs/RadarTarget.h>
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <dynamic_reconfigure/server.h>
@@ -178,7 +178,7 @@ public:
         }
 
         ainstein_radar_msgs::BoundingBox box;
-        ainstein_radar_filters::utilities::getTargetsBoundingBox(msg_targets, box);
+        ainstein_radar_drivers::utilities::getTargetsBoundingBox(msg_targets, box);
 
         msg_tracked_boxes_.boxes.push_back(box);
       }

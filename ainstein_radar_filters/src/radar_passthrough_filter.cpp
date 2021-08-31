@@ -24,6 +24,7 @@
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "ainstein_radar_filters/data_conversions.h"
 #include "ainstein_radar_filters/radar_passthrough_filter.h"
 
 namespace ainstein_radar_filters

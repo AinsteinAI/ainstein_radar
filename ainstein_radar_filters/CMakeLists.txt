@@ -3,7 +3,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(ainstein_radar_filters)
 
-find_package(PCL REQUIRED)
+find_package(PCL 1.10 REQUIRED)
+set(PCL_INCLUDE_DIRS /usr/include/pcl-1.10)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -15,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   tf2_sensor_msgs
   ainstein_radar_msgs
+  ainstein_radar_drivers
   dynamic_reconfigure
 )
 

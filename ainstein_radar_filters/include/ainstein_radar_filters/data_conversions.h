@@ -11,65 +11,17 @@
 
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_filters/pcl_point_radar_target.h>
+#include <ainstein_radar_drivers/utilities.h>
 
 namespace ainstein_radar_filters
 {
   namespace data_conversions
-  {
-    static void sphericalToCartesian( double range, double azimuth, double elevation,
-				      Eigen::Vector3d& p )
-    {
-      // Convert spherical coordinates to Cartesian coordinates. Range and point xyz are in
-      // meters, angles are in radians.
-      p.x() = range * cos( azimuth ) * cos( elevation );
-      p.y() = range * sin( azimuth ) * cos( elevation );
-      p.z() = range * sin( elevation );
-    }
-
-    static void cartesianToSpherical( const Eigen::Vector3d& p,
-				      double& range, double& azimuth, double& elevation )
-    {
-      // Convert Cartesian coordinates to spherical coordinates. Range and point xyz are in
-      // meters, angles are in radians.
-      range = std::sqrt( std::pow( p.x(), 2.0 ) +
-			 std::pow( p.y(), 2.0 ) +
-			 std::pow( p.z(), 2.0 ) );
-      azimuth = std::atan2( p.y(), p.x() );
-      elevation = std::asin( p.z() / range );
-    }
-
-    static Eigen::Matrix3d velocityToRotation( const Eigen::Vector3d& vel )
-    {
-      // Compute the pose assuming the +x direction is the current estimated Cartesian
-      // velocity direction:                         
-      Eigen::Matrix3d rot_mat;
-      if( vel.norm() < 1e-3 ) // handle degenerate case of near-zero velocity               
-	{
-	  rot_mat = Eigen::Matrix3d::Identity();
-	}
-      else
-	{
-	  rot_mat.col( 0 ) = vel / vel.norm();
-	  rot_mat.col( 1 ) = Eigen::Vector3d::UnitZ().cross( rot_mat.col( 0 ) );
-	  rot_mat.col( 2 ) = rot_mat.col( 0 ).cross( rot_mat.col( 1 ) );
-	}
-
-      return rot_mat;
-    }
-
-    static geometry_msgs::Pose posVelToPose( const Eigen::Vector3d& pos, const Eigen::Vector3d& vel )
-    {
-      Eigen::Affine3d pose_eigen;
-      pose_eigen.translation() = pos;
-      pose_eigen.linear() = velocityToRotation( vel );
-      return tf2::toMsg( pose_eigen );
-    }
-    
+  {    
     static void radarTargetToPclPoint( const ainstein_radar_msgs::RadarTarget& target,
 				       PointRadarTarget& pcl_point )
     {
       Eigen::Vector3d p;
-      sphericalToCartesian( target.range,
+      ainstein_radar_drivers::utilities::sphericalToCartesian( target.range,
 			    ( M_PI / 180.0 ) * target.azimuth,
 			    ( M_PI / 180.0 ) * target.elevation,
 			    p );
@@ -92,7 +44,7 @@ namespace ainstein_radar_filters
       target.speed = pcl_point.speed;
 
       double range, azimuth, elevation;
-      cartesianToSpherical( Eigen::Vector3d( pcl_point.x, pcl_point.y, pcl_point.z ),
+      ainstein_radar_drivers::utilities::cartesianToSpherical( Eigen::Vector3d( pcl_point.x, pcl_point.y, pcl_point.z ),
 			    range, azimuth, elevation );
       target.range = range;
       target.azimuth = ( 180.0 / M_PI ) * azimuth;
