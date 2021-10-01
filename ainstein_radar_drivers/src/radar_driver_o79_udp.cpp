@@ -63,8 +63,8 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 0x05;
   const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 0x06;
 
-  const double RadarDriverO79UDP::msg_range_res = 0.01;
-  const double RadarDriverO79UDP::msg_speed_res = 0.005;
+  const double RadarDriverO79UDP::msg_range_res = 0.001;
+  const double RadarDriverO79UDP::msg_speed_res = 0.001;
   const double RadarDriverO79UDP::msg_cart_pos_res = 0.01;
   const double RadarDriverO79UDP::msg_cart_vel_res = 0.005;
   const double RadarDriverO79UDP::msg_bbox_pos_res = 0.01;

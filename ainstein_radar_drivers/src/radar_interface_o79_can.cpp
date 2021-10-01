@@ -32,8 +32,8 @@
 namespace ainstein_radar_drivers
 {
 
-  const double RadarInterfaceO79CAN::msg_range_res = 0.01;
-  const double RadarInterfaceO79CAN::msg_speed_res = 0.005;
+  const double RadarInterfaceO79CAN::msg_range_res = 0.001;
+  const double RadarInterfaceO79CAN::msg_speed_res = 0.001;
   const double RadarInterfaceO79CAN::msg_pos_res = 0.01;
   const double RadarInterfaceO79CAN::msg_vel_res = 0.005;
 
