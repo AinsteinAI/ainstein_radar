@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
-import mmwave_CLI as cli
+from wayv_air_api.wayv_air_device_api import Wayv_Air_API
 
 from collections import OrderedDict
 import math
 import numpy as np
 import time
 import serial
+import signal
+import sys
+
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 from ainstein_radar_msgs.msg import RadarTargetArray
 from ainstein_radar_msgs.msg import RadarTarget
@@ -16,16 +21,43 @@ import quaternion
 import rospy
 
 # Wayv device communication parameters
-data_baud = 921600
-stay_silent = True
+MODE_485 = 0
+MODE_WIFI = 1
+delay_init = 50 # number of target callbacks to pass before sending or reading configurations
+delay = delay_init
+v_level = 1
+if 'linux' in sys.platform:
+    serial_port = "/dev/ttyUSB0"
+else:
+    serial_port = "COM5"
+serial_baud = 115200
+comm_mode = MODE_485
+wifi_ip = '192.168.4.65'
+wifi_port = 8877
+target_detail = 0
+velocity_enable = 1
+point_num_enable = 0
+rs485_id = 1
+new_comm_config = False
+new_param_config = False
+new_firmware = False
+enbl_pcl = True
+query_config = []
+comm_config = []
+param_config = []
+firmware_up = []
+radars_seen = []
 
-# define lab-specific TLV data structures
-MMWDEMO_OUTPUT_MSG_POINT_CLOUD = 6
-MMWDEMO_OUTPUT_MSG_TARGET_LIST = 7
-MMWDEMO_OUTPUT_MSG_TARGET_INDEX = 8
-
-# Define TLVs (Type-Length-Values) to read from Wayv 
-TLVs_to_use = [MMWDEMO_OUTPUT_MSG_POINT_CLOUD, MMWDEMO_OUTPUT_MSG_TARGET_LIST]
+def sigint_handler(*args):
+    sys.stderr.write('/r')
+    # make a list of the radars because the dictionary will change when disconnecting radars
+    radar_list = []
+    for r in list(wayv_air.radars.keys()):
+        radar_list.append(r)
+    for r in radar_list:
+        wayv_air.radar_disconnect(r) # disconnect the radar before quitting
+    QApplication.quit()
+    app.quit()
 
 class WayvROSInterface( object ):
     """
@@ -50,6 +82,18 @@ class WayvROSInterface( object ):
             (None)
 
         """
+
+       # Register the ROS interface data callbacks with the sensor
+        self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback,
+                                     (v_level >= 3), comm_mode, serial_port, serial_baud,
+                                     rs485_id, wifi_ip, target_detail, wifi_port)
+    
+        print( "Waiting to start communication" )
+
+        if v_level >= 1:
+            print("WAYV Air API version:", self.wayv_air.version)
+        self.wayv_air.radar_connect()
+ 
         
         self.pub_point_cloud = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
         self.radar_data_msg = RadarTargetArray()
@@ -60,17 +104,78 @@ class WayvROSInterface( object ):
         self.tracked_pose_msg.header.frame_id = frame_id
 
         
-    def callback( self, data ):
+    def radar_con_callback(self, id):
+        global new_firmware, query_config, comm_config, param_config, firmware_up, enbl_pcl
+        if id not in radars_seen:
+            radars_seen.append(id)
+            if new_comm_config:
+                comm_config.append(id)  # tell the supervisor to update this radar's comm. config
+            if new_param_config:
+                param_config.append(id)  # tell the supervisor to update this radar's radar parameters
+            if new_firmware:
+                firmware_up.append(id)  # tell the supervisor to update this radar's firmware
+            if enbl_pcl:
+                self.wayv_air.enable_pcl(id)
+        query_config.append(id)  # tell the supervisor to query the config for this radar
+
+        
+    def target_to_pose(self, px, py, pz, vx, vy, vz):
+        """
+        Converts a tracked object to Pose representation.
+
+        Utility function for converting a tracked object received from the radar 
+        having position and velocity information to a Pose message. The velocity
+        is used to define the orientation.
+
+        Args:
+            px (Float): Target x position.
+            py (Float): Target y position.
+            pz (Float): Target z position.
+            vx (Float): Target x velocity.
+            vy (Float): Target y velocity.
+            vz (Float): Target z velocity.
+
+        Returns:
+            (Pose): Pose representing the target.
+
+        """
+        pose = Pose()
+        pose.position.x = py
+        pose.position.y = -px
+        pose.position.z = pz
+
+        # Compute tarect pose, assuming velocity is in +x direction
+        vel = np.array( [vy, -vx, vz] ).transpose()
+
+        # If velocity is near zero, keep identity orientation
+        rot_mat = np.identity( 3 )
+        if( np.linalg.norm( vel ) > 0.001 ):
+            rot_mat[:,0] = vel / np.linalg.norm( vel )
+            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
+                                     rot_mat[:,0] )
+            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
+
+        # Convert from rotation matrix to quaternion to fill ROS pose
+        quat = quaternion.from_rotation_matrix( rot_mat )
+        pose.orientation.w = quat.w
+        pose.orientation.x = quat.x
+        pose.orientation.y = quat.y
+        pose.orientation.z = quat.z
+
+        return pose
+
+        
+    def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
 
-        Receives point cloud (raw detection) and tracked object data from the TI
+        Receives point cloud (raw detection) and tracked object data from the
         firmware, packs the data into ROS messages and publishes. Note that the 
         orientation of the tracked object pose is derived from its velocity,
         under the assumption that objects always move in the forward direction.
 
-        Also note that the full (3d) velocity and acceleration are available for
-        all tracked objects but are unused in this driver because they would 
-        require custom VectorArray message types. To be added in the future.
+        Also note that the full (3d) velocity is available for all tracked objects
+        but is unused in this driver because it would require custom VectorArray 
+        message types. To be added in the future.
 
         Args:
             data (array of dict arrays): Data from the Wayv, organized by TLV.
@@ -80,56 +185,140 @@ class WayvROSInterface( object ):
 
         """
 
+        # Clear the output ROS message array
+        self.tracked_pose_msg.poses = []
+
+        # Receive and pack Wayv tracked object info into ROS message
+        for v in self.wayv_air.radars.values():
+            if v.targets_recvd:  # Only print targets from devices that have new targets; could also tell this from id passed to the callback
+                v.targets_recvd = False
+
+                if target_detail == 1:            ## call debug mode format for Wayv Air
+                    if velocity_enable == 1:
+                        if point_num_enable == 1:
+                            for tar in v.targets:
+                                self.tracked_pose_msg.poses.append(
+                                    self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                        else:  # velocity only, not point number
+                            for tar in v.targets:
+                                self.tracked_pose_msg.poses.append(
+                                    self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                    elif point_num_enable == 1:  # point number, not velocity
+                        for tar in v.targets:
+                            self.tracked_pose_msg.poses.append(
+                                self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                elif target_detail == 0:          ## call normal mode format for Wayv Air
+                    for tar in v.targets:
+                        self.tracked_pose_msg.poses.append(
+                            self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                else:                               ## default in  debug mode format for Wayv Air
+                    for tar in v.targets:
+                        self.tracked_pose_msg.poses.append(
+                            self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+
+        # Timestamp and publish tracked object poses
+        self.tracked_pose_msg.header.stamp = rospy.Time.now()
+        self.pub_tracked_pose.publish( self.tracked_pose_msg )
+
+        # May also publish the board status, to be added with new message
+        # if v_level >= 2:
+        #     print("Board temperature:", v.board_temp, "℃")
+        #     print("Tx temperatures:", v.tx_temps, "℃")
+        #     print("PM temperature:", v.pm_temp, "℃")
+        #     print("Voltage", v.voltage, "V")
+        #     print("Power", v.power, "W")
+
+        
+    def pcl_callback(self, id):
+        """ Callback to process data from the Wayv and publish ROS messages.
+
+        Receives point cloud (raw detection) and tracked object data from the
+        firmware, packs the data into ROS messages and publishes. Note that the 
+        orientation of the tracked object pose is derived from its velocity,
+        under the assumption that objects always move in the forward direction.
+
+        Also note that the full (3d) velocity is available for all tracked objects
+        but is unused in this driver because it would require custom VectorArray 
+        message types. To be added in the future.
+
+        Args:
+            data (array of dict arrays): Data from the Wayv, organized by TLV.
+
+        Returns:
+            (None)
+
+        """
+        
         # Clear the output ROS message arrays
         self.radar_data_msg.targets = []
-        self.tracked_pose_msg.poses = []
 
         # Receive and pack Wayv point cloud detections into ROS message
         i = 0
-        for point in data[MMWDEMO_OUTPUT_MSG_POINT_CLOUD]:
+        for p in self.wayv_air.radars[id].points:
             target = RadarTarget()
             target.target_id = i
-            target.range = point['range']
-            target.azimuth = -1.0 * math.degrees( point['angle'] )
-            target.elevation = math.degrees( point['elev'] )
-            target.speed = point['doppler']
-            target.snr = point['snr']
+            target.range = p.range
+            target.azimuth = -1.0 * math.degrees( p.azimuth )
+            target.elevation = math.degrees( p.elevation )
+            target.speed = p.doppler
+            target.snr = p.snr
             self.radar_data_msg.targets.append( target )
             i = i + 1
-
-        # Receive and pack Wayv tracked object info into ROS message
-        for obj in data[MMWDEMO_OUTPUT_MSG_TARGET_LIST]:
-            pose = Pose()
-            pose.position.x = obj['posY']
-            pose.position.y = -obj['posX']
-            pose.position.z = obj['posZ']
-
-            # Compute object pose, assuming velocity is in +x direction
-            vel = np.array( [obj['velY'], -obj['velX'], obj['velZ']] ).transpose()
-
-            # If velocity is near zero, keep identity orientation
-            rot_mat = np.identity( 3 )
-            if( np.linalg.norm( vel ) > 0.001 ):
-                rot_mat[:,0] = vel / np.linalg.norm( vel )
-                rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
-                                         rot_mat[:,0] )
-                rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
-
-            # Convert from rotation matrix to quaternion to fill ROS pose
-            quat = quaternion.from_rotation_matrix( rot_mat )
-            pose.orientation.w = quat.w
-            pose.orientation.x = quat.x
-            pose.orientation.y = quat.y
-            pose.orientation.z = quat.z
-            self.tracked_pose_msg.poses.append( pose )
 
         # Timestamp and publish radar point cloud
         self.radar_data_msg.header.stamp = rospy.Time.now()
         self.pub_point_cloud.publish( self.radar_data_msg )
 
-        # Timestamp and publish tracked object poses
-        self.tracked_pose_msg.header.stamp = rospy.Time.now()
-        self.pub_tracked_pose.publish( self.tracked_pose_msg )
+        
+    def supervisor(self):
+        # This function handles less time-sensitive operations like updating configurations
+        # and firmware. It also provides a mechanism for the Python interpreter to run so the
+        # signint handler can exit the program properly
+        global query_config, comm_config, param_config, new_firmware
+
+        for v in self.wayv_air.radars.values():
+            # print progress updates
+            if v.progress > 0:
+                print(v.ser_no, "update progress:", v.progress, "%")
+            if v.progress >= 100:
+                v.progress = -1  # use negative numbers to indicate acknowledged completion
+                # check for new config messages and acknowledge them
+            if v.comm_config_recvd:
+                v.comm_config_recvd = False
+                # print firmware version
+                if v_level >= 1:
+                    print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
+                    print("Present Comm. Config:")
+                    for item in v.comm_config.__dict__.items():
+                        print(item)
+                        print("")
+            if v.radar_config_recvd:
+                v.radar_config_recvd = False
+                if v_level >= 1:
+                    print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
+                    print("Present Radar Config: (",v.radar_config.cmd_count,"lines )")
+                    for item in v.radar_config.cmds:
+                        print(item)
+                    print("")
+
+        if len(query_config) > 0:
+            id = query_config.pop(0)
+            self.wayv_air.query_config(id)  # the API only support querying one radar at a time
+        elif len(comm_config) > 0:
+            id = comm_config.pop(0)
+            self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
+            if id not in query_config:
+                query_config.append(id)
+        elif len(param_config) > 0:
+            id = param_config.pop(0)
+            self.wayv_air.modify_param_config(id, param_file)  # only the first radar in this example
+            if id not in query_config:
+                query_config.append(id)
+        elif len(firmware_up) > 0:
+            id = firmware_up.pop(0)
+            if id not in query_config:
+                query_config.append(id)
+            self.wayv_air.update_firmware(id, fw_path)
 
     
 if __name__ == "__main__":
@@ -141,14 +330,20 @@ if __name__ == "__main__":
         # Create the ROS interface 
         wayv_intf = WayvROSInterface( frame_id )
 
-        # Register the ROS interface data callback with the sensor
-        ppl_cnt = cli.PeopleCountingCLI( data_port, data_baud, wayv_intf.callback )
-    
-        print( "Waiting to start communication" )
-        time.sleep( 1.0 )
+        # Set up an event loop to make the python interpreter run periodically
+        # so that ctrl+c will disconnect the radar and kill the program
+        signal.signal(signal.SIGINT, sigint_handler)
 
-        # Run the underlying people counting demo to trigger callbacks
-        ppl_cnt.read_data( stay_silent, TLVs_to_use )
+        # The QApplication must be started before anything can be sent to, or received from, the Wayv Air
+        app = QApplication(sys.argv)
+        timer = QTimer()
+        timer.start(2000)
+        timer.timeout.connect(wayv_intf.supervisor)
+        
+        time.sleep(2)  # delay long enough for the radar to connect over WiFi
+
+        sys.exit(app.exec_())
+        rospy.spin()
         
     except rospy.ROSInterruptException:
         pass
