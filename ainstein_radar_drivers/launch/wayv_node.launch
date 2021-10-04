@@ -1,6 +1,6 @@
 <launch>
 
-  <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" >
+  <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" output="screen" >
     <param name="frame_id" value="map" />
   </node>
 
