@@ -1,3 +1,0 @@
-[submodule "ainstein_radar_drivers/wayv_air_api"]
-	path = ainstein_radar_drivers/wayv_air_api
-	url = https://github.com/AinsteinAI/wayv_air_api.git
