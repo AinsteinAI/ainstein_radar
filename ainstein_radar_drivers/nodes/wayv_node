@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import *
 
 from ainstein_radar_msgs.msg import RadarTargetArray
 from ainstein_radar_msgs.msg import RadarTarget
+from ainstein_radar_drivers.msg import WayvAirStatus
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
 import quaternion
@@ -25,7 +26,7 @@ MODE_485 = 0
 MODE_WIFI = 1
 delay_init = 50 # number of target callbacks to pass before sending or reading configurations
 delay = delay_init
-v_level = 1
+v_level = 3
 if 'linux' in sys.platform:
     serial_port = "/dev/ttyUSB0"
 else:
@@ -102,6 +103,10 @@ class WayvROSInterface( object ):
         self.pub_tracked_pose = rospy.Publisher( '~objects/poses', PoseArray, queue_size=10 )
         self.tracked_pose_msg = PoseArray()
         self.tracked_pose_msg.header.frame_id = frame_id
+
+        self.pub_status = rospy.Publisher( '~status', WayvAirStatus, queue_size=10 )
+        self.status_msg = WayvAirStatus()
+        self.status_msg.header.frame_id = frame_id
 
         
     def radar_con_callback(self, id):
@@ -221,12 +226,17 @@ class WayvROSInterface( object ):
         self.pub_tracked_pose.publish( self.tracked_pose_msg )
 
         # May also publish the board status, to be added with new message
-        # if v_level >= 2:
-        #     print("Board temperature:", v.board_temp, "℃")
-        #     print("Tx temperatures:", v.tx_temps, "℃")
-        #     print("PM temperature:", v.pm_temp, "℃")
-        #     print("Voltage", v.voltage, "V")
-        #     print("Power", v.power, "W")
+        if v_level >= 2:
+            self.status_msg.board_temp = v.board_temp
+            self.status_msg.tx_temps = []
+            for temp in v.tx_temps:
+                self.status_msg.tx_temps.append(temp)
+            self.status_msg.pm_temp = v.pm_temp
+            self.status_msg.voltage = v.voltage
+            self.status_msg.power = v.power
+            self.status_msg.header.stamp = rospy.Time.now()
+            
+            self.pub_status.publish( self.status_msg )
 
         
     def pcl_callback(self, id):
