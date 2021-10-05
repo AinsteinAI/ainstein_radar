@@ -25,6 +25,7 @@ add_message_files(
   O79NetworkParams.msg
   O79DeviceParams.msg
   O79TrackingParams.msg
+  WayvAirStatus.msg
   )
 
 generate_messages(
@@ -62,6 +63,12 @@ target_link_libraries(t79_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(t79_bsd_node src/t79_bsd_node.cpp src/radar_interface_t79_bsd.cpp src/utilities.cpp)
 add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(t79_bsd_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+catkin_install_python(PROGRAMS
+  nodes/wayv_node
+  nodes/o79_config_node
+  nodes/srd_d1_node
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS
   o79_can_node
