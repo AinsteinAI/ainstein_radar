@@ -52,6 +52,7 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // bytes per raw target
   const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // bytes per bounding box
   const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 13; // bytes per Cartesian tracked target
+  const unsigned int RadarDriverO79UDP::msg_len_monitor_alarms = 8; // total bytes for alarms message
 
   const unsigned int RadarDriverO79UDP::msg_header_len = 8; // 8 byte header per message
   const unsigned int RadarDriverO79UDP::msg_type_byte = 4;
@@ -62,6 +63,7 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 0x04;
   const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 0x05;
   const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 0x06;
+  const unsigned int RadarDriverO79UDP::msg_id_monitor_alarms = 0x07;
 
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
@@ -188,7 +190,8 @@ namespace ainstein_radar_drivers
 					  std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
 					  std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
 					  std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart,
-            std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart )
+					  std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart,
+					  ainstein_radar_drivers::MonitorAlarms& monitor_alarms)
   {
     // Clear the targets array in preparation for message processing:
     targets.clear();
@@ -419,6 +422,41 @@ namespace ainstein_radar_drivers
               targets_ground_cart.push_back( target_cart_ground );
             }
         }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_monitor_alarms )
+      {
+        // Check data is a valid length:
+        if( msg_data_len != RadarDriverO79UDP::msg_len_monitor_alarms )
+        {
+            std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+            return false;
+        }
+	else
+	{
+	  if( static_cast<MonitorAlarms::Temperature>( buffer_[0] ) >= MonitorAlarms::Temperature::Disabled &&
+	      static_cast<MonitorAlarms::Temperature>( buffer_[0] ) <= MonitorAlarms::Temperature::Low )
+	    {
+	      monitor_alarms.temperature = static_cast<MonitorAlarms::Temperature>( buffer_[0] );
+	    }
+
+	  if( static_cast<MonitorAlarms::FrameTime>( buffer_[0] ) >= MonitorAlarms::FrameTime::Disabled &&
+	      static_cast<MonitorAlarms::FrameTime>( buffer_[0] ) <= MonitorAlarms::FrameTime::FailedHigh )
+	    {
+	      monitor_alarms.frame_time = static_cast<MonitorAlarms::FrameTime>( buffer_[1] );
+	    }
+
+	  if( static_cast<MonitorAlarms::BlockedRadar>( buffer_[0] ) >= MonitorAlarms::BlockedRadar::Disabled &&
+	      static_cast<MonitorAlarms::BlockedRadar>( buffer_[0] ) <= MonitorAlarms::BlockedRadar::Failed )
+	    {
+	      monitor_alarms.blocked_radar = static_cast<MonitorAlarms::BlockedRadar>( buffer_[2] );
+	    }
+
+	  if( static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[0] ) >= MonitorAlarms::MmwaveMonitor::Disabled &&
+	      static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[0] ) <= MonitorAlarms::MmwaveMonitor::Failed )
+	    {
+	      monitor_alarms.mmwave_monitor = static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[3] );
+	    }
+	}
       }
       else
         {

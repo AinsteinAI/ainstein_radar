@@ -11,6 +11,7 @@
 #include <ainstein_radar_msgs/RadarTargetArray.h>
 #include <ainstein_radar_msgs/RadarTrackedObjectArray.h>
 #include <ainstein_radar_msgs/BoundingBoxArray.h>
+#include <ainstein_radar_drivers/O79MonitorAlarms.h>
 #include <ainstein_radar_drivers/radar_driver_o79_udp.h>
 #include <ainstein_radar_drivers/utilities.h>
 #include <ainstein_radar_filters/data_conversions.h>
@@ -79,6 +80,7 @@ private:
   ros::Publisher pub_cloud_raw_;
   ros::Publisher pub_bounding_boxes_;
   ros::Publisher pub_radar_info_;
+  ros::Publisher pub_monitor_alarms_;
 
   boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;      
   boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_tracked_;

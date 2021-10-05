@@ -24,6 +24,7 @@ add_message_files(
   O79NetworkParams.msg
   O79DeviceParams.msg
   O79TrackingParams.msg
+  O79MonitorAlarms.msg
   )
 
 generate_messages(

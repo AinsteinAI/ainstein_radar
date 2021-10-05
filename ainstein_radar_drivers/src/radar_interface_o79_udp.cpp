@@ -102,6 +102,9 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 raw point cloud:
   pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
 
+  // Advertise the O79 monitor alarms:
+  pub_monitor_alarms_ = nh_private_.advertise<ainstein_radar_drivers::O79MonitorAlarms>( "monitor_alarms", 10 );
+  
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
   mutex_.lock();
@@ -129,11 +132,12 @@ void RadarInterfaceO79UDP::mainLoop(void)
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_ground_cart;
+  ainstein_radar_drivers::MonitorAlarms monitor_alarms;
 
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart, targets_ground_cart) == false )
+      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart, targets_ground_cart, monitor_alarms ) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
@@ -285,6 +289,79 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      // Publish the ground target data:
 	      pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );
 	    }
+
+	  // Always publish the MonitorAlarms status because we have no way to check for a new message (defaults to "normal" if no message received):
+	  ainstein_radar_drivers::O79MonitorAlarms alarms_msg;
+	  switch( monitor_alarms.temperature )
+	    {
+	    case MonitorAlarms::Temperature::Disabled:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_DISABLED;
+	      break;
+	    case MonitorAlarms::Temperature::High:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_HIGH;
+	      break;
+	    case MonitorAlarms::Temperature::HighWarn:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_HIGH_WARN;
+	      break;
+	    case MonitorAlarms::Temperature::Normal:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_NORMAL;
+	      break;
+	    case MonitorAlarms::Temperature::LowWarn:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_LOW_WARN;
+	      break;
+	    case MonitorAlarms::Temperature::Low:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_LOW;
+	      break;
+	    default:
+	      alarms_msg.temp = O79MonitorAlarms::TEMP_NORMAL;
+	    }  
+
+	  switch( monitor_alarms.frame_time )
+	    {
+	    case MonitorAlarms::FrameTime::Disabled:
+	      alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_DISABLED;
+	      break;
+	    case MonitorAlarms::FrameTime::Normal:
+	      alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_NORMAL;
+	      break;
+	    case MonitorAlarms::FrameTime::FailedHigh:
+	      alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_FAILED_HIGH;
+	      break;
+	    default:
+	      alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_NORMAL;
+	    }  
+
+	  switch( monitor_alarms.blocked_radar )
+	    {
+	    case MonitorAlarms::BlockedRadar::Disabled:
+	      alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_DISABLED;
+	      break;
+	    case MonitorAlarms::BlockedRadar::Normal:
+	      alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_NORMAL;
+	      break;
+	    case MonitorAlarms::BlockedRadar::Failed:
+	      alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_FAILED;
+	      break;
+	    default:
+	      alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_NORMAL;
+	    }  
+
+	  switch( monitor_alarms.mmwave_monitor )
+	    {
+	    case MonitorAlarms::MmwaveMonitor::Disabled:
+	      alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_DISABLED;
+	      break;
+	    case MonitorAlarms::MmwaveMonitor::Normal:
+	      alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_NORMAL;
+	      break;
+	    case MonitorAlarms::MmwaveMonitor::Failed:
+	      alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_FAILED;
+	      break;
+	    default:
+	      alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_NORMAL;
+	    }
+
+	  pub_monitor_alarms_.publish( alarms_msg );
 	}
 
       // Check whether the data loop should still be running:
