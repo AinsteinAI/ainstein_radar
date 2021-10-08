@@ -56,6 +56,7 @@ namespace ainstein_radar_drivers
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
     radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
+    radar_data_msg_ptr_ground_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
@@ -74,6 +75,7 @@ namespace ainstein_radar_drivers
 
   /* declare the Cartesian targets as global because each one spans two messages */
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_cart;
+  std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_gnd_cart;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     if( msg.id == can_id_ )
@@ -82,7 +84,8 @@ namespace ainstein_radar_drivers
         target_type_t tmp_target_type = (target_type_t)msg.data[4];
 
         if( (tmp_target_type==raw_spherical || tmp_target_type==tracked_spherical \
-             || tmp_target_type==tracked_cartesian || tmp_target_type==raw_sphere_16bit_pwr) \
+             || tmp_target_type==tracked_cartesian || tmp_target_type==raw_sphere_16bit_pwr \
+             || tmp_target_type==ground_cartesian) \
             && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
           {
             ROS_DEBUG( "received start frame from radar" );
@@ -109,6 +112,13 @@ namespace ainstein_radar_drivers
                 radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
                 radar_data_msg_ptr_tracked_->objects.clear();
                 gtarget_cart.clear();
+              }
+            else if( tmp_target_type == ground_cartesian )
+              {
+                // tracked targets in Cartesian coordinates
+                radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
+                radar_data_msg_ptr_ground_->objects.clear();
+                gtarget_gnd_cart.clear();
               }
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
@@ -185,7 +195,7 @@ namespace ainstein_radar_drivers
                 radar_data_msg_ptr_tracked_->objects.push_back( obj );
                 targets_received++;
               }
-            else if( target_type == tracked_cartesian )
+            else if( target_type == tracked_cartesian || target_type == ground_cartesian )
               {
                 if( msg.data[1] == 0 )
                 {
@@ -198,28 +208,59 @@ namespace ainstein_radar_drivers
                                static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
                   tc.pos.z() = RadarInterfaceO79CAN::msg_pos_res * \
                                static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
-                  gtarget_cart.push_back(tc);
+                  if( target_type == tracked_cartesian )
+                  {
+                    gtarget_cart.push_back(tc);
+                  }
+                  else // ground
+                  {
+                    gtarget_gnd_cart.push_back(tc);
+                  }
+                  
                 }
                 else if( msg.data[1] == 1 )
                   {
                     targets_received++;
-                    if( gtarget_cart.size() > 0 )
+                    if( (target_type == tracked_cartesian && gtarget_cart.size() > 0) || \
+                        (target_type == ground_cartesian && gtarget_gnd_cart.size() > 0) )
                       {
-                      if( gtarget_cart.back().id == msg.data[0] )
+                        if( target_type == tracked_cartesian )
                         {
-                          gtarget_cart.back().vel.x() = RadarInterfaceO79CAN::msg_vel_res * \
-                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+                          if( gtarget_cart.back().id == msg.data[0] )
+                            {
+                              gtarget_cart.back().vel.x() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
 
-                          gtarget_cart.back().vel.y() = RadarInterfaceO79CAN::msg_vel_res * \
-                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+                              gtarget_cart.back().vel.y() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
 
-                          gtarget_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
-                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                              gtarget_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                            }
+                          else
+                            {
+                              std::cout << "WARNING >> no matching position frame found " << std::endl;
+                            }
                         }
-                      else
+                        else
                         {
-                          std::cout << "WARNING >> no matching position frame found " << std::endl;
+                          if( gtarget_gnd_cart.back().id == msg.data[0] )
+                            {
+                              gtarget_gnd_cart.back().vel.x() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+
+                              gtarget_gnd_cart.back().vel.y() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+
+                              gtarget_gnd_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                            static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                            }
+                          else
+                            {
+                              std::cout << "WARNING >> no matching position frame found " << std::endl;
+                            }
                         }
+
                       }
                     else
                       {
@@ -277,6 +318,38 @@ namespace ainstein_radar_drivers
                 
                 // Publish the tracked target data:
                 pub_radar_data_tracked_.publish( radar_data_msg_ptr_tracked_ );
+              }
+              else if( target_type == ground_cartesian )
+              {
+                // Fill in the RadarTrackedObjectArray message from the received Cartesian ground targets
+                radar_data_msg_ptr_ground_->header.stamp = ros::Time::now();
+                radar_data_msg_ptr_ground_->objects.clear();
+
+                ainstein_radar_msgs::RadarTrackedObject obj_msg;
+                for( const auto &t : gtarget_gnd_cart )
+                              {
+                    // Pass the target ID through to the object ID:
+                    obj_msg.id = t.id;
+                    
+                    // Fill in the pose information:
+                    obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+
+                    // Fill in the velocity information:
+                    obj_msg.velocity.linear.x = t.vel.x();
+                    obj_msg.velocity.linear.y = t.vel.y();
+                    obj_msg.velocity.linear.z = t.vel.z();
+                  
+                    // Fill in dummy bounding box information:
+                    obj_msg.box.pose = obj_msg.pose;
+                    obj_msg.box.dimensions.x = 0.01;
+                    obj_msg.box.dimensions.y = 0.01;
+                    obj_msg.box.dimensions.z = 0.01;
+                
+                    radar_data_msg_ptr_ground_->objects.push_back( obj_msg );
+                  }
+                
+                // Publish the tracked target data:
+                pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );
               }
             targets_received = 0;
             targets_to_come = -1;
