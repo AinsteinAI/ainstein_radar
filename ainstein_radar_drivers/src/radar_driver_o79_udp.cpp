@@ -433,28 +433,30 @@ namespace ainstein_radar_drivers
         }
 	else
 	{
-	  if( static_cast<MonitorAlarms::Temperature>( buffer_[0] ) >= MonitorAlarms::Temperature::Disabled &&
-	      static_cast<MonitorAlarms::Temperature>( buffer_[0] ) <= MonitorAlarms::Temperature::Low )
+	  offset = RadarDriverO79UDP::msg_header_len;
+
+	  if( static_cast<MonitorAlarms::Temperature>( buffer_[offset + 0] ) >= MonitorAlarms::Temperature::Disabled &&
+	      static_cast<MonitorAlarms::Temperature>( buffer_[offset + 0] ) <= MonitorAlarms::Temperature::Low )
 	    {
-	      monitor_alarms.temperature = static_cast<MonitorAlarms::Temperature>( buffer_[0] );
+	      monitor_alarms.temperature = static_cast<MonitorAlarms::Temperature>( buffer_[offset + 0] );
 	    }
 
-	  if( static_cast<MonitorAlarms::FrameTime>( buffer_[0] ) >= MonitorAlarms::FrameTime::Disabled &&
-	      static_cast<MonitorAlarms::FrameTime>( buffer_[0] ) <= MonitorAlarms::FrameTime::FailedHigh )
+	  if( static_cast<MonitorAlarms::FrameTime>( buffer_[offset + 1] ) >= MonitorAlarms::FrameTime::Disabled &&
+	      static_cast<MonitorAlarms::FrameTime>( buffer_[offset + 1] ) <= MonitorAlarms::FrameTime::FailedHigh )
 	    {
-	      monitor_alarms.frame_time = static_cast<MonitorAlarms::FrameTime>( buffer_[1] );
+	      monitor_alarms.frame_time = static_cast<MonitorAlarms::FrameTime>( buffer_[offset + 1] );
 	    }
 
-	  if( static_cast<MonitorAlarms::BlockedRadar>( buffer_[0] ) >= MonitorAlarms::BlockedRadar::Disabled &&
-	      static_cast<MonitorAlarms::BlockedRadar>( buffer_[0] ) <= MonitorAlarms::BlockedRadar::Failed )
+	  if( static_cast<MonitorAlarms::BlockedRadar>( buffer_[offset + 2] ) >= MonitorAlarms::BlockedRadar::Disabled &&
+	      static_cast<MonitorAlarms::BlockedRadar>( buffer_[offset + 2] ) <= MonitorAlarms::BlockedRadar::Failed )
 	    {
-	      monitor_alarms.blocked_radar = static_cast<MonitorAlarms::BlockedRadar>( buffer_[2] );
+	      monitor_alarms.blocked_radar = static_cast<MonitorAlarms::BlockedRadar>( buffer_[offset + 2] );
 	    }
 
-	  if( static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[0] ) >= MonitorAlarms::MmwaveMonitor::Disabled &&
-	      static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[0] ) <= MonitorAlarms::MmwaveMonitor::Failed )
+	  if( static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[offset + 3] ) >= MonitorAlarms::MmwaveMonitor::Disabled &&
+	      static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[offset + 3] ) <= MonitorAlarms::MmwaveMonitor::Failed )
 	    {
-	      monitor_alarms.mmwave_monitor = static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[3] );
+	      monitor_alarms.mmwave_monitor = static_cast<MonitorAlarms::MmwaveMonitor>( buffer_[offset + 3] );
 	    }
 	}
       }
