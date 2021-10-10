@@ -66,6 +66,8 @@ namespace ainstein_radar_drivers
     static const double msg_pos_res;
     static const double msg_vel_res;
 
+    static const uint8_t id_monitor_alarm;
+
   private:
     void publishRadarInfo( void );
 
@@ -79,6 +81,8 @@ namespace ainstein_radar_drivers
 
     ros::Publisher pub_radar_info_;
     boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
+
+    ros::Publisher pub_monitor_alarms_;
 };
 
 } // namespace ainstein_drivers

@@ -25,7 +25,9 @@
 */
 
 #include "ainstein_radar_drivers/radar_interface_o79_can.h"
-#include  "ainstein_radar_drivers/radar_target_cartesian.h"
+#include "ainstein_radar_drivers/radar_target_cartesian.h"
+#include "ainstein_radar_drivers/O79MonitorAlarms.h"
+#include "ainstein_radar_drivers/monitor_alarms.h"
 #include "ainstein_radar_drivers/types_o79.h"
 #include <tf2_eigen/tf2_eigen.h>
 
@@ -37,6 +39,8 @@ namespace ainstein_radar_drivers
   const double RadarInterfaceO79CAN::msg_pos_res = 0.01;
   const double RadarInterfaceO79CAN::msg_vel_res = 0.005;
 
+  const uint8_t RadarInterfaceO79CAN::id_monitor_alarm = 0x50;
+  
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
         ros::NodeHandle node_handle_private ) :
     RadarInterface<can_msgs::Frame>( node_handle,
@@ -59,6 +63,9 @@ namespace ainstein_radar_drivers
 
     // Publish the RadarInfo message:
     publishRadarInfo();
+    
+    // Advertise the O79 monitor alarms:
+    pub_monitor_alarms_ = nh_private_.advertise<ainstein_radar_drivers::O79MonitorAlarms>( "monitor_alarms", 10 );
 
     // Set up the CAN frame message:
     can_frame_msg_.header.frame_id = "0";
@@ -229,7 +236,109 @@ namespace ainstein_radar_drivers
               }
 
           }
-        else
+        else if( msg.data[0] == RadarInterfaceO79CAN::id_monitor_alarm )
+	  {
+	    // Parse the monitor alarm data using the enum class for portability (as done in the UDP driver):
+	    MonitorAlarms monitor_alarms;
+
+	    if( static_cast<MonitorAlarms::Temperature>( msg.data[1] ) >= MonitorAlarms::Temperature::Disabled &&
+		static_cast<MonitorAlarms::Temperature>( msg.data[1] ) <= MonitorAlarms::Temperature::Low )
+	      {
+		monitor_alarms.temperature = static_cast<MonitorAlarms::Temperature>( msg.data[1] );
+	      }
+
+	    if( static_cast<MonitorAlarms::FrameTime>( msg.data[2] ) >= MonitorAlarms::FrameTime::Disabled &&
+		static_cast<MonitorAlarms::FrameTime>( msg.data[2] ) <= MonitorAlarms::FrameTime::FailedHigh )
+	      {
+		monitor_alarms.frame_time = static_cast<MonitorAlarms::FrameTime>( msg.data[2] );
+	      }
+
+	    if( static_cast<MonitorAlarms::BlockedRadar>( msg.data[3] ) >= MonitorAlarms::BlockedRadar::Disabled &&
+		static_cast<MonitorAlarms::BlockedRadar>( msg.data[3] ) <= MonitorAlarms::BlockedRadar::Failed )
+	      {
+		monitor_alarms.blocked_radar = static_cast<MonitorAlarms::BlockedRadar>( msg.data[3] );
+	      }
+
+	    if( static_cast<MonitorAlarms::MmwaveMonitor>( msg.data[4] ) >= MonitorAlarms::MmwaveMonitor::Disabled &&
+		static_cast<MonitorAlarms::MmwaveMonitor>( msg.data[4] ) <= MonitorAlarms::MmwaveMonitor::Failed )
+	      {
+		monitor_alarms.mmwave_monitor = static_cast<MonitorAlarms::MmwaveMonitor>( msg.data[4] );
+	      }
+
+	    // Always publish the MonitorAlarms status because we have no way to check for a new message (defaults to "normal" if no message received):
+	    ainstein_radar_drivers::O79MonitorAlarms alarms_msg;
+	    switch( monitor_alarms.temperature )
+	      {
+	      case MonitorAlarms::Temperature::Disabled:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_DISABLED;
+		break;
+	      case MonitorAlarms::Temperature::High:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_HIGH;
+		break;
+	      case MonitorAlarms::Temperature::HighWarn:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_HIGH_WARN;
+		break;
+	      case MonitorAlarms::Temperature::Normal:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_NORMAL;
+		break;
+	      case MonitorAlarms::Temperature::LowWarn:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_LOW_WARN;
+		break;
+	      case MonitorAlarms::Temperature::Low:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_LOW;
+		break;
+	      default:
+		alarms_msg.temp = O79MonitorAlarms::TEMP_NORMAL;
+	      }  
+
+	    switch( monitor_alarms.frame_time )
+	      {
+	      case MonitorAlarms::FrameTime::Disabled:
+		alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_DISABLED;
+		break;
+	      case MonitorAlarms::FrameTime::Normal:
+		alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_NORMAL;
+		break;
+	      case MonitorAlarms::FrameTime::FailedHigh:
+		alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_FAILED_HIGH;
+		break;
+	      default:
+		alarms_msg.frame_time = O79MonitorAlarms::FRAME_TIME_NORMAL;
+	      }  
+
+	    switch( monitor_alarms.blocked_radar )
+	      {
+	      case MonitorAlarms::BlockedRadar::Disabled:
+		alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_DISABLED;
+		break;
+	      case MonitorAlarms::BlockedRadar::Normal:
+		alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_NORMAL;
+		break;
+	      case MonitorAlarms::BlockedRadar::Failed:
+		alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_FAILED;
+		break;
+	      default:
+		alarms_msg.blocked_radar = O79MonitorAlarms::BLOCKED_NORMAL;
+	      }  
+
+	    switch( monitor_alarms.mmwave_monitor )
+	      {
+	      case MonitorAlarms::MmwaveMonitor::Disabled:
+		alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_DISABLED;
+		break;
+	      case MonitorAlarms::MmwaveMonitor::Normal:
+		alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_NORMAL;
+		break;
+	      case MonitorAlarms::MmwaveMonitor::Failed:
+		alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_FAILED;
+		break;
+	      default:
+		alarms_msg.mmwave_monitor = O79MonitorAlarms::MONITOR_NORMAL;
+	      }
+
+	    pub_monitor_alarms_.publish( alarms_msg );
+	  }
+	else
           {
             ROS_DEBUG( "received message with unknown id: %02x", msg.id );
           }
