@@ -52,16 +52,18 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_len_tracked_targets = 8; // bytes per raw target
   const unsigned int RadarDriverO79UDP::msg_len_bounding_boxes = 9; // bytes per bounding box
   const unsigned int RadarDriverO79UDP::msg_len_tracked_targets_cart = 13; // bytes per Cartesian tracked target
+  const unsigned int RadarDriverO79UDP::msg_len_alarms = 4; // bytes per alarm message
 
   const unsigned int RadarDriverO79UDP::msg_header_len = 8; // 8 byte header per message
   const unsigned int RadarDriverO79UDP::msg_type_byte = 4;
 
-  const unsigned int RadarDriverO79UDP::msg_id_raw_targets = 0x00;
-  const unsigned int RadarDriverO79UDP::msg_id_tracked_targets = 0x01;
-  const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 0x02;
-  const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 0x04;
-  const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 0x05;
-  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 0x06;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets = 0;
+  const unsigned int RadarDriverO79UDP::msg_id_tracked_targets = 1;
+  const unsigned int RadarDriverO79UDP::msg_id_bounding_boxes = 2;
+  const unsigned int RadarDriverO79UDP::msg_id_tracked_targets_cart = 4;
+  const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 5;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 6;
+  const unsigned int RadarDriverO79UDP::msg_id_alarms = 7;
 
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
@@ -188,7 +190,8 @@ namespace ainstein_radar_drivers
 					  std::vector<ainstein_radar_drivers::RadarTarget> &targets_tracked,
 					  std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
 					  std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart,
-            std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart )
+            std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart,
+            std::vector<ainstein_radar_drivers::RadarDeviceAlarms> &alarms)
   {
     // Clear the targets array in preparation for message processing:
     targets.clear();
@@ -196,6 +199,7 @@ namespace ainstein_radar_drivers
     bounding_boxes.clear();
     targets_tracked_cart.clear();
     targets_ground_cart.clear();
+    alarms.clear();
 
     // Received message length:
     int msg_len;
@@ -231,6 +235,7 @@ namespace ainstein_radar_drivers
       ainstein_radar_drivers::BoundingBox box;
       ainstein_radar_drivers::RadarTargetCartesian target_cart;
       ainstein_radar_drivers::RadarTargetCartesian target_cart_ground;
+      ainstein_radar_drivers::RadarDeviceAlarms alarm;
 
       // Check the first byte for the message type ID:
       if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_tracked_targets )
@@ -418,6 +423,28 @@ namespace ainstein_radar_drivers
 
               targets_ground_cart.push_back( target_cart_ground );
             }
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_alarms )
+      {
+        // Check data is a valid length:
+        if( ( msg_data_len % RadarDriverO79UDP::msg_len_alarms ) != 0 )
+        {
+            std::cout << "WARNING >> Incorrect number of bytes: " << msg_len << std::endl;
+            return false;
+        }
+        else
+        {
+            offset = 0; /* FA is in bytes 0 & 1, TFTKO is in bytes 2 & 3, after the header message. Both little-endian */
+            alarm.FA_bits = static_cast<RadarDeviceAlarms::diag_status_bits>((static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
+                            (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff)));
+            
+            offset += 2;
+            alarm.TFTKO_bits = static_cast<RadarDeviceAlarms::diag_status_bits>((static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
+                               (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff)));
+            alarms.push_back(alarm);
+
+            std::cout << "FA: 0x" << std::hex << alarm.FA_bits << " TFTKO: 0x" << std::hex << alarm.TFTKO_bits << std::endl;
         }
       }
       else

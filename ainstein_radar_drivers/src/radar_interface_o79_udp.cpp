@@ -129,11 +129,17 @@ void RadarInterfaceO79UDP::mainLoop(void)
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_ground_cart;
+   std::vector<ainstein_radar_drivers::RadarDeviceAlarms> alarms;
 
   while( running && !ros::isShuttingDown() )
     {
       // Call to block until data has been received:
-      if( driver_->receiveTargets( targets_raw, targets_tracked, bounding_boxes, targets_tracked_cart, targets_ground_cart) == false )
+      if( driver_->receiveTargets( targets_raw, 
+	  							   targets_tracked, 
+								   bounding_boxes, 
+								   targets_tracked_cart,
+								   targets_ground_cart,
+								   alarms) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
 	}
