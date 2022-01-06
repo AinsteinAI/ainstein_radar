@@ -436,15 +436,15 @@ namespace ainstein_radar_drivers
         else
         {
             offset = 0; /* FA is in bytes 0 & 1, TFTKO is in bytes 2 & 3, after the header message. Both little-endian */
-            alarm.FA_bits = static_cast<RadarDeviceAlarms::diag_status_bits>((static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
-                            (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff)));
+            alarm.FA_bits = (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
+                            (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff));
             
             offset += 2;
-            alarm.TFTKO_bits = static_cast<RadarDeviceAlarms::diag_status_bits>((static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
-                               (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff)));
+            alarm.TFTKO_bits = (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset + 1] & 0xff) << 8) |
+                               (static_cast<uint16_t>(buffer_[RadarDriverO79UDP::msg_header_len + offset] & 0xff));
             alarms.push_back(alarm);
 
-            std::cout << "FA: 0x" << std::hex << alarm.FA_bits << " TFTKO: 0x" << std::hex << alarm.TFTKO_bits << std::endl;
+            // std::cout << "FA: 0x" << std::hex << alarm.FA_bits << " TFTKO: 0x" << std::hex << alarm.TFTKO_bits << std::endl;
         }
       }
       else
