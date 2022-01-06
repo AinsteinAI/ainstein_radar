@@ -17,6 +17,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <ros/ros.h>
 #include <tf2_eigen/tf2_eigen.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace ainstein_radar_drivers
 {
@@ -86,6 +87,12 @@ private:
   boost::shared_ptr<ainstein_radar_msgs::BoundingBoxArray> msg_ptr_tracked_boxes_;
   boost::shared_ptr<sensor_msgs::PointCloud2> cloud_msg_ptr_raw_;
   boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
+  rviz_visual_tools::RvizVisualToolsPtr str_msg_ptr_;
+
+  double msg_offset_x_;
+  double msg_offset_y_;
+  double msg_offset_z_;
+  Eigen::Isometry3d msg_pose_;
 };
 
 } // namespace ainstein_radar_drivers

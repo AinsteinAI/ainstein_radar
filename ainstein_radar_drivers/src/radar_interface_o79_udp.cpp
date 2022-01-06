@@ -23,7 +23,7 @@
   IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
+#include <rviz_visual_tools/rviz_visual_tools.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,6 +37,8 @@
 #include <cerrno>
 
 #include "ainstein_radar_drivers/radar_interface_o79_udp.h"
+
+namespace rvt = rviz_visual_tools;
 
 namespace ainstein_radar_drivers
 {
@@ -74,6 +76,19 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Get whether to publish ROS point cloud messages:
   nh_private_.param( "publish_raw_cloud", publish_raw_cloud_, false );
 
+  // Get string message parameters
+  std::string name;
+  nh_private_.param("name", name, std::string("o79_udp"));
+  nh_private_.param("msg_offset_x", msg_offset_x_, -2.0);
+  nh_private_.param("msg_offset_y", msg_offset_y_, 0.0);
+  nh_private_.param("msg_offset_z", msg_offset_z_, 0.0);
+
+  // Create pose for string messages
+  msg_pose_ = Eigen::Isometry3d::Identity();
+  msg_pose_.translation().x() = msg_offset_x_;
+  msg_pose_.translation().y() = msg_offset_y_;
+  msg_pose_.translation().z() = msg_offset_z_;
+
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
@@ -102,6 +117,12 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 raw point cloud:
   pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
 
+  str_msg_ptr_.reset(new rvt::RvizVisualTools(frame_id_, name + "/messages"));
+  str_msg_ptr_->loadMarkerPub();  // create publisher before waiting
+  // Clear messages
+  str_msg_ptr_->deleteAllMarkers();
+  //   str_msg_ptr_->enableBatchPublishing();
+
   // Start the data collection thread:
   thread_ = std::unique_ptr<std::thread>( new std::thread( &RadarInterfaceO79UDP::mainLoop, this ) );
   mutex_.lock();
@@ -129,7 +150,7 @@ void RadarInterfaceO79UDP::mainLoop(void)
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_ground_cart;
-   std::vector<ainstein_radar_drivers::RadarDeviceAlarms> alarms;
+  std::vector<ainstein_radar_drivers::RadarDeviceAlarms> alarms;
 
   while( running && !ros::isShuttingDown() )
     {
@@ -291,6 +312,29 @@ void RadarInterfaceO79UDP::mainLoop(void)
 	      // Publish the ground target data:
 	      pub_radar_data_ground_.publish( radar_data_msg_ptr_ground_ );
 	    }
+		if(alarms.size() > 0)
+		{
+			RadarDeviceAlarms l_alarm;
+			for( const auto &a : alarms )
+		    {
+				l_alarm.FA_bits |= a.FA_bits;
+				l_alarm.TFTKO_bits |= a.TFTKO_bits;
+			}
+
+			std::string disp_str = "FA: ";
+			disp_str += l_alarm.getStatusStr(l_alarm.FA_bits);
+			disp_str += "\nTFTKO: ";
+			disp_str += l_alarm.getStatusStr(l_alarm.TFTKO_bits);
+
+			rvt::colors disp_color = rvt::GREEN;
+			if(l_alarm.FA_bits > 0)
+			{
+				disp_color = rvt::RED;
+			}
+			str_msg_ptr_->deleteAllMarkers();
+			str_msg_ptr_->publishText(msg_pose_, disp_str, disp_color, rvt::XXXXLARGE, false);
+			str_msg_ptr_->trigger();
+		}
 	}
 
       // Check whether the data loop should still be running:

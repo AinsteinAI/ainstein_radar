@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   ainstein_radar_filters
   dynamic_reconfigure
   message_generation
+  rviz_visual_tools
   )
 
 add_message_files(
@@ -50,7 +51,7 @@ add_executable(o79_can_node src/o79_can_node.cpp src/radar_interface_o79_can.cpp
 add_dependencies(o79_can_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(o79_can_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(o79_udp_node src/o79_udp_node.cpp src/radar_interface_o79_udp.cpp src/radar_driver_o79_udp.cpp src/utilities.cpp)
+add_executable(o79_udp_node src/o79_udp_node.cpp src/radar_interface_o79_udp.cpp src/radar_driver_o79_udp.cpp src/utilities.cpp src/radar_device_alarms.cpp)
 add_dependencies(o79_udp_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(o79_udp_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 

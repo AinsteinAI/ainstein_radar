@@ -1,6 +1,8 @@
 #ifndef RADAR_DEVICE_ALARMS_H_
 #define RADAR_DEVICE_ALARMS_H_
-
+#include <stdlib.h>
+#include <vector>
+#include "radar_device_diag.h"
 namespace ainstein_radar_drivers
 {  
     class RadarDeviceAlarms
@@ -13,19 +15,20 @@ namespace ainstein_radar_drivers
         }
         ~RadarDeviceAlarms(void) {}
 
-        enum diag_status_bits: uint16_t
-        {
-            none            = 0,
-            blocked_radar   = 1<<0,
-            frame_time      = 1<<1,
-            main_proc_temp  = 1<<2,
-            mmwave_temp     = 1<<3,
-            mmwave_proc     = 1<<4,
-            main_proc       = 1<<5
-        };
+        std::string getStatusStr(uint16_t flags);
 
         uint16_t FA_bits;
         uint16_t TFTKO_bits;
+
+    private:
+        /* The bitmask value here must match the corresponding definitions on the radar*/
+        const std::vector<RadarDeviceDiag> diags_{RadarDeviceDiag((uint16_t)0, "None"),
+                                                  RadarDeviceDiag((uint16_t)(1<<0), "Blocked Radar"),
+                                                  RadarDeviceDiag((uint16_t)(1<<1), "Frame Time"),
+                                                  RadarDeviceDiag((uint16_t)(1<<2), "Main Processor Temperature"),
+                                                  RadarDeviceDiag((uint16_t)(1<<3), "RF Processor Temperature"),
+                                                  RadarDeviceDiag((uint16_t)(1<<4), "RF Processor Performance"),
+                                                  RadarDeviceDiag((uint16_t)(1<<5), "Main Processor Performance")};
     };
 }
 #endif
