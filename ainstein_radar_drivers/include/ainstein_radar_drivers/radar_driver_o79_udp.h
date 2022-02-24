@@ -27,6 +27,10 @@ namespace ainstein_radar_drivers
 			 std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
 			 std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart,
        std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart,
+       std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_1,
+       std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_2,
+       std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_3,
+       std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_4,
        std::vector<ainstein_radar_drivers::RadarDeviceAlarms> &alarms);
 
     static const std::string connect_cmd_str;
@@ -49,6 +53,10 @@ namespace ainstein_radar_drivers
     static const unsigned int msg_id_tracked_targets_cart;
     static const unsigned int msg_id_ground_targets_cart;
     static const unsigned int msg_id_raw_targets_16bit_pwr;
+    static const unsigned int msg_id_raw_targets_filter_1;
+    static const unsigned int msg_id_raw_targets_filter_2;
+    static const unsigned int msg_id_raw_targets_filter_3;
+    static const unsigned int msg_id_raw_targets_filter_4;
     static const unsigned int msg_id_alarms;
 
     static const double msg_range_res;

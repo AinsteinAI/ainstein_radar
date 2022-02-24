@@ -32,6 +32,10 @@ public:
     nh_private_( node_handle_private ),
     name_( radar_name ),
     radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_raw_filter_1_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_raw_filter_2_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_raw_filter_3_( new ainstein_radar_msgs::RadarTargetArray ),
+    radar_data_msg_ptr_raw_filter_4_( new ainstein_radar_msgs::RadarTargetArray ),
     radar_data_msg_ptr_ground_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
     radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
     radar_data_msg_ptr_alarms_( new ainstein_radar_msgs::RadarAlarmArray )
@@ -47,6 +51,14 @@ public:
 
         // Set up the publishers for sending out processed radar data:
         pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw",
+											10 );
+        pub_radar_data_raw_filter_1_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_1",
+											10 );
+        pub_radar_data_raw_filter_2_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_2",
+											10 );
+        pub_radar_data_raw_filter_3_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_3",
+											10 );
+        pub_radar_data_raw_filter_4_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_4",
 											10 );
         pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTrackedObjectArray>( "objects",
 												10 );
@@ -78,6 +90,10 @@ protected:
 
     ros::Publisher pub_radar_cmd_;
     ros::Publisher pub_radar_data_raw_;
+    ros::Publisher pub_radar_data_raw_filter_1_;
+    ros::Publisher pub_radar_data_raw_filter_2_;
+    ros::Publisher pub_radar_data_raw_filter_3_;
+    ros::Publisher pub_radar_data_raw_filter_4_;
     ros::Publisher pub_radar_data_tracked_;
     ros::Publisher pub_radar_data_ground_;
     ros::Publisher pub_radar_data_alarms_;
@@ -85,6 +101,10 @@ protected:
     ros::Subscriber sub_data_msg_;
 
     boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_filter_1_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_filter_2_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_filter_3_;
+    boost::shared_ptr<ainstein_radar_msgs::RadarTargetArray> radar_data_msg_ptr_raw_filter_4_;
     boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_tracked_;
     boost::shared_ptr<ainstein_radar_msgs::RadarTrackedObjectArray> radar_data_msg_ptr_ground_;
     boost::shared_ptr<ainstein_radar_msgs::RadarAlarmArray> radar_data_msg_ptr_alarms_;

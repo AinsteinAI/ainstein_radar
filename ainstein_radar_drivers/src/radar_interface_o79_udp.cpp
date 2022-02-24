@@ -50,10 +50,18 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   nh_( node_handle ),
   nh_private_( node_handle_private ),
   radar_data_msg_ptr_raw_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_data_msg_ptr_raw_filter_1_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_data_msg_ptr_raw_filter_2_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_data_msg_ptr_raw_filter_3_( new ainstein_radar_msgs::RadarTargetArray ),
+  radar_data_msg_ptr_raw_filter_4_( new ainstein_radar_msgs::RadarTargetArray ),
   radar_data_msg_ptr_tracked_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   radar_data_msg_ptr_ground_( new ainstein_radar_msgs::RadarTrackedObjectArray ),
   msg_ptr_tracked_boxes_( new ainstein_radar_msgs::BoundingBoxArray ),
   cloud_msg_ptr_raw_( new sensor_msgs::PointCloud2 ),
+  cloud_msg_ptr_raw_filter_1_( new sensor_msgs::PointCloud2 ),
+  cloud_msg_ptr_raw_filter_2_( new sensor_msgs::PointCloud2 ),
+  cloud_msg_ptr_raw_filter_3_( new sensor_msgs::PointCloud2 ),
+  cloud_msg_ptr_raw_filter_4_( new sensor_msgs::PointCloud2 ),
   radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
 {
   // Get the host IP and port:
@@ -91,6 +99,10 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Set the frame ID:
   radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_raw_filter_1_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_raw_filter_2_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_raw_filter_3_->header.frame_id = frame_id_;
+  radar_data_msg_ptr_raw_filter_4_->header.frame_id = frame_id_;
   radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
   radar_data_msg_ptr_ground_->header.frame_id = frame_id_;
   msg_ptr_tracked_boxes_->header.frame_id = frame_id_;
@@ -105,6 +117,18 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
   // Advertise the O79 raw targets data:
   pub_radar_data_raw_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw", 10 );
 
+  // Advertise the O79 filter 1 raw targets data:
+  pub_radar_data_raw_filter_1_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_1", 10 );
+
+  // Advertise the O79 filter 2 raw targets data:
+  pub_radar_data_raw_filter_2_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_2", 10 );
+
+  // Advertise the O79 filter 3 raw targets data:
+  pub_radar_data_raw_filter_3_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_3", 10 );
+
+  // Advertise the O79 filter 4 raw targets data:
+  pub_radar_data_raw_filter_4_ = nh_private_.advertise<ainstein_radar_msgs::RadarTargetArray>( "targets/raw_filter_4", 10 );
+
   // Advertise the O79 tracked targets data:
   pub_radar_data_tracked_ = nh_private_.advertise<ainstein_radar_msgs::RadarTrackedObjectArray>( "objects", 10 );
 
@@ -116,6 +140,18 @@ RadarInterfaceO79UDP::RadarInterfaceO79UDP( ros::NodeHandle node_handle,
 
   // Advertise the O79 raw point cloud:
   pub_cloud_raw_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
+
+  // Advertise the O79 raw point cloud (filter 1):
+  pub_cloud_raw_filter_1_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
+
+  // Advertise the O79 raw point cloud (filter 2):
+  pub_cloud_raw_filter_2_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
+
+  // Advertise the O79 raw point cloud (filter 3):
+  pub_cloud_raw_filter_3_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
+
+  // Advertise the O79 raw point cloud (filter 4):
+  pub_cloud_raw_filter_4_ = nh_private_.advertise<sensor_msgs::PointCloud2>( "cloud/raw", 10 );
 
   str_msg_ptr_.reset(new rvt::RvizVisualTools(frame_id_, name + "/messages"));
   str_msg_ptr_->loadMarkerPub();  // create publisher before waiting
@@ -146,6 +182,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
   // Enter the main data receiving loop:
   bool running = true;
   std::vector<ainstein_radar_drivers::RadarTarget> targets_raw;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_raw_filter_1;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_raw_filter_2;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_raw_filter_3;
+  std::vector<ainstein_radar_drivers::RadarTarget> targets_raw_filter_4;
   std::vector<ainstein_radar_drivers::RadarTarget> targets_tracked;
   std::vector<ainstein_radar_drivers::BoundingBox> bounding_boxes;
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> targets_tracked_cart;
@@ -160,6 +200,10 @@ void RadarInterfaceO79UDP::mainLoop(void)
 								   bounding_boxes, 
 								   targets_tracked_cart,
 								   targets_ground_cart,
+								   targets_raw_filter_1,
+								   targets_raw_filter_2,
+								   targets_raw_filter_3,
+								   targets_raw_filter_4,
 								   alarms) == false )
 	{
 	  ROS_WARN_STREAM( "Failed to read data: " << std::strerror( errno ) << std::endl );
@@ -187,6 +231,98 @@ void RadarInterfaceO79UDP::mainLoop(void)
 		{
 		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_, *cloud_msg_ptr_raw_ );
 		  pub_cloud_raw_.publish( cloud_msg_ptr_raw_ );
+		}
+	    }
+	if(targets_raw_filter_1.size() > 0)
+	   {
+		// Fill in the raw RadarTargetArray message from the received targets:
+		radar_data_msg_ptr_raw_filter_1_->header.stamp = ros::Time::now();
+		radar_data_msg_ptr_raw_filter_1_->targets.clear();
+		for( const auto &t : targets_raw_filter_1 )
+		{
+			if (t.id >= 0)
+			{
+				radar_data_msg_ptr_raw_filter_1_->targets.push_back( utilities::targetToROSMsg( t ) );
+			}
+		}
+
+		// Publish the raw target data:
+		pub_radar_data_raw_filter_1_.publish( radar_data_msg_ptr_raw_filter_1_ );
+
+		// Optionally publish raw detections as ROS point cloud:
+		if( publish_raw_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_filter_1_, *cloud_msg_ptr_raw_filter_1_ );
+		  pub_cloud_raw_filter_1_.publish( cloud_msg_ptr_raw_filter_1_ );
+		}
+	    }
+	 if(targets_raw_filter_2.size() > 0)
+	   {
+	      // Fill in the raw RadarTargetArray message from the received targets:
+	      radar_data_msg_ptr_raw_filter_2_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_raw_filter_2_->targets.clear();
+	      for( const auto &t : targets_raw_filter_2 )
+		{
+		  if (t.id >= 0)
+		    {
+		      radar_data_msg_ptr_raw_filter_2_->targets.push_back( utilities::targetToROSMsg( t ) );
+		    }
+		}
+
+	      // Publish the raw target data:
+	      pub_radar_data_raw_filter_2_.publish( radar_data_msg_ptr_raw_filter_2_ );
+
+	      // Optionally publish raw detections as ROS point cloud:
+	      if( publish_raw_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_filter_2_, *cloud_msg_ptr_raw_filter_2_ );
+		  pub_cloud_raw_filter_2_.publish( cloud_msg_ptr_raw_filter_2_ );
+		}
+	    }
+	 if(targets_raw_filter_3.size() > 0)
+	   {
+	      // Fill in the raw RadarTargetArray message from the received targets:
+	      radar_data_msg_ptr_raw_filter_3_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_raw_filter_3_->targets.clear();
+	      for( const auto &t : targets_raw_filter_3 )
+		{
+		  if (t.id >= 0)
+		    {
+		      radar_data_msg_ptr_raw_filter_3_->targets.push_back( utilities::targetToROSMsg( t ) );
+		    }
+		}
+
+	      // Publish the raw target data:
+	      pub_radar_data_raw_filter_3_.publish( radar_data_msg_ptr_raw_filter_3_ );
+
+	      // Optionally publish raw detections as ROS point cloud:
+	      if( publish_raw_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_filter_3_, *cloud_msg_ptr_raw_filter_3_ );
+		  pub_cloud_raw_filter_3_.publish( cloud_msg_ptr_raw_filter_3_ );
+		}
+	    }
+	 if(targets_raw_filter_4.size() > 0)
+	   {
+	      // Fill in the raw RadarTargetArray message from the received targets:
+	      radar_data_msg_ptr_raw_filter_4_->header.stamp = ros::Time::now();
+	      radar_data_msg_ptr_raw_filter_4_->targets.clear();
+	      for( const auto &t : targets_raw_filter_4 )
+		{
+		  if (t.id >= 0)
+		    {
+		      radar_data_msg_ptr_raw_filter_4_->targets.push_back( utilities::targetToROSMsg( t ) );
+		    }
+		}
+
+	      // Publish the raw target data:
+	      pub_radar_data_raw_filter_4_.publish( radar_data_msg_ptr_raw_filter_4_ );
+
+	      // Optionally publish raw detections as ROS point cloud:
+	      if( publish_raw_cloud_ )
+		{
+		  ainstein_radar_filters::data_conversions::radarTargetArrayToROSCloud( *radar_data_msg_ptr_raw_filter_4_, *cloud_msg_ptr_raw_filter_4_ );
+		  pub_cloud_raw_filter_4_.publish( cloud_msg_ptr_raw_filter_4_ );
 		}
 	    }
 

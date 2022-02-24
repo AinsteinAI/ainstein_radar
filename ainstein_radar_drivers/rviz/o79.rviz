@@ -71,7 +71,7 @@ Visualization Manager:
           Info Text Height: 0.05000000074505806
           Max Range: 100
           Min Range: 0
-          Name: Raw Targets
+          Name: Raw Targets 
           Number of Scans: 1
           Queue Size: 10
           Scale: 0.20000000298023224
@@ -79,6 +79,78 @@ Visualization Manager:
           Show Info: false
           Show Speed: true
           Topic: /o79_udp/targets/raw
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTargetArray
+          Color: 0; 255; 0
+          Color Method: Flat
+          Enabled: true
+          Info Text Height: 0.05000000074505806
+          Max Range: 100
+          Min Range: 0
+          Name: Raw Targets Filter 1
+          Number of Scans: 1
+          Queue Size: 10
+          Scale: 0.20000000298023224
+          Shape: Cube
+          Show Info: false
+          Show Speed: true
+          Topic: /o79_udp/targets/raw_filter_1
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTargetArray
+          Color: 255; 255; 255
+          Color Method: Flat
+          Enabled: true
+          Info Text Height: 0.05000000074505806
+          Max Range: 100
+          Min Range: 0
+          Name: Raw Targets Filter 2
+          Number of Scans: 1
+          Queue Size: 10
+          Scale: 0.20000000298023224
+          Shape: Cube
+          Show Info: false
+          Show Speed: true
+          Topic: /o79_udp/targets/raw_filter_2
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTargetArray
+          Color: 0; 255; 255
+          Color Method: Flat
+          Enabled: true
+          Info Text Height: 0.05000000074505806
+          Max Range: 100
+          Min Range: 0rawFovFilterSendTask
+          Name: Raw Targets Filter 3
+          Number of Scans: 1
+          Queue Size: 10
+          Scale: 0.20000000298023224
+          Shape: Cube
+          Show Info: false
+          Show Speed: true
+          Topic: /o79_udp/targets/raw_filter_3
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTargetArray
+          Color: 255; 0; 255
+          Color Method: Flat
+          Enabled: true
+          Info Text Height: 0.05000000074505806
+          Max Range: 100
+          Min Range: 0
+          Name: Raw Targets Filter 4
+          Number of Scans: 1
+          Queue Size: 10
+          Scale: 0.20000000298023224
+          Shape: Cube
+          Show Info: false
+          Show Speed: true
+          Topic: /o79_udp/targets/raw_filter_4
           Unreliable: false
           Value: true
         - Alpha: 1
