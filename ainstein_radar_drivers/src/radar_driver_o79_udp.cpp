@@ -64,6 +64,10 @@ namespace ainstein_radar_drivers
   const unsigned int RadarDriverO79UDP::msg_id_ground_targets_cart = 5;
   const unsigned int RadarDriverO79UDP::msg_id_raw_targets_16bit_pwr = 6;
   const unsigned int RadarDriverO79UDP::msg_id_alarms = 7;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_filter_1 = 8;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_filter_2 = 9;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_filter_3 = 10;
+  const unsigned int RadarDriverO79UDP::msg_id_raw_targets_filter_4 = 11;
 
   const double RadarDriverO79UDP::msg_range_res = 0.01;
   const double RadarDriverO79UDP::msg_speed_res = 0.005;
@@ -191,6 +195,10 @@ namespace ainstein_radar_drivers
 					  std::vector<ainstein_radar_drivers::BoundingBox> &bounding_boxes,
 					  std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_tracked_cart,
             std::vector<ainstein_radar_drivers::RadarTargetCartesian> &targets_ground_cart,
+            std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_1,
+            std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_2,
+            std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_3,
+            std::vector<ainstein_radar_drivers::RadarTarget> &targets_filter_4,
             std::vector<ainstein_radar_drivers::RadarDeviceAlarms> &alarms)
   {
     // Clear the targets array in preparation for message processing:
@@ -199,6 +207,10 @@ namespace ainstein_radar_drivers
     bounding_boxes.clear();
     targets_tracked_cart.clear();
     targets_ground_cart.clear();
+    targets_filter_1.clear();
+    targets_filter_2.clear();
+    targets_filter_3.clear();
+    targets_filter_4.clear();
     alarms.clear();
 
     // Received message length:
@@ -322,6 +334,110 @@ namespace ainstein_radar_drivers
           // empty target frame will be sent
           target.id = -1;
           targets.push_back( target );
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets_filter_1)
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
+
+            target.id = 0;
+            target.snr = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                                static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
+            targets_filter_1.push_back( target );
+        }
+        if( targets_filter_1.size() == 0 )
+        {
+          // no targets from filter 1 were received; push back some dummy data so that an
+          // empty target frame will be sent
+          target.id = -1;
+          targets_filter_1.push_back( target );
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets_filter_2)
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
+
+            target.id = 0;
+            target.snr = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                                static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
+            targets_filter_2.push_back( target );
+        }
+        if( targets_filter_2.size() == 0 )
+        {
+          // no targets were received; push back some dummy data so that an
+          // empty target frame will be sent
+          target.id = -1;
+          targets_filter_2.push_back( target );
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets_filter_3)
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
+
+            target.id = 0;
+            target.snr = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                                static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
+            targets_filter_3.push_back( target );
+        }
+        if( targets_filter_3.size() == 0 )
+        {
+          // no targets were received; push back some dummy data so that an
+          // empty target frame will be sent
+          target.id = -1;
+          targets_filter_3.push_back( target );
+        }
+      }
+      else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_raw_targets_filter_4)
+      {
+        for( int i = 0; i < ( msg_data_len / RadarDriverO79UDP::msg_len_raw_targets ); ++i )
+        {
+            offset = i * RadarDriverO79UDP::msg_len_raw_targets + RadarDriverO79UDP::msg_header_len;
+
+            target.id = 0;
+            target.snr = static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 0] & 0xff ) << 8 ) |
+                                                static_cast<uint16_t>( buffer_[offset + 1] & 0xff ) );
+            target.range = RadarDriverO79UDP::msg_range_res * static_cast<double>( static_cast<uint16_t>( ( buffer_[offset + 2] & 0xff ) << 8 ) |
+                                                                                  static_cast<uint16_t>( buffer_[offset + 3] & 0xff ) );
+            target.speed = RadarDriverO79UDP::msg_speed_res * static_cast<double>( static_cast<int16_t>( ( buffer_[offset + 4] & 0xff ) << 8 ) |
+                                                                                  static_cast<int16_t>( buffer_[offset + 5] & 0xff ) );
+            target.azimuth =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 6] ) );
+            target.elevation =  static_cast<double>( static_cast<int8_t>( buffer_[offset + 7] ) );
+
+            targets_filter_4.push_back( target );
+        }
+        if( targets_filter_4.size() == 0 )
+        {
+          // no targets were received; push back some dummy data so that an
+          // empty target frame will be sent
+          target.id = -1;
+          targets_filter_4.push_back( target );
         }
       }
       else if( buffer_[RadarDriverO79UDP::msg_type_byte] == RadarDriverO79UDP::msg_id_bounding_boxes )
