@@ -212,7 +212,7 @@ Visualization Manager:
       Name: Image
       Normalize Range: true
       Queue Size: 2
-      Transport Hint: raw
+      Transport Hint: compressed
       Unreliable: false
       Value: true
   Enabled: true
