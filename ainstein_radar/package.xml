@@ -14,8 +14,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>rviz_visual_tools</build_depend>
-
   <exec_depend>ainstein_radar_drivers</exec_depend>
   <exec_depend>ainstein_radar_filters</exec_depend>
   <exec_depend>ainstein_radar_gazebo_plugins</exec_depend>
