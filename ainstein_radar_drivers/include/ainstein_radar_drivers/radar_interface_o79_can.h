@@ -66,6 +66,13 @@ namespace ainstein_radar_drivers
     static const double msg_pos_res;
     static const double msg_vel_res;
 
+    static const double msg_pos_x_res;
+    static const double msg_pos_y_res;
+    static const double msg_pos_z_res;
+    static const double msg_vel_x_res;
+    static const double msg_vel_y_res;
+    static const double msg_vel_z_res;
+
   private:
     void publishRadarInfo( void );
 
