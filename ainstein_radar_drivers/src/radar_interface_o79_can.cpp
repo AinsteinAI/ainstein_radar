@@ -91,6 +91,7 @@ namespace ainstein_radar_drivers
 
         if( (tmp_target_type == raw_spherical ||
              tmp_target_type == tracked_cartesian ||
+             tmp_target_type == tracked_cartesian_CAN ||
              tmp_target_type == raw_sphere_16bit_pwr ||
              tmp_target_type == filtered_point_cloud)
             && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
@@ -107,7 +108,7 @@ namespace ainstein_radar_drivers
               radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
               radar_data_msg_ptr_raw_->targets.clear();
             }
-            else if( tmp_target_type == tracked_cartesian )
+            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_CAN )
             {
               // tracked targets in Cartesian coordinates
               radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
@@ -173,6 +174,49 @@ namespace ainstein_radar_drivers
               }
             else if( target_type == tracked_cartesian )
               {
+                if( msg.data[1] == 0 )
+                {
+                  /* position message; add a new entry to the vector of targets */
+                  ainstein_radar_drivers::RadarTargetCartesian tc;
+                  tc.id = static_cast<uint8_t>( msg.data[0] );
+                  tc.pos.x() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+                  tc.pos.y() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+                  tc.pos.z() = RadarInterfaceO79CAN::msg_pos_res * \
+                               static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                  gtarget_cart.push_back(tc);
+                }
+                else if( msg.data[1] == 1 )
+                  {
+                    targets_received++;
+                    if( gtarget_cart.size() > 0 )
+                      {
+                      if( gtarget_cart.back().id == msg.data[0] )
+                        {
+                          gtarget_cart.back().vel.x() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[2] << 8 ) + msg.data[3] ) );
+
+                          gtarget_cart.back().vel.y() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[4] << 8 ) + msg.data[5] ) );
+
+                          gtarget_cart.back().vel.z() = RadarInterfaceO79CAN::msg_vel_res * \
+                                                        static_cast<double>( static_cast<int16_t>( ( msg.data[6] << 8 ) + msg.data[7] ) );
+                        }
+                      else
+                        {
+                          std::cout << "WARNING >> no matching position frame found " << std::endl;
+                        }
+                      }
+                    else
+                      {
+                        std::cout << "WARNING >> no position frames in memory " << std::endl;
+                      }
+                  }
+                
+              }
+              else if( target_type == tracked_cartesian_CAN )
+              {
 
                 /* position message; add a new entry to the vector of targets */
                 ainstein_radar_drivers::RadarTargetCartesian tc;
@@ -229,7 +273,7 @@ namespace ainstein_radar_drivers
               {
                 pub_radar_data_filtered_pcl_.publish( radar_data_msg_ptr_filtered_pcl_ );
               }
-            else if( target_type == tracked_cartesian )
+            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_CAN )
               {
                 // Fill in the RadarTrackedObjectArray message from the received Cartesian targets
                 // using the same object message as for spherical data (only one type of tracked
