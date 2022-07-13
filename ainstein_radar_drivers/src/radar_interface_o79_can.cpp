@@ -37,6 +37,13 @@ namespace ainstein_radar_drivers
   const double RadarInterfaceO79CAN::msg_pos_res = 0.01;
   const double RadarInterfaceO79CAN::msg_vel_res = 0.005;
 
+  const double RadarInterfaceO79CAN::msg_pos_x_res = 0.025;
+  const double RadarInterfaceO79CAN::msg_pos_y_res = 0.025;
+  const double RadarInterfaceO79CAN::msg_pos_z_res = 0.08;
+  const double RadarInterfaceO79CAN::msg_vel_x_res = 0.025;
+  const double RadarInterfaceO79CAN::msg_vel_y_res = 0.025;
+  const double RadarInterfaceO79CAN::msg_vel_z_res = 0.125;
+
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
         ros::NodeHandle node_handle_private ) :
     RadarInterface<can_msgs::Frame>( node_handle,
@@ -84,6 +91,7 @@ namespace ainstein_radar_drivers
 
         if( (tmp_target_type == raw_spherical ||
              tmp_target_type == tracked_cartesian ||
+             tmp_target_type == tracked_cartesian_low_res ||
              tmp_target_type == raw_sphere_16bit_pwr ||
              tmp_target_type == filtered_point_cloud)
             && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
@@ -100,7 +108,7 @@ namespace ainstein_radar_drivers
               radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
               radar_data_msg_ptr_raw_->targets.clear();
             }
-            else if( tmp_target_type == tracked_cartesian )
+            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_low_res )
             {
               // tracked targets in Cartesian coordinates
               radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
@@ -205,6 +213,48 @@ namespace ainstein_radar_drivers
                         std::cout << "WARNING >> no position frames in memory " << std::endl;
                       }
                   }
+                
+              }
+              else if( target_type == tracked_cartesian_low_res )
+              {
+
+                /* position message; add a new entry to the vector of targets */
+                ainstein_radar_drivers::RadarTargetCartesian tc;
+                
+                /* Move data into 64 bit range to make extraction easier when they do not allign on 8 bit range */
+                uint64_t can_frame = 0x0; // = (uint64_t*) msg.data;
+                for(int i = 0; i < msg.dlc; i++)
+                {
+                  can_frame |= (uint64_t)msg.data[i] << (i * 8);
+                }
+                // std::copy(msg.data, msg.data+8, &can_frame);
+
+                tc.id = static_cast<uint8_t>( (can_frame & 0x3F) );
+
+                tc.pos.x() = RadarInterfaceO79CAN::msg_pos_x_res * \
+                              static_cast<double>( static_cast<uint16_t>( (can_frame & 0x000000000000FFC0) >> 6 ) );
+
+                uint16_t pos_y_11_bit = (can_frame & 0x0000000007FF0000) >> 16;
+                int16_t pos_y_16_bit = pos_y_11_bit | ((0x400 & pos_y_11_bit) ? 0xF800 : 0x0); // Check sign and add leading 1's if needed
+                tc.pos.y() = RadarInterfaceO79CAN::msg_pos_y_res * static_cast<double>(pos_y_16_bit);
+
+                int8_t pos_z_8_bit = (can_frame & 0x00000007F8000000) >> 27;
+                tc.pos.z() = RadarInterfaceO79CAN::msg_pos_z_res * static_cast<double>( pos_z_8_bit );
+
+                uint16_t vel_x_11_bit = (can_frame & 0x00003FF800000000) >> 35;
+                int16_t vel_x_16_bit = vel_x_11_bit | ((0x400 & vel_x_11_bit) ? 0xF800 : 0x0); // Check sign and add leading 1's if needed
+                tc.vel.x() = RadarInterfaceO79CAN::msg_vel_x_res * static_cast<double>( vel_x_16_bit );
+
+                uint16_t vel_y_11_bit = (can_frame & 0x01FFC00000000000) >> 46;
+                int16_t vel_y_16_bit = vel_y_11_bit | ((0x400 & vel_y_11_bit) ? 0xF800 : 0x0); // Check sign and add leading 1's if needed
+                tc.vel.y() = RadarInterfaceO79CAN::msg_vel_y_res * static_cast<double>( vel_y_16_bit );
+
+                uint8_t vel_z_7_bit = (can_frame & 0xFE00000000000000) >> 57;
+                int8_t vel_z_8_bit = vel_z_7_bit | ((0x40 & vel_z_7_bit) ? 0x80 : 0x0); // Check sign and add leading 1's if needed
+                tc.vel.z() = RadarInterfaceO79CAN::msg_vel_z_res * static_cast<double>( vel_z_8_bit );
+                
+                gtarget_cart.push_back(tc);
+                targets_received++;
               }
 
           }
@@ -223,7 +273,7 @@ namespace ainstein_radar_drivers
               {
                 pub_radar_data_filtered_pcl_.publish( radar_data_msg_ptr_filtered_pcl_ );
               }
-            else if( target_type == tracked_cartesian )
+            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_low_res )
               {
                 // Fill in the RadarTrackedObjectArray message from the received Cartesian targets
                 // using the same object message as for spherical data (only one type of tracked
