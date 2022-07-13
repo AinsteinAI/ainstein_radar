@@ -11,7 +11,7 @@ typedef enum radar_message_type {
   raw_sphere_16bit_pwr = 6,
   alarm_status = 7,
   filtered_point_cloud = 8,
-  tracked_cartesian_CAN = 9
+  tracked_cartesian_low_res = 9
 } radar_message_type_t;
 
 #endif

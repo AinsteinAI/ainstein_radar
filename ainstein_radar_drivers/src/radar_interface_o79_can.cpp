@@ -91,7 +91,7 @@ namespace ainstein_radar_drivers
 
         if( (tmp_target_type == raw_spherical ||
              tmp_target_type == tracked_cartesian ||
-             tmp_target_type == tracked_cartesian_CAN ||
+             tmp_target_type == tracked_cartesian_low_res ||
              tmp_target_type == raw_sphere_16bit_pwr ||
              tmp_target_type == filtered_point_cloud)
             && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
@@ -108,7 +108,7 @@ namespace ainstein_radar_drivers
               radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
               radar_data_msg_ptr_raw_->targets.clear();
             }
-            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_CAN )
+            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_low_res )
             {
               // tracked targets in Cartesian coordinates
               radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
@@ -215,7 +215,7 @@ namespace ainstein_radar_drivers
                   }
                 
               }
-              else if( target_type == tracked_cartesian_CAN )
+              else if( target_type == tracked_cartesian_low_res )
               {
 
                 /* position message; add a new entry to the vector of targets */
@@ -273,7 +273,7 @@ namespace ainstein_radar_drivers
               {
                 pub_radar_data_filtered_pcl_.publish( radar_data_msg_ptr_filtered_pcl_ );
               }
-            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_CAN )
+            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_low_res )
               {
                 // Fill in the RadarTrackedObjectArray message from the received Cartesian targets
                 // using the same object message as for spherical data (only one type of tracked
