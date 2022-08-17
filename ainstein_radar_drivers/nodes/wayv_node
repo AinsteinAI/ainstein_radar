@@ -2,16 +2,13 @@
 
 from wayv_air_api.wayv_air_device_api import Wayv_Air_API
 
-from collections import OrderedDict
 import math
 import numpy as np
 import time
-import serial
 import signal
 import sys
-
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+import threading
+import smokesignal
 
 from ainstein_radar_msgs.msg import RadarTargetArray
 from ainstein_radar_msgs.msg import RadarTarget
@@ -28,9 +25,10 @@ delay_init = 50 # number of target callbacks to pass before sending or reading c
 delay = delay_init
 v_level = 3
 if 'linux' in sys.platform:
-    serial_port = "/dev/ttyUSB0"
+    SER_PORT_DEFAULT = "/dev/ttyUSB0"
 else:
-    serial_port = "COM5"
+    SER_PORT_DEFAULT = "COM5"
+serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
 serial_baud = 115200
 comm_mode = MODE_485
 wifi_ip = '192.168.4.65'
@@ -53,12 +51,11 @@ def sigint_handler(*args):
     sys.stderr.write('/r')
     # make a list of the radars because the dictionary will change when disconnecting radars
     radar_list = []
-    for r in list(wayv_air.radars.keys()):
+    for r in list(wayv_intf.wayv_air.radars.keys()):
         radar_list.append(r)
     for r in radar_list:
-        wayv_air.radar_disconnect(r) # disconnect the radar before quitting
-    QApplication.quit()
-    app.quit()
+        wayv_intf.wayv_air.radar_disconnect(r) # disconnect the radar before quitting
+    sys.exit()
 
 class WayvROSInterface( object ):
     """
@@ -337,22 +334,22 @@ if __name__ == "__main__":
         frame_id = rospy.get_param( '~frame_id', 'map' )
         data_port = rospy.get_param( '~data_port', '/dev/ttyUSB0' )
 
-        # Create the ROS interface 
-        wayv_intf = WayvROSInterface( frame_id )
-
         # Set up an event loop to make the python interpreter run periodically
         # so that ctrl+c will disconnect the radar and kill the program
         signal.signal(signal.SIGINT, sigint_handler)
 
+        # Create the ROS interface 
+        wayv_intf = WayvROSInterface( frame_id )
+
         # The QApplication must be started before anything can be sent to, or received from, the Wayv Air
-        app = QApplication(sys.argv)
-        timer = QTimer()
-        timer.start(2000)
-        timer.timeout.connect(wayv_intf.supervisor)
-        
+        timer = threading.Timer(2, wayv_intf.supervisor)
+        timer.start()
+
         time.sleep(2)  # delay long enough for the radar to connect over WiFi
 
-        sys.exit(app.exec_())
+        #Initialize signal watcher for config 
+        smokesignal.on('config_ready', wayv_intf.supervisor)
+
         rospy.spin()
         
     except rospy.ROSInterruptException:
