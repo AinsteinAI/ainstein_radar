@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- Param required for playing back recorded data -->
+  <param name="use_sim_time" value="true" />
+
+  <!-- Load the rviz configuration -->
+  <arg name="rvizconfig_wayv" default="$(find ainstein_radar_drivers)/rviz/wayv_air.rviz" />
+
+  <!-- Run Rviz with specified configuration -->
+  <node name="rviz_wayv" pkg="rviz" type="rviz" args="-d $(arg rvizconfig_wayv)" />
+
+  <!-- Run the rqtbag GUI (make sure to right-click in bottom half and set to publish all) -->
+  <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
+
+</launch>
