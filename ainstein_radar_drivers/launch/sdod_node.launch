@@ -1,0 +1,6 @@
+<launch>
+
+  <!-- Run the SDOD CAN node for CAN output -->
+  <include file="$(find ainstein_radar_drivers)/launch/sdod_can_node.launch" />
+  
+</launch>

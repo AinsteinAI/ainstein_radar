@@ -17,6 +17,8 @@ add_message_files(
   RadarAlarmStamped.msg
   RadarTarget.msg
   RadarTargetArray.msg
+  RadarTargetCartesian.msg
+  RadarTargetCartesianArray.msg
   RadarTargetStamped.msg
   RadarTrackedObject.msg
   RadarTrackedObjectArray.msg

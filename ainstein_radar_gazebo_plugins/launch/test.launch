@@ -1,8 +1,0 @@
-<launch>
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="verbose" value="true"/>
-    <arg name="world_name" value="$(find ainstein_radar_gazebo_plugins)/worlds/test.world"/>
-  </include>
-  <arg name="rvizconfig_test" default="$(find ainstein_radar_gazebo_plugins)/rviz/test.rviz" />
-  <node name="rviz_test" pkg="rviz" type="rviz" args="-d $(arg rvizconfig_test)" required="false" />
-</launch>

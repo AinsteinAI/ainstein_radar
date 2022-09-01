@@ -64,6 +64,10 @@ add_executable(t79_bsd_node src/t79_bsd_node.cpp src/radar_interface_t79_bsd.cpp
 add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(t79_bsd_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(sdod_can_node src/sdod_can_node.cpp src/radar_interface_sdod_can.cpp src/utilities.cpp)
+add_dependencies(sdod_can_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(sdod_can_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 catkin_install_python(PROGRAMS
   nodes/wayv_node
   nodes/o79_config_node
@@ -75,6 +79,7 @@ install(TARGETS
   o79_udp_node
   t79_node
   t79_bsd_node
+  sdod_can_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

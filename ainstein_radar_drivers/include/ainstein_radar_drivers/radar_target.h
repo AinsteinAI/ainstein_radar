@@ -28,8 +28,8 @@ namespace ainstein_radar_drivers
       range = 0.0;
       speed = 0.0;
       azimuth = 0.0;
-	elevation = 0.0;
-	snr = 0.0;
+      elevation = 0.0;
+      snr = 0.0;
       }
     ~RadarTarget( void )
       {
