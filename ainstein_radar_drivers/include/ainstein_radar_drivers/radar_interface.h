@@ -42,7 +42,7 @@ public:
     radar_data_msg_ptr_alarms_( new ainstein_radar_msgs::RadarAlarmArray )
     {
         // Set up the subscriber to receive radar data:
-        sub_data_msg_ = nh_.subscribe( data_msg_topic, 10,
+        sub_data_msg_ = nh_.subscribe( data_msg_topic, 50,
 				       &RadarInterface::dataMsgCallback,
 				       this );
 

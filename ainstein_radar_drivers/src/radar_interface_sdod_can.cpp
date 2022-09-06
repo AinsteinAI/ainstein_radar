@@ -25,7 +25,7 @@
 */
 
 #include "ainstein_radar_drivers/radar_interface_sdod_can.h"
-#include  "ainstein_radar_drivers/radar_target_cartesian.h"
+#include "ainstein_radar_drivers/radar_target_cartesian.h"
 #include "ainstein_radar_drivers/types_sdod.h"
 #include <tf2_eigen/tf2_eigen.h>
 #include <iostream>
@@ -46,27 +46,26 @@ namespace ainstein_radar_drivers
 
   const int16_t RadarInterfaceSDODCAN::q_type = 7U;
 
-  RadarInterfaceSDODCAN::RadarInterfaceSDODCAN( ros::NodeHandle node_handle,
-        ros::NodeHandle node_handle_private ) :
-    RadarInterface<can_msgs::Frame>( node_handle,
-       node_handle_private,
-       ros::this_node::getName(),
-       "received_messages",
-       "sent_messages" ),
-    radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
+  RadarInterfaceSDODCAN::RadarInterfaceSDODCAN(ros::NodeHandle node_handle,
+                                               ros::NodeHandle node_handle_private) : RadarInterface<can_msgs::Frame>(node_handle,
+                                                                                                                      node_handle_private,
+                                                                                                                      ros::this_node::getName(),
+                                                                                                                      "received_messages",
+                                                                                                                      "sent_messages"),
+                                                                                      radar_info_msg_ptr_(new ainstein_radar_msgs::RadarInfo)
   {
     // Store the radar data frame ID:
     // Convert for RADAC ROS
-    nh_private_.param( "can_id", can_id_str_, std::string( "0x1" ) );
-    nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
+    nh_private_.param("can_id", can_id_str_, std::string("0x1"));
+    nh_private_.param("frame_id", frame_id_, std::string("map"));
 
     // Convert the CAN ID string to an int:
-    can_id_ = std::stoul(can_id_str_, nullptr, 16 );
+    can_id_ = std::stoul(can_id_str_, nullptr, 16);
 
     // Set the frame ID:
     radar_data_msg_ptr_raw_cartesian_->header.frame_id = frame_id_;
     radar_data_msg_ptr_raw_clusters_->header.frame_id = frame_id_;
-    // radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
+    radar_data_msg_ptr_tracked_->header.frame_id = frame_id_;
 
     // Publish the RadarInfo message:
     publishRadarInfo();
@@ -83,171 +82,228 @@ namespace ainstein_radar_drivers
   unsigned int targets_received = 0;
   radar_message_type_t target_type = no_type;
   uint8_t object_id = 0;
+  uint16_t radarFrameID = 0;
 
-  void RadarInterfaceSDODCAN::dataMsgCallback( const can_msgs::Frame &msg )
+  void RadarInterfaceSDODCAN::dataMsgCallback(const can_msgs::Frame &msg)
   {
-    if( msg.id == can_id_ )
+
+    // std::cout << "Message: ";
+    // for(uint8_t cnt = 0; cnt < msg.dlc; cnt++)
+    // {
+    //   std::cout << std::hex << (int)msg.data[cnt];
+    //   std::cout << " ";
+    // }
+    // std::cout << std::endl;
+
+    if (msg.id == can_id_)
     {
       // Parse out start of frame messages:
       radar_message_type_t tmp_target_type = (radar_message_type_t)msg.data[4];
 
-      if( (tmp_target_type == CAN_cartesian_2D_revA_T ||
-            tmp_target_type == CAN_raw_cluster_2D_revA_T ||
-            tmp_target_type == CAN_tracked_cluster_2D_revA_T)
-          && msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF )
-        {
-          target_type = tmp_target_type;
-          targets_received = 0;
-          targets_to_come = (msg.data[3] << 8) | msg.data[2];
-          object_id = 0;
+      // std::cout << "Message Received: " << msg << std::endl;
 
-          std::cout << "Message Type: " << target_type << " with NumObjs:" << targets_to_come << std::endl;
-
-          /* Clear Radar Message Data Arrays */
-          switch(target_type)
-          {
-            case CAN_cartesian_2D_revA_T:
-            {
-              radar_data_msg_ptr_raw_cartesian_->header.stamp = ros::Time::now();
-              radar_data_msg_ptr_raw_cartesian_->targets.clear();
-              break;
-            }
-
-            case CAN_raw_cluster_2D_revA_T:
-            {
-              radar_data_msg_ptr_raw_clusters_->header.stamp = ros::Time::now();
-              radar_data_msg_ptr_raw_clusters_->boxes.clear();
-              break;
-            }
-
-            case CAN_tracked_cluster_2D_revA_T:
-              {
-              radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
-              radar_data_msg_ptr_tracked_->objects.clear();
-              break;
-              }
-
-            default:
-              ROS_DEBUG( "Invalid target type received." );
-              break;
-          }
-        }
-      // Parse out raw target data messages:
-      else if( targets_to_come > 0 )
+      if ((tmp_target_type == CAN_cartesian_2D_revA_T ||
+           tmp_target_type == CAN_raw_cluster_2D_revA_T ||
+           tmp_target_type == CAN_tracked_cluster_2D_revA_T) &&
+          msg.data[5] == 0xFF && msg.data[6] == 0xFF && msg.data[7] == 0xFF)
       {
-        ROS_DEBUG( "received target from radar" );
+        if(targets_received > 0 )
+        {
+          std::cout << "New header was received prior to receving all objects. Received: " << targets_received << " Expected: " << targets_to_come << std::endl; 
+          std::cout << "Message Type was: " << target_type << " Message Count Delta: " << targets_to_come - targets_received << std::endl; 
+        }
+        radarFrameID = (msg.data[1] << 1) | msg.data[0];
+        target_type = tmp_target_type;
+        targets_received = 0;
+        targets_to_come = (msg.data[3] << 8) | msg.data[2];
+        object_id = 0;
+
+        // std::cout << "Message Type: " << target_type << " with NumObjs:" << targets_to_come << std::endl;
+
+        /* Clear Radar Message Data Arrays */
+        switch (target_type)
+        {
+        case CAN_cartesian_2D_revA_T:
+        {
+          radar_data_msg_ptr_raw_cartesian_->header.stamp = ros::Time::now();
+          radar_data_msg_ptr_raw_cartesian_->targets.clear();
+          break;
+        }
+
+        case CAN_raw_cluster_2D_revA_T:
+        {
+          radar_data_msg_ptr_raw_clusters_->header.stamp = ros::Time::now();
+          radar_data_msg_ptr_raw_clusters_->boxes.clear();
+          break;
+        }
+
+        case CAN_tracked_cluster_2D_revA_T:
+        {
+          radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+          radar_data_msg_ptr_tracked_->objects.clear();
+          break;
+        }
+
+        default:
+        {
+          ROS_DEBUG("Invalid target type received.");
+          std::cout << "Invalid target type received: " << target_type << std::endl;
+          break;
+        }
+        }
+      }
+      // Parse out raw target data messages:
+      else if (targets_to_come > 0)
+      {
+        ROS_DEBUG("received target from radar");
+        // std::cout << "Received target from radar: " << target_type << " Targets Received: " << targets_received << std::endl;
+
+        switch (target_type)
+        {
+        case CAN_cartesian_2D_revA_T:
+        {
+          /* position message; add a new entry to the vector of targets */
+          ainstein_radar_drivers::RadarTargetCartesian tc;
+          ainstein_radar_msgs::RadarTargetCartesian tc_out;
+
+          tc.id = object_id;
+          tc.pos.x() = static_cast<double>(static_cast<int16_t>((msg.data[1] << 8) + msg.data[0])) / (1 << RadarInterfaceSDODCAN::q_type);
+          tc.pos.y() = static_cast<double>(static_cast<int16_t>((msg.data[3] << 8) + msg.data[2])) / (1 << RadarInterfaceSDODCAN::q_type);
+          tc.pos.z() = 0U;
+
+          tc.speed = static_cast<double>(static_cast<int16_t>((msg.data[5] << 8) + msg.data[4])) / (1 << RadarInterfaceSDODCAN::q_type);
+          tc.peakVal = static_cast<double>(static_cast<int16_t>((msg.data[7] << 8) + msg.data[6])) / (1 << RadarInterfaceSDODCAN::q_type);
+          tc.vel.x() = tc.speed * tc.pos.x();
+          tc.vel.y() = tc.speed * tc.pos.y();
+          tc.vel.z() = tc.speed * tc.pos.z();
+
+          // Fill in the pose information:
+          tc_out.id = tc.id;
+          tc_out.peakVal = tc.peakVal;
+          tc_out.pose = ainstein_radar_filters::data_conversions::posVelToPose(tc.pos, tc.vel);
+
+          // Fill in the velocity information:
+          tc_out.velocity.linear.x = tc.vel.x();
+          tc_out.velocity.linear.y = tc.vel.y();
+          tc_out.velocity.linear.z = tc.vel.z();
+
+          radar_data_msg_ptr_raw_cartesian_->targets.push_back(tc_out);
+          object_id++;
+          break;
+        }
+
+        case CAN_raw_cluster_2D_revA_T:
+        {
+          ainstein_radar_msgs::BoundingBox box;
+          Eigen::Affine3d box_pose;
+
+          // Compute box pose (identity orientation, geometric center is position):
+          box_pose.linear() = Eigen::Matrix3d::Identity();
+          box_pose.translation().x() = static_cast<double>(static_cast<int16_t>((msg.data[1] << 8) + msg.data[0])) / (1 << RadarInterfaceSDODCAN::q_type);
+          box_pose.translation().y() = static_cast<double>(static_cast<int16_t>((msg.data[3] << 8) + msg.data[2])) / (1 << RadarInterfaceSDODCAN::q_type);
+          box_pose.translation().z() = (0U);
+
+          // Form the box message:
+          box.pose = tf2::toMsg(box_pose);
+
+          box.dimensions.x = static_cast<double>(static_cast<int16_t>((msg.data[5] << 8) + msg.data[4])) / (1 << RadarInterfaceSDODCAN::q_type);
+          box.dimensions.y = static_cast<double>(static_cast<int16_t>((msg.data[7] << 8) + msg.data[6])) / (1 << RadarInterfaceSDODCAN::q_type);
+          box.dimensions.z = (0U);
+
+          radar_data_msg_ptr_raw_clusters_->boxes.push_back(box);
+          break;
+        }
+
+        case CAN_tracked_cluster_2D_revA_T:
+        {
+          ainstein_radar_msgs::RadarTrackedObject object;
+          Eigen::Vector3d pos, vel;
+          Eigen::Affine3d box_pose;
           
-          switch(target_type)
+          object.id = object_id;
+
+          pos.x() = static_cast<double>(static_cast<int16_t>((msg.data[1] << 8) + msg.data[0])) / (1 << RadarInterfaceSDODCAN::q_type);
+          pos.y() = static_cast<double>(static_cast<int16_t>((msg.data[3] << 8) + msg.data[2])) / (1 << RadarInterfaceSDODCAN::q_type);
+          pos.z() = (0U);
+
+          vel.x() = static_cast<double>(static_cast<int16_t>((msg.data[5] << 8) + msg.data[4])) / (1 << RadarInterfaceSDODCAN::q_type);
+          vel.y() = static_cast<double>(static_cast<int16_t>((msg.data[7] << 8) + msg.data[6])) / (1 << RadarInterfaceSDODCAN::q_type);
+          vel.z() = (0U);
+
+          object.pose = ainstein_radar_filters::data_conversions::posVelToPose(pos, vel);
+
+          object.box.pose = object.pose;
+          object.box.dimensions.x = static_cast<double>(static_cast<int16_t>((msg.data[9] << 8) + msg.data[8])) / (1 << RadarInterfaceSDODCAN::q_type);
+          object.box.dimensions.y = static_cast<double>(static_cast<int16_t>((msg.data[11] << 8) + msg.data[10])) / (1 << RadarInterfaceSDODCAN::q_type);
+          object.box.dimensions.z = (0U);
+
+          object.velocity.linear.x = vel.x();
+          object.velocity.linear.y = vel.y();
+          object.velocity.linear.z = vel.z();
+
+          radar_data_msg_ptr_tracked_->objects.push_back(object);
+          object_id++;
+          break;
+        }
+
+        default:
+        {
+          ROS_DEBUG("Invalid target type received.");
+          std::cout << "Invalid target type received: " << target_type << std::endl;
+          break;
+        }
+        }
+        targets_received++;
+
+        if (targets_received == targets_to_come)
+        {
+          switch (target_type)
           {
-            case CAN_cartesian_2D_revA_T:
-            {
-              /* position message; add a new entry to the vector of targets */
-              ainstein_radar_drivers::RadarTargetCartesian tc;
-              ainstein_radar_msgs::RadarTargetCartesian tc_out;
-
-              tc.id = object_id;
-              tc.pos.x() = static_cast<double>( static_cast<int16_t>( ( msg.data[1] << 8 ) + msg.data[0] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              tc.pos.y() = static_cast<double>( static_cast<int16_t>( ( msg.data[3] << 8 ) + msg.data[2] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              tc.pos.z() = 0U;
-
-              tc.speed = static_cast<double>( static_cast<int16_t>( ( msg.data[5] << 8 ) + msg.data[4] ) ) / (1 << RadarInterfaceSDODCAN::q_type);
-              tc.peakVal = static_cast<double>( static_cast<int16_t>( ( msg.data[7] << 8 ) + msg.data[6] ) ) / (1 << RadarInterfaceSDODCAN::q_type);
-              tc.vel.x() = tc.speed * tc.pos.x();
-              tc.vel.y() = tc.speed * tc.pos.y();
-              tc.vel.z() = tc.speed * tc.pos.z();
-
-              // Fill in the pose information:
-              tc_out.id = tc.id;
-              tc_out.peakVal = tc.peakVal;
-              tc_out.pose = ainstein_radar_filters::data_conversions::posVelToPose(tc.pos, tc.vel);
-
-               // Fill in the velocity information:
-              tc_out.velocity.linear.x = tc.vel.x();
-              tc_out.velocity.linear.y = tc.vel.y();
-              tc_out.velocity.linear.z = tc.vel.z();
-
-              radar_data_msg_ptr_raw_cartesian_->targets.push_back( tc_out );
-              object_id++;
-              break;
-            }
-
-            case CAN_raw_cluster_2D_revA_T:
-            {
-              ainstein_radar_msgs::BoundingBox box;
-
-              // Compute box pose (identity orientation, geometric center is position):
-              Eigen::Affine3d box_pose;
-              box_pose.linear() = Eigen::Matrix3d::Identity();
-              box_pose.translation().x() = static_cast<double>( static_cast<int16_t>( ( msg.data[1] << 8 ) + msg.data[0] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              box_pose.translation().y() = static_cast<double>( static_cast<int16_t>( ( msg.data[3] << 8 ) + msg.data[2] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              box_pose.translation().z() = (0U);
-
-              // Form the box message:
-              box.pose = tf2::toMsg( box_pose );
-
-              box.dimensions.x = static_cast<double>( static_cast<int16_t>( ( msg.data[5] << 8 ) + msg.data[4] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              box.dimensions.y = static_cast<double>( static_cast<int16_t>( ( msg.data[7] << 8 ) + msg.data[6] )) / (1 << RadarInterfaceSDODCAN::q_type);
-              box.dimensions.z = (0U);
-
-              radar_data_msg_ptr_raw_clusters_->boxes.push_back( box );
-              break;
-            }
-
-            case CAN_tracked_cluster_2D_revA_T:
-            {
-              //TODO: Add tracked cluster handling
-              break;
-            }
-            
-            default:
-            {
-              ROS_DEBUG( "Invalid target type received." );
-              break;
-            }
-          }
-          targets_received++;
-
-        if( targets_received == targets_to_come )
+          case CAN_cartesian_2D_revA_T:
           {
-            switch(target_type)
-            {
-              case CAN_cartesian_2D_revA_T:
-              {
-                pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_cartesian_ );
-                std::cout << "Published Raw Cartesian" << std::endl;
-                break;
-              }
-
-              case CAN_raw_cluster_2D_revA_T:
-              {
-                pub_radar_data_raw_.publish( radar_data_msg_ptr_raw_clusters_ );
-                std::cout << "Published Raw Cluster" << std::endl;
-                break;
-              }
-
-              case CAN_tracked_cluster_2D_revA_T:
-              {
-                pub_radar_data_raw_.publish( radar_data_msg_ptr_tracked_ );
-                break;
-              }
-
-              default:
-                ROS_DEBUG( "Invalid target type received." );
-                break;
-            }
-            targets_received = 0;
-            targets_to_come = -1;
-            target_type = no_type;
+            pub_radar_data_raw_cartesian_.publish(radar_data_msg_ptr_raw_cartesian_);
+            // std::cout << "Published Raw Cartesians" << std::endl;
+            break;
           }
+
+          case CAN_raw_cluster_2D_revA_T:
+          {
+            pub_radar_data_raw_clusters_.publish(radar_data_msg_ptr_raw_clusters_);
+            // std::cout << "Published Raw Clusters" << std::endl;
+            break;
+          }
+
+          case CAN_tracked_cluster_2D_revA_T:
+          {
+            pub_radar_data_tracked_.publish(radar_data_msg_ptr_tracked_);
+            // std::cout << "Published Tracked Clusters" << std::endl;
+            break;
+          }
+
+          default:
+          {
+            ROS_DEBUG("Invalid target type received.");
+            std::cout << "Invalid target type received: " << target_type << std::endl;
+            break;
+          }
+          }
+          targets_received = 0;
+          targets_to_come = -1;
+          target_type = no_type;
+        }
+      }
+      else
+      {
+        std::cout << "Message Received but not detected as object" << std::endl;
       }
     }
   }
 
-  void RadarInterfaceSDODCAN::publishRadarInfo( void )
+  void RadarInterfaceSDODCAN::publishRadarInfo(void)
   {
     // Advertise the SDOD sensor info (LATCHED):
-#if 1    
-    pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>( "radar_info", 10, true );
+#if 1
+    pub_radar_info_ = nh_private_.advertise<ainstein_radar_msgs::RadarInfo>("radar_info", 10, true);
 
     // Form the RadarInfo message which is fixed for a given sensor:
     radar_info_msg_ptr_->header.stamp = ros::Time::now();
@@ -281,7 +337,7 @@ namespace ainstein_radar_drivers
     radar_info_msg_ptr_->elevation_accuracy = ELEVATION_ACC;
 
     // Publish the RadarInfo message once since it's latched:
-    pub_radar_info_.publish( radar_info_msg_ptr_ );
+    pub_radar_info_.publish(radar_info_msg_ptr_);
 #endif
   }
 

@@ -39,6 +39,8 @@ add_definitions(-DQT_NO_KEYWORDS)
 set(SRC_FILES
   src/radar_target_array/radar_target_array_display.cpp
   src/radar_target_array/radar_target_array_visual.cpp
+  src/radar_target_cartesian_array/radar_target_cartesian_array_display.cpp
+  src/radar_target_cartesian_array/radar_target_cartesian_array_visual.cpp
   src/radar_info/radar_info_display.cpp
   src/radar_info/radar_info_visual.cpp
   src/bounding_box_array/bounding_box_array_display.cpp

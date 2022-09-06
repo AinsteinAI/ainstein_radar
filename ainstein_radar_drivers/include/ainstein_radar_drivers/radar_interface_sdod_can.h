@@ -64,18 +64,6 @@ namespace ainstein_radar_drivers
     static constexpr double ELEVATION_RES = 0.0;
     static constexpr double ELEVATION_ACC = 0.0;
 
-    // static const double msg_range_res;
-    // static const double msg_speed_res;
-    // static const double msg_pos_res;
-    // static const double msg_vel_res;
-
-    // static const double msg_pos_x_res;
-    // static const double msg_pos_y_res;
-    // static const double msg_pos_z_res;
-    // static const double msg_vel_x_res;
-    // static const double msg_vel_y_res;
-    // static const double msg_vel_z_res;
-
     static const int16_t q_type;
 
   private:
