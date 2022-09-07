@@ -109,8 +109,10 @@ namespace ainstein_radar_drivers
       {
         if(targets_received > 0 )
         {
-          std::cout << "New header was received prior to receving all objects. Received: " << targets_received << " Expected: " << targets_to_come << std::endl; 
-          std::cout << "Message Type was: " << target_type << " Message Count Delta: " << targets_to_come - targets_received << std::endl; 
+          // std::cout << "New header was received prior to receving all objects. Received: " << targets_received << " Expected: " << targets_to_come << std::endl; 
+          // std::cout << "Message Type was: " << target_type << " Message Count Delta: " << targets_to_come - targets_received << std::endl; 
+          ROS_DEBUG("New header was received prior to receving all objects. Received: %d Expected: %d", targets_received, targets_to_come);
+          ROS_DEBUG("Message Type was: %d Message Count Delta: %d", target_type, (targets_to_come - targets_received));
         }
         radarFrameID = (msg.data[1] << 1) | msg.data[0];
         target_type = tmp_target_type;
@@ -146,8 +148,8 @@ namespace ainstein_radar_drivers
 
         default:
         {
-          ROS_DEBUG("Invalid target type received.");
-          std::cout << "Invalid target type received: " << target_type << std::endl;
+          ROS_DEBUG("Invalid target type received: %d", target_type);
+          // std::cout << "Invalid target type received: " << target_type << std::endl;
           break;
         }
         }
@@ -155,7 +157,7 @@ namespace ainstein_radar_drivers
       // Parse out raw target data messages:
       else if (targets_to_come > 0)
       {
-        ROS_DEBUG("received target from radar");
+        ROS_DEBUG("received target from radar: %d Targets Received: %d", target_type, targets_received);
         // std::cout << "Received target from radar: " << target_type << " Targets Received: " << targets_received << std::endl;
 
         switch (target_type)
@@ -248,8 +250,8 @@ namespace ainstein_radar_drivers
 
         default:
         {
-          ROS_DEBUG("Invalid target type received.");
-          std::cout << "Invalid target type received: " << target_type << std::endl;
+          ROS_DEBUG("Invalid target type received: %d", target_type);
+          // std::cout << "Invalid target type received: " << target_type << std::endl;
           break;
         }
         }
@@ -282,8 +284,8 @@ namespace ainstein_radar_drivers
 
           default:
           {
-            ROS_DEBUG("Invalid target type received.");
-            std::cout << "Invalid target type received: " << target_type << std::endl;
+            ROS_DEBUG("Invalid target type received: %d", target_type);
+            // std::cout << "Invalid target type received: " << target_type << std::endl;
             break;
           }
           }
@@ -294,7 +296,8 @@ namespace ainstein_radar_drivers
       }
       else
       {
-        std::cout << "Message Received but not detected as object" << std::endl;
+        ROS_DEBUG("Message Received but not detected as object");
+        // std::cout << "Message Received but not detected as object" << std::endl;
       }
     }
   }
