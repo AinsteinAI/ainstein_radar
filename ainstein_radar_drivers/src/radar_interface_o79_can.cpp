@@ -92,12 +92,11 @@ namespace ainstein_radar_drivers
       if( msg.id == (can_id_ + i*(1 << 8)))
       {
         valid_CAN_ID = true;
-        if(i > 0)
+        if(target_type == no_type)
         {
-          /* PGN not default, but is valid, assume msgType */
           target_type = track_cart_rev_c;
         }
-        else
+        if(i == 0)
         {
           default_CAN_ID = true;
         }
