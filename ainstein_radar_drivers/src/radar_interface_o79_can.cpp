@@ -85,20 +85,16 @@ namespace ainstein_radar_drivers
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
     bool valid_CAN_ID = false;
-    bool default_CAN_ID = false;
+    bool starting_CAN_ID = false;
     for(unsigned long i = 0; i < CAN_NUM_TRACK_CART_REV_C_PER_FRAME; i++)
     {
       /* For all valid CAN ID's for target_type check if current msg CAN ID matches*/
       if( msg.id == (can_id_ + i*(1 << 8)))
       {
         valid_CAN_ID = true;
-        if(target_type == no_type)
-        {
-          target_type = track_cart_rev_c;
-        }
         if(i == 0)
         {
-          default_CAN_ID = true;
+          starting_CAN_ID = true;
         }
         break;
       }
@@ -106,22 +102,8 @@ namespace ainstein_radar_drivers
     if( valid_CAN_ID )
       {
         // Parse out start of frame messages (for message types that have start frame):
-        radar_message_type_t tmp_target_type = no_type;
-        if(msg.data[5]==0xFF && msg.data[6]==0xFF && msg.data[7]==0xFF)
-        {
-          // regular header frame specifies message type
-          tmp_target_type = (radar_message_type_t)msg.data[4];
-        }
-        else if(targets_received == 0 && target_type == track_cart_rev_c && default_CAN_ID)
-        {
-          // No regular header frame, start getting targets when CAN ID is first valid PGN in frame
-          targets_to_come = CAN_NUM_TRACK_CART_REV_C_PER_FRAME;
-
-          // clear out buffer from previous frame and take timestamp for frame start
-          radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
-          radar_data_msg_ptr_tracked_->objects.clear();
-          gtarget_cart.clear();
-        }
+        radar_message_type_t tmp_target_type = (radar_message_type_t)msg.data[4];
+        bool is_data_frame = true;
 
         if( (tmp_target_type == raw_spherical ||
              tmp_target_type == tracked_cartesian ||
@@ -134,6 +116,7 @@ namespace ainstein_radar_drivers
             target_type = tmp_target_type;
             targets_received = 0;
             targets_to_come = (msg.data[2] << 8) | msg.data[3];
+            is_data_frame = false;
 
             // clear radar data message arrays here
             if( (tmp_target_type == raw_spherical) || (tmp_target_type == raw_sphere_16bit_pwr))
@@ -157,8 +140,18 @@ namespace ainstein_radar_drivers
             }
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
+        else if( targets_received == 0 && starting_CAN_ID && target_type == no_type)
+          {
+            target_type = track_cart_rev_c;
+            targets_to_come = CAN_NUM_TRACK_CART_REV_C_PER_FRAME;
+
+            // clear out buffer from previous frame and take timestamp for frame start
+            radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+            radar_data_msg_ptr_tracked_->objects.clear();
+            gtarget_cart.clear();
+          }
         // Parse out raw target data messages:
-        else if( targets_to_come > 0 )
+        if( targets_to_come > 0 && is_data_frame )
           {
             ROS_DEBUG( "received target from radar" );
 
@@ -292,7 +285,7 @@ namespace ainstein_radar_drivers
               }
 
           }
-        else
+        else if(targets_to_come <= 0)
           {
             ROS_DEBUG( "received message with unknown id: %02x", msg.id );
           }
@@ -318,7 +311,9 @@ namespace ainstein_radar_drivers
                 ainstein_radar_msgs::RadarTrackedObject obj_msg;
                 for( const auto &t : gtarget_cart )
                               {
-                    if(t.vel.x() || t.vel.y() || t.vel.z() || t.pos.x() || t.pos.y() || t.pos.z())
+                    /* if target type is rev_c and there are 0's in all positions the "object" should NOT be considered */
+                    bool all_zeroes = !(t.vel.x() || t.vel.y() || t.vel.z() || t.pos.x() || t.pos.y() || t.pos.z());
+                    if(!(target_type == track_cart_rev_c && all_zeroes))
                     {
                       // Pass the target ID through to the object ID:
                       obj_msg.id = t.id;
