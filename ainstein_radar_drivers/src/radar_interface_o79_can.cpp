@@ -84,10 +84,26 @@ namespace ainstein_radar_drivers
   std::vector<ainstein_radar_drivers::RadarTargetCartesian> gtarget_cart;
   void RadarInterfaceO79CAN::dataMsgCallback( const can_msgs::Frame &msg )
   {
-    if( msg.id == can_id_ )
+    bool valid_CAN_ID = false;
+    bool starting_CAN_ID = false;
+    for(unsigned long i = 0; i < CAN_NUM_TRACK_CART_REV_C_PER_FRAME; i++)
+    {
+      /* For all valid CAN ID's for target_type check if current msg CAN ID matches*/
+      if( msg.id == (can_id_ + i*(1 << 8)))
       {
-        // Parse out start of frame messages:
+        valid_CAN_ID = true;
+        if(i == 0)
+        {
+          starting_CAN_ID = true;
+        }
+        break;
+      }
+    }
+    if( valid_CAN_ID )
+      {
+        // Parse out start of frame messages (for message types that have start frame):
         radar_message_type_t tmp_target_type = (radar_message_type_t)msg.data[4];
+        bool is_data_frame = true;
 
         if( (tmp_target_type == raw_spherical ||
              tmp_target_type == tracked_cartesian ||
@@ -100,6 +116,7 @@ namespace ainstein_radar_drivers
             target_type = tmp_target_type;
             targets_received = 0;
             targets_to_come = (msg.data[2] << 8) | msg.data[3];
+            is_data_frame = false;
 
             // clear radar data message arrays here
             if( (tmp_target_type == raw_spherical) || (tmp_target_type == raw_sphere_16bit_pwr))
@@ -108,7 +125,7 @@ namespace ainstein_radar_drivers
               radar_data_msg_ptr_raw_->header.stamp = ros::Time::now();
               radar_data_msg_ptr_raw_->targets.clear();
             }
-            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_low_res )
+            else if( tmp_target_type == tracked_cartesian || tmp_target_type == tracked_cartesian_low_res || tmp_target_type == track_cart_rev_c)
             {
               // tracked targets in Cartesian coordinates
               radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
@@ -123,8 +140,18 @@ namespace ainstein_radar_drivers
             }
             ROS_DEBUG( "receiving %d type %d targets from radar", targets_to_come, target_type );
           }
+        else if( targets_received == 0 && starting_CAN_ID && target_type == no_type)
+          {
+            target_type = track_cart_rev_c;
+            targets_to_come = CAN_NUM_TRACK_CART_REV_C_PER_FRAME;
+
+            // clear out buffer from previous frame and take timestamp for frame start
+            radar_data_msg_ptr_tracked_->header.stamp = ros::Time::now();
+            radar_data_msg_ptr_tracked_->objects.clear();
+            gtarget_cart.clear();
+          }
         // Parse out raw target data messages:
-        else if( targets_to_come > 0 )
+        if( targets_to_come > 0 && is_data_frame )
           {
             ROS_DEBUG( "received target from radar" );
 
@@ -215,7 +242,7 @@ namespace ainstein_radar_drivers
                   }
                 
               }
-              else if( target_type == tracked_cartesian_low_res )
+              else if( target_type == tracked_cartesian_low_res || target_type == track_cart_rev_c)
               {
 
                 /* position message; add a new entry to the vector of targets */
@@ -258,7 +285,7 @@ namespace ainstein_radar_drivers
               }
 
           }
-        else
+        else if(targets_to_come <= 0)
           {
             ROS_DEBUG( "received message with unknown id: %02x", msg.id );
           }
@@ -273,7 +300,7 @@ namespace ainstein_radar_drivers
               {
                 pub_radar_data_filtered_pcl_.publish( radar_data_msg_ptr_filtered_pcl_ );
               }
-            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_low_res )
+            else if( target_type == tracked_cartesian || target_type == tracked_cartesian_low_res || target_type == track_cart_rev_c)
               {
                 // Fill in the RadarTrackedObjectArray message from the received Cartesian targets
                 // using the same object message as for spherical data (only one type of tracked
@@ -284,24 +311,29 @@ namespace ainstein_radar_drivers
                 ainstein_radar_msgs::RadarTrackedObject obj_msg;
                 for( const auto &t : gtarget_cart )
                               {
-                    // Pass the target ID through to the object ID:
-                    obj_msg.id = t.id;
-                    
-                    // Fill in the pose information:
-                    obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+                    /* if target type is rev_c and there are 0's in all positions the "object" should NOT be considered */
+                    bool all_zeroes = !(t.vel.x() || t.vel.y() || t.vel.z() || t.pos.x() || t.pos.y() || t.pos.z());
+                    if(!(target_type == track_cart_rev_c && all_zeroes))
+                    {
+                      // Pass the target ID through to the object ID:
+                      obj_msg.id = t.id;
 
-                    // Fill in the velocity information:
-                    obj_msg.velocity.linear.x = t.vel.x();
-                    obj_msg.velocity.linear.y = t.vel.y();
-                    obj_msg.velocity.linear.z = t.vel.z();
+                      // Fill in the pose information:
+                      obj_msg.pose = ainstein_radar_filters::data_conversions::posVelToPose( t.pos, t.vel );
+
+                      // Fill in the velocity information:
+                      obj_msg.velocity.linear.x = t.vel.x();
+                      obj_msg.velocity.linear.y = t.vel.y();
+                      obj_msg.velocity.linear.z = t.vel.z();
+                    
+                      // Fill in dummy bounding box information:
+                      obj_msg.box.pose = obj_msg.pose;
+                      obj_msg.box.dimensions.x = 0.01;
+                      obj_msg.box.dimensions.y = 0.01;
+                      obj_msg.box.dimensions.z = 0.01;
                   
-                    // Fill in dummy bounding box information:
-                    obj_msg.box.pose = obj_msg.pose;
-                    obj_msg.box.dimensions.x = 0.01;
-                    obj_msg.box.dimensions.y = 0.01;
-                    obj_msg.box.dimensions.z = 0.01;
-                
-                    radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
+                      radar_data_msg_ptr_tracked_->objects.push_back( obj_msg );
+                    }
                   }
                 
                 // Publish the tracked target data:
