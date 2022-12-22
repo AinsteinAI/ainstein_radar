@@ -10,6 +10,8 @@ import sys
 import threading
 import smokesignal
 
+from ainstein_radar_msgs.msg import RadarTrackedObjectArray
+from ainstein_radar_msgs.msg import RadarTrackedObject
 from ainstein_radar_msgs.msg import RadarTargetArray
 from ainstein_radar_msgs.msg import RadarTarget
 from ainstein_radar_drivers.msg import WayvAirStatus
@@ -40,7 +42,7 @@ rs485_id = 1
 new_comm_config = False
 new_param_config = False
 new_firmware = False
-enbl_pcl = True
+enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
 query_config = []
 comm_config = []
 param_config = []
@@ -100,6 +102,10 @@ class WayvROSInterface( object ):
         self.pub_tracked_pose = rospy.Publisher( '~objects/poses', PoseArray, queue_size=10 )
         self.tracked_pose_msg = PoseArray()
         self.tracked_pose_msg.header.frame_id = frame_id
+
+        self.pub_tracked_obj = rospy.Publisher( '~objects/tracked', RadarTrackedObjectArray, queue_size=10 )
+        self.tracked_obj_msg = RadarTrackedObjectArray()
+        self.tracked_obj_msg.header.frame_id = frame_id
 
         self.pub_status = rospy.Publisher( '~status', WayvAirStatus, queue_size=10 )
         self.status_msg = WayvAirStatus()
@@ -165,6 +171,66 @@ class WayvROSInterface( object ):
         pose.orientation.z = quat.z
 
         return pose
+    
+
+    def target_to_obj(self, px, py, pz, vx, vy, vz):
+        """
+        Converts a tracked object to RadarTrackedObject representation.
+
+        Utility function for converting a tracked object received from the radar 
+        having position and velocity information to a Tracked Object message.
+
+        Args:
+            px (Float): Target x position.
+            py (Float): Target y position.
+            pz (Float): Target z position.
+            vx (Float): Target x velocity.
+            vy (Float): Target y velocity.
+            vz (Float): Target z velocity.
+
+        Returns:
+            (obj_msg): Message containing tracked object information.
+
+        """
+        obj_msg = RadarTrackedObject()
+
+        obj_msg.pose.position.x = py
+        obj_msg.pose.position.y = -px
+        obj_msg.pose.position.z = pz
+
+        obj_msg.velocity.linear.x = vy
+        obj_msg.velocity.linear.x = -vx
+        obj_msg.velocity.linear.x = vz
+
+        obj_msg.box.pose.position.x = py
+        obj_msg.box.pose.position.x = -px
+        obj_msg.box.pose.position.x = pz
+
+        # Compute target pose, assuming velocity is in +x direction
+        vel = np.array( [vy, -vx, vz] ).transpose()
+
+        # If velocity is near zero, keep identity orientation
+        rot_mat = np.identity( 3 )
+        if( np.linalg.norm( vel ) > 0.001 ):
+            rot_mat[:,0] = vel / np.linalg.norm( vel )
+            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
+                                     rot_mat[:,0] )
+            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
+
+        # Convert from rotation matrix to quaternion to fill ROS pose
+        quat = quaternion.from_rotation_matrix( rot_mat )
+        
+        obj_msg.pose.orientation.w = quat.w
+        obj_msg.pose.orientation.x = quat.x
+        obj_msg.pose.orientation.y = quat.y
+        obj_msg.pose.orientation.z = quat.z
+
+        obj_msg.box.pose.orientation.w = quat.w
+        obj_msg.box.pose.orientation.x = quat.x
+        obj_msg.box.pose.orientation.y = quat.y
+        obj_msg.box.pose.orientation.z = quat.z
+
+        return obj_msg
 
         
     def target_callback(self, id):
@@ -189,6 +255,7 @@ class WayvROSInterface( object ):
 
         # Clear the output ROS message array
         self.tracked_pose_msg.poses = []
+        self.tracked_obj_msg.objects = []
 
         # Receive and pack Wayv tracked object info into ROS message
         for v in self.wayv_air.radars.values():
@@ -201,26 +268,37 @@ class WayvROSInterface( object ):
                             for tar in v.targets:
                                 self.tracked_pose_msg.poses.append(
                                     self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                                self.tracked_obj_msg.objects.append(
+                                    self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                         else:  # velocity only, not point number
                             for tar in v.targets:
                                 self.tracked_pose_msg.poses.append(
                                     self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                                self.tracked_obj_msg.objects.append(
+                                    self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                     elif point_num_enable == 1:  # point number, not velocity
                         for tar in v.targets:
                             self.tracked_pose_msg.poses.append(
                                 self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                            self.tracked_obj_msg.objects.append(
+                                self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
                 elif target_detail == 0:          ## call normal mode format for Wayv Air
                     for tar in v.targets:
                         self.tracked_pose_msg.poses.append(
                             self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                        self.tracked_obj_msg.objects.append(
+                            self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
                 else:                               ## default in  debug mode format for Wayv Air
                     for tar in v.targets:
                         self.tracked_pose_msg.poses.append(
                             self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                        self.tracked_obj_msg.objects.append(
+                            self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
 
         # Timestamp and publish tracked object poses
         self.tracked_pose_msg.header.stamp = rospy.Time.now()
         self.pub_tracked_pose.publish( self.tracked_pose_msg )
+        self.pub_tracked_obj.publish( self.tracked_obj_msg )
 
         # May also publish the board status, to be added with new message
         if v_level >= 2:
