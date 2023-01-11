@@ -31,9 +31,9 @@ if 'linux' in sys.platform:
 else:
     SER_PORT_DEFAULT = "COM5"
 serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
-serial_baud = 115200
-comm_mode = MODE_485
-wifi_ip = '192.168.4.65'
+serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 921600)
+comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
+wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
 wifi_port = 8877
 target_detail = 0
 velocity_enable = 1

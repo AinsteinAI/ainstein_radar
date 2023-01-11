@@ -2,6 +2,9 @@
 
   <arg name="serial_port" default="/dev/ttyUSB0" />
   <arg name="enable_pcl" default="True" />
+  <arg name="serial_baud" default="921600" /> <?ignore 115200 or 921600 ?>
+  <arg name="server_ip" default="192.168.4.65" />
+  <arg name="comm_mode" default="0" /> <?ignore MODE_485 = 0 or MODE_WIFI = 1?>
   
   <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" output="screen" >
     <param name="frame_id" value="map" />
@@ -12,6 +15,9 @@
     <remap from="radar_in" to="/wayv/targets/raw" />
     <param name="serial_port" value="$(arg serial_port)" />
     <param name="enable_pcl" value="$(arg enable_pcl)" />
+    <param name="serial_baud" value="$(arg serial_baud)" />
+    <param name="server_ip" value="$(arg server_ip)" />
+    <param name="comm_mode" value="$(arg comm_mode)" />
   </node>
 
 </launch>
