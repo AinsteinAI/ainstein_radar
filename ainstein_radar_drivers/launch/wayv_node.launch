@@ -3,8 +3,10 @@
   <arg name="serial_port" default="/dev/ttyUSB0" />
   <arg name="enable_pcl" default="True" />
   <arg name="serial_baud" default="921600" /> <?ignore 115200 or 921600 ?>
-  <arg name="server_ip" default="192.168.4.65" />
-  <arg name="comm_mode" default="0" /> <?ignore MODE_485 = 0 or MODE_WIFI = 1?>
+  <arg name="server_ip" default="192.168.2.234" />
+  <arg name="comm_mode" default="0" /> <?ignore MODE_485(USB) = 0 or MODE_WIFI = 1?>
+
+  <arg name="use_camera" default="true" />
   
   <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" output="screen" >
     <param name="frame_id" value="map" />
@@ -19,5 +21,17 @@
     <param name="server_ip" value="$(arg server_ip)" />
     <param name="comm_mode" value="$(arg comm_mode)" />
   </node>
+
+<!-- USB camera nodes -->
+  <group if="$(arg use_camera)">
+
+    <!-- USB camera in room -->
+      <include file="$(find ainstein_radar_drivers)/launch/usb_cam.launch" >
+        <arg name="machine" value="localhost" />
+        <arg name="video_device" value="/dev/video4" />
+      </include>
+
+  </group>
+
 
 </launch>

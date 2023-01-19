@@ -43,6 +43,7 @@ new_comm_config = False
 new_param_config = False
 new_firmware = False
 enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
+query_config_requested = False
 query_config = []
 comm_config = []
 param_config = []
@@ -107,13 +108,22 @@ class WayvROSInterface( object ):
         self.tracked_obj_msg = RadarTrackedObjectArray()
         self.tracked_obj_msg.header.frame_id = frame_id
 
+        self.pub_tlv_tracked_pose = rospy.Publisher( '~objects/tlv_poses', PoseArray, queue_size=10 )
+        self.tlv_tracked_pose_msg = PoseArray()
+        self.tlv_tracked_pose_msg.header.frame_id = frame_id
+
+
+        self.pub_tlv_tracked_obj = rospy.Publisher( '~objects/tlv_tracked', RadarTrackedObjectArray, queue_size=10 )
+        self.tlv_tracked_obj_msg = RadarTrackedObjectArray()
+        self.tlv_tracked_obj_msg.header.frame_id = frame_id
+
         self.pub_status = rospy.Publisher( '~status', WayvAirStatus, queue_size=10 )
         self.status_msg = WayvAirStatus()
         self.status_msg.header.frame_id = frame_id
 
         
     def radar_con_callback(self, id):
-        global new_firmware, query_config, comm_config, param_config, firmware_up, enbl_pcl
+        global new_firmware, query_config, comm_config, param_config, firmware_up
         if id not in radars_seen:
             radars_seen.append(id)
             if new_comm_config:
@@ -122,8 +132,6 @@ class WayvROSInterface( object ):
                 param_config.append(id)  # tell the supervisor to update this radar's radar parameters
             if new_firmware:
                 firmware_up.append(id)  # tell the supervisor to update this radar's firmware
-            if enbl_pcl:
-                self.wayv_air.enable_pcl(id)
         query_config.append(id)  # tell the supervisor to query the config for this radar
 
         
@@ -336,6 +344,8 @@ class WayvROSInterface( object ):
         
         # Clear the output ROS message arrays
         self.radar_data_msg.targets = []
+        self.tlv_tracked_pose_msg.poses = []
+        self.tlv_tracked_obj_msg.objects = []
 
         # Receive and pack Wayv point cloud detections into ROS message
         i = 0
@@ -350,16 +360,27 @@ class WayvROSInterface( object ):
             self.radar_data_msg.targets.append( target )
             i = i + 1
 
+        for tar in self.wayv_air.radars[id].tlv_targets:
+            self.tlv_tracked_pose_msg.poses.append(
+                self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+            self.tlv_tracked_obj_msg.objects.append(
+                self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+
         # Timestamp and publish radar point cloud
         self.radar_data_msg.header.stamp = rospy.Time.now()
         self.pub_point_cloud.publish( self.radar_data_msg )
+
+        # Timestamp and publish tracked object poses
+        self.tlv_tracked_pose_msg.header.stamp = rospy.Time.now()
+        self.pub_tlv_tracked_pose.publish( self.tlv_tracked_pose_msg )
+        self.pub_tlv_tracked_obj.publish( self.tlv_tracked_obj_msg )
 
         
     def supervisor(self):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
         # signint handler can exit the program properly
-        global query_config, comm_config, param_config, new_firmware
+        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl
 
         for v in self.wayv_air.radars.values():
             # print progress updates
@@ -367,28 +388,37 @@ class WayvROSInterface( object ):
                 print(v.ser_no, "update progress:", v.progress, "%")
             if v.progress >= 100:
                 v.progress = -1  # use negative numbers to indicate acknowledged completion
-                # check for new config messages and acknowledge them
-            if v.comm_config_recvd:
-                v.comm_config_recvd = False
-                # print firmware version
-                if v_level >= 1:
-                    print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
-                    print("Present Comm. Config:")
-                    for item in v.comm_config.__dict__.items():
-                        print(item)
+
+            # check for new config messages and acknowledge them
+            if v.comm_config_recvd and v.radar_config_recvd:
+                # Wait for query to be received
+                if query_config_requested:
+                    query_config_requested = False
+                    if v_level >= 1:
+                        # print firmware version
+                        print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
+                        print("Device: ", v.ser_no, "SBL Version: ", v.sbl_version)
+                        print("Present Comm. Config:")
+                        for item in v.comm_config.__dict__.items():
+                            print(item)
                         print("")
-            if v.radar_config_recvd:
-                v.radar_config_recvd = False
-                if v_level >= 1:
-                    print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
-                    print("Present Radar Config: (",v.radar_config.cmd_count,"lines )")
-                    for item in v.radar_config.cmds:
-                        print(item)
-                    print("")
+                        print("Present Radar Config: (",v.radar_config.cmd_count,"lines )")
+                        for item in v.radar_config.cmds:
+                            print(item)
+                        print("")
+
+                    # Disable PCL mode if already in PCL mode
+                    if v.comm_config.sys_mode != 0 and enbl_pcl is False:
+                        self.wayv_air.enable_pcl(v.id, False)
+
+                    # Enable PCL mode if requested
+                    if enbl_pcl:
+                        self.wayv_air.enable_pcl(v.id, True) # Enable Point Cloud mode on this radar
 
         if len(query_config) > 0:
             id = query_config.pop(0)
             self.wayv_air.query_config(id)  # the API only support querying one radar at a time
+            query_config_requested = True
         elif len(comm_config) > 0:
             id = comm_config.pop(0)
             self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
