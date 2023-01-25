@@ -31,7 +31,7 @@ if 'linux' in sys.platform:
 else:
     SER_PORT_DEFAULT = "COM5"
 serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
-serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 921600)
+serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
 comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
 wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
 wifi_port = 8877
@@ -59,6 +59,45 @@ def sigint_handler(*args):
     for r in radar_list:
         wayv_intf.wayv_air.radar_disconnect(r) # disconnect the radar before quitting
     sys.exit()
+
+def cart2sph(x, y, z):
+    r = np.sqrt((x * x) + (y * y) + (z * z))
+    if y == 0:
+        az = np.pi / 2
+    elif y > 0:
+        az = np.arctan(x/y)
+    else:
+        az = np.arctan(x/y) + np.pi
+
+    el = np.arctan(z / np.sqrt( (x * x) + (y * y) ))
+
+    return az, el, r
+
+def sph2cart(az, el, r):
+    rcos_theta = r * np.cos(el)
+    x = rcos_theta * np.sin(az)
+    y = rcos_theta * np.cos(az)
+    z = r * np.sin(el)
+    return x, y, z
+
+# Function to rotate a set of coordinates [x,y,z] about the various axis via the tilt angles
+# Tilt angles are in degrees
+def eulerRot(x, y, z, elevTilt, aziTilt):
+    # Convert to radians
+    elevTilt = np.deg2rad(elevTilt)
+    aziTilt = np.deg2rad(aziTilt)
+
+    elevAziRotMatrix = np.matrix([  [  math.cos(aziTilt),  math.cos(elevTilt)*math.sin(aziTilt), math.sin(elevTilt)*math.sin(aziTilt)],
+                                    [ -math.sin(aziTilt),  math.cos(elevTilt)*math.cos(aziTilt), math.sin(elevTilt)*math.cos(aziTilt)],
+                                    [                  0,                   -math.sin(elevTilt),                   math.cos(elevTilt)],
+                                ])
+
+    target =  np.array([[x],[y],[z]])
+    rotTarget = elevAziRotMatrix*target
+    rotX = rotTarget[0,0]
+    rotY = rotTarget[1,0]
+    rotZ = rotTarget[2,0]
+    return rotX, rotY, rotZ
 
 class WayvROSInterface( object ):
     """
@@ -160,7 +199,7 @@ class WayvROSInterface( object ):
         pose.position.y = -px
         pose.position.z = pz
 
-        # Compute tarect pose, assuming velocity is in +x direction
+        # Compute target pose, assuming velocity is in +x direction
         vel = np.array( [vy, -vx, vz] ).transpose()
 
         # If velocity is near zero, keep identity orientation
@@ -240,7 +279,51 @@ class WayvROSInterface( object ):
 
         return obj_msg
 
+
+
+    # def target_to_world_orientation(self, target: RadarTarget, radar_cfg: list) -> RadarTarget:
+    #     """Takes a radar target type in spherical format relative to the sensor and returns
+    #        spherical format using world coordinates.
+
+    #     Args:
+    #         target (RadarTarget): Target in spherical coordinates relative to sensor
+    #         radar_cfg (list): Radar Config cmds list as provided by the WAYV API
+
+    #     Returns:
+    #         RadarTarget: Updated RadarTarget
+    #     """
+    #     new_target = RadarTarget()
+    #     new_target.snr = target.snr
+    #     new_target.speed = target.speed
+
+    #     # Convert to cartesian
+    #     sensor_x = target.range * math.cos(target.elevation) * math.sin(target.azimuth)
+    #     sensor_y = target.range * math.cos(target.elevation) * math.cos(target.azimuth)
+    #     sensor_z = target.range * math.sin(target.elevation)
         
+
+    #     # Read Tilt values from Radar configuration
+    #     for item in radar_cfg:
+    #         args = item.split()
+    #         if args[0] == 'sensorPosition':
+    #             sensor_height = float(args[1])
+    #             azi_tilt = float(args[2])
+    #             elev_tilt = float(args[3])
+    #             cos_elev_tilt = math.cos(math.radians(elev_tilt))
+    #             sin_elev_tilt = math.sin(math.radians(elev_tilt))
+
+    #     # Convert cartesian from sensor to world cartesian
+    #     world_x = sensor_x
+    #     world_y = (sensor_y * cos_elev_tilt) + (sensor_z * sin_elev_tilt)
+    #     world_z = -(sensor_y * sin_elev_tilt) + (sensor_z * cos_elev_tilt) + sensor_height
+
+    #     new_target.range = math.sqrt( (world_x ** 2) + (world_y ** 2) + (world_z ** 2) )
+    #     new_target.azimuth = math.atan( world_x / world_y )
+    #     new_target.elevation = math.atan( world_z / math.sqrt( (world_x ** 2) + (world_y ** 2) ))
+
+    #     return new_target
+
+
     def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
 
@@ -347,24 +430,65 @@ class WayvROSInterface( object ):
         self.tlv_tracked_pose_msg.poses = []
         self.tlv_tracked_obj_msg.objects = []
 
+        for item in self.wayv_air.radars[id].radar_config.cmds:
+            args = item.split()
+            if args[0] == 'sensorPosition':
+                sensor_height = float(args[1])
+                azi_tilt = float(args[2])
+                elev_tilt = float(args[3])
+
         # Receive and pack Wayv point cloud detections into ROS message
         i = 0
         for p in self.wayv_air.radars[id].points:
             target = RadarTarget()
             target.target_id = i
             target.range = p.range
-            target.azimuth = -1.0 * math.degrees( p.azimuth )
-            target.elevation = math.degrees( p.elevation )
+            target.azimuth = p.azimuth
+            target.elevation = p.elevation
             target.speed = p.doppler
             target.snr = p.snr
+
+            # Translate point orientation to be relative to the mounting position.
+            sensor_x, sensor_y, sensor_z = sph2cart(target.azimuth, target.elevation, target.range)
+            world_x, world_y, world_z = eulerRot (sensor_x, sensor_y, sensor_z, elev_tilt, azi_tilt)
+            world_z += sensor_height
+            target.azimuth, target.elevation, target.range = cart2sph(world_x, world_y, world_z)
+
+            target.azimuth = -1.0 * math.degrees( target.azimuth )
+            # target.azimuth = math.degrees( target.azimuth )
+            target.elevation = math.degrees( target.elevation )
             self.radar_data_msg.targets.append( target )
             i = i + 1
 
+            print(f"range: {target.range:.2f}, "\
+                  f"azimuth: {target.azimuth:.2f}, "\
+                  f"elevation: {target.elevation:.2f}, "\
+                  f"speed: {target.speed:.2f}, "\
+                  f"snr: {target.snr:.2f}, ")
+
+        # num_tlv_targets = len(self.wayv_air.radars[id].tlv_targets)
+        # print(f"Tracked Target Packet: {num_tlv_targets} targets")
         for tar in self.wayv_air.radars[id].tlv_targets:
+            tar.x, tar.y, tar.z = eulerRot (tar.x, tar.y, tar.z, 90, 0)
+            tar.z += sensor_height
             self.tlv_tracked_pose_msg.poses.append(
                 self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
             self.tlv_tracked_obj_msg.objects.append(
                 self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+
+            print(f"tar id: {tar.tid}, "\
+                    f"x: {tar.x:.2f}, "\
+                    f"y: {tar.y:.2f}, "\
+                    f"z: {tar.z:.2f}, "\
+                    f"vel_x: {tar.vel_x:.2f}, "\
+                    f"vel_y: {tar.vel_y:.2f}, "\
+                    f"vel_z: {tar.vel_z:.2f}, "\
+                    f"acc_x: {tar.acc_x:.2f}, "\
+                    f"acc_y: {tar.acc_y:.2f}, "\
+                    f"acc_z: {tar.acc_z:.2f}, "\
+                #   f"ec_matrix: {tar.ec_matrix:.2f}, "\
+                    f"gating_gain: {tar.gating_gain:.2f}, "\
+                    f"confidence_level: {tar.confidence_level:.2f}")
 
         # Timestamp and publish radar point cloud
         self.radar_data_msg.header.stamp = rospy.Time.now()
@@ -419,16 +543,19 @@ class WayvROSInterface( object ):
             id = query_config.pop(0)
             self.wayv_air.query_config(id)  # the API only support querying one radar at a time
             query_config_requested = True
+
         elif len(comm_config) > 0:
             id = comm_config.pop(0)
             self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
             if id not in query_config:
                 query_config.append(id)
+
         elif len(param_config) > 0:
             id = param_config.pop(0)
             self.wayv_air.modify_param_config(id, param_file)  # only the first radar in this example
             if id not in query_config:
                 query_config.append(id)
+                
         elif len(firmware_up) > 0:
             id = firmware_up.pop(0)
             if id not in query_config:

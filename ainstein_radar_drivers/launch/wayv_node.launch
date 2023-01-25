@@ -2,7 +2,7 @@
 
   <arg name="serial_port" default="/dev/ttyUSB0" />
   <arg name="enable_pcl" default="True" />
-  <arg name="serial_baud" default="921600" /> <?ignore 115200 or 921600 ?>
+  <arg name="serial_baud" default="115200" /> <?ignore 115200 or 921600 ?>
   <arg name="server_ip" default="192.168.2.234" />
   <arg name="comm_mode" default="0" /> <?ignore MODE_485(USB) = 0 or MODE_WIFI = 1?>
 
@@ -28,7 +28,7 @@
     <!-- USB camera in room -->
       <include file="$(find ainstein_radar_drivers)/launch/usb_cam.launch" >
         <arg name="machine" value="localhost" />
-        <arg name="video_device" value="/dev/video4" />
+        <arg name="video_device" value="/dev/video6" />
       </include>
 
   </group>
