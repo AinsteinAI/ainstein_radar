@@ -169,7 +169,7 @@ class WayvROSInterface( object ):
         self.boundary_box_msg.action = 0
         self.boundary_box_msg.color.r = 0
         self.boundary_box_msg.color.g = 0
-        self.boundary_box_msg.color.b = 0
+        self.boundary_box_msg.color.b = .5
         self.boundary_box_msg.color.a = 1
         self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.stl"
 
@@ -618,7 +618,7 @@ class WayvROSInterface( object ):
         self.boundary_box_msg.scale.x = (y_max - y_min)
         self.boundary_box_msg.scale.z = (z_max - z_min)
 
-        self.boundary_box_msg.pose.position.y = (x_max + x_min)/2
+        self.boundary_box_msg.pose.position.y = -(x_max + x_min)/2
         self.boundary_box_msg.pose.position.x = (y_max + y_min)/2
         self.boundary_box_msg.pose.position.z = (z_max + z_min)/2
 
