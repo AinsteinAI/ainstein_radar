@@ -171,7 +171,7 @@ class WayvROSInterface( object ):
         self.boundary_box_msg.color.g = 0
         self.boundary_box_msg.color.b = 0
         self.boundary_box_msg.color.a = 1
-        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.obj"
+        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.stl"
 
         self.pub_wayv_marker = rospy.Publisher( '~model', Marker, queue_size=10 )
         self.wave_marker_msg = Marker()
@@ -188,7 +188,7 @@ class WayvROSInterface( object ):
         self.wave_marker_msg.color.g = 1
         self.wave_marker_msg.color.b = 1
         self.wave_marker_msg.color.a = 1
-        self.wave_marker_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/wayv_air.obj"
+        self.wave_marker_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/wayv_air.stl"
 
         
     def radar_con_callback(self, id):
