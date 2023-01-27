@@ -17,6 +17,8 @@ from ainstein_radar_msgs.msg import RadarTarget
 from ainstein_radar_drivers.msg import WayvAirStatus
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
+from visualization_msgs.msg import Marker
+from tf.transformations import quaternion_from_euler
 import quaternion
 import rospy
 
@@ -159,6 +161,34 @@ class WayvROSInterface( object ):
         self.pub_status = rospy.Publisher( '~status', WayvAirStatus, queue_size=10 )
         self.status_msg = WayvAirStatus()
         self.status_msg.header.frame_id = frame_id
+
+        self.pub_boundary_box = rospy.Publisher( '~boundary_box', Marker, queue_size=10 )
+        self.boundary_box_msg = Marker()
+        self.boundary_box_msg.header.frame_id = frame_id
+        self.boundary_box_msg.type = 10
+        self.boundary_box_msg.action = 0
+        self.boundary_box_msg.color.r = 0
+        self.boundary_box_msg.color.g = 0
+        self.boundary_box_msg.color.b = 0
+        self.boundary_box_msg.color.a = 1
+        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.obj"
+
+        self.pub_wayv_marker = rospy.Publisher( '~model', Marker, queue_size=10 )
+        self.wave_marker_msg = Marker()
+        self.wave_marker_msg.header.frame_id = frame_id
+        self.wave_marker_msg.type = 10
+        self.wave_marker_msg.action = 0
+        self.wave_marker_msg.pose.position.x = 0
+        self.wave_marker_msg.pose.position.y = 0
+        self.wayv_model_scale = 3  # Modify this value to change scale of WA model, 1 = Actual size. Set to 3x for better visibility
+        self.wave_marker_msg.scale.x = (1/1000)*self.wayv_model_scale
+        self.wave_marker_msg.scale.y = (1/1000)*self.wayv_model_scale
+        self.wave_marker_msg.scale.z = (1/1000)*self.wayv_model_scale
+        self.wave_marker_msg.color.r = 1
+        self.wave_marker_msg.color.g = 1
+        self.wave_marker_msg.color.b = 1
+        self.wave_marker_msg.color.a = 1
+        self.wave_marker_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/wayv_air.obj"
 
         
     def radar_con_callback(self, id):
@@ -529,6 +559,13 @@ class WayvROSInterface( object ):
                         print("Present Radar Config: (",v.radar_config.cmd_count,"lines )")
                         for item in v.radar_config.cmds:
                             print(item)
+                            args = item.split()
+                            if args[0] == 'boundaryBox':
+                                bbox = threading.Thread(target=wayv_intf.pub_boundary_box_msg, args=[args])
+                                bbox.start()
+                            if args[0] == 'sensorPosition':
+                                wayv_model = threading.Thread(target=wayv_intf.pub_wayv_marker_msg, args=[args])
+                                wayv_model.start()
                         print("")
 
                     # Disable PCL mode if already in PCL mode
@@ -561,6 +598,73 @@ class WayvROSInterface( object ):
             if id not in query_config:
                 query_config.append(id)
             self.wayv_air.update_firmware(id, fw_path)
+
+
+    def pub_boundary_box_msg(self, boundaryBox):
+        """
+        This function handles publishing a Marker topic 
+        to visually represent the boundaryBox config value
+        """
+        # Get boundary box values from config
+        x_min = float(boundaryBox[1])
+        x_max = float(boundaryBox[2])
+        y_min = float(boundaryBox[3])
+        y_max = float(boundaryBox[4])
+        z_min = float(boundaryBox[5])
+        z_max = float(boundaryBox[6])
+        
+        # Set location, size and orientation of the boundary box
+        self.boundary_box_msg.scale.y = (x_max - x_min)
+        self.boundary_box_msg.scale.x = (y_max - y_min)
+        self.boundary_box_msg.scale.z = (z_max - z_min)
+
+        self.boundary_box_msg.pose.position.y = (x_max + x_min)/2
+        self.boundary_box_msg.pose.position.x = (y_max + y_min)/2
+        self.boundary_box_msg.pose.position.z = (z_max + z_min)/2
+
+        quaternion_list = quaternion_from_euler(0, 0, 0)
+        self.boundary_box_msg.pose.orientation.x = quaternion_list[0]
+        self.boundary_box_msg.pose.orientation.y = quaternion_list[1]
+        self.boundary_box_msg.pose.orientation.z = quaternion_list[2]
+        self.boundary_box_msg.pose.orientation.w = quaternion_list[3]
+
+        # Publish at a specified rate
+        rate = rospy.Rate(1)  # 1 Hz
+        while not rospy.is_shutdown():     
+            # Timestamp and publish marker message
+            self.boundary_box_msg.header.stamp = rospy.Time.now()
+            self.pub_boundary_box.publish(self.boundary_box_msg)
+            rate.sleep()
+    
+
+    def pub_wayv_marker_msg(self, sensorPosition):
+        """
+        This function handles publishing a Marker topic 
+        to visually represent the wayv air sensor location
+        """
+        # Parse sensorPosition args
+        sensor_height = float(sensorPosition[1])
+        azi_tilt = float(sensorPosition[2])
+        elev_tilt = float(sensorPosition[3])
+
+        # Set position and orientation of wayv air model
+        self.wave_marker_msg.pose.position.z = sensor_height
+
+        # Couldn't remember how to properly use quaternion.from_rotation_matrix() so used a different function that I am more comfortable with
+        quaternion_list = quaternion_from_euler(math.radians(90+elev_tilt), 0, math.radians(90)+azi_tilt)  # Did not verify if azimuth tilt was implemented correctly
+        self.wave_marker_msg.pose.orientation.x = quaternion_list[0]
+        self.wave_marker_msg.pose.orientation.y = quaternion_list[1]
+        self.wave_marker_msg.pose.orientation.z = quaternion_list[2]
+        self.wave_marker_msg.pose.orientation.w = quaternion_list[3]
+
+        # Publish at a specified rate
+        rate = rospy.Rate(1)  # 1 Hz
+        while not rospy.is_shutdown():
+            # Timestamp and publish marker message
+            self.wave_marker_msg.header.stamp = rospy.Time.now()
+            self.pub_wayv_marker.publish(self.wave_marker_msg)
+            rate.sleep()
+
 
     
 if __name__ == "__main__":
