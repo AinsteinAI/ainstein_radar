@@ -1,10 +1,12 @@
 <launch>
 
   <arg name="serial_port" default="/dev/ttyUSB0" />
-  <arg name="enable_pcl" default="True" />
+  <arg name="enable_pcl" default="True" /> <?ignore Note: Must switch to normal when changing between wifi and usb pcl mode ?>
   <arg name="serial_baud" default="115200" /> <?ignore 115200 or 921600 ?>
   <arg name="server_ip" default="192.168.2.234" />
   <arg name="comm_mode" default="0" /> <?ignore MODE_485(USB) = 0 or MODE_WIFI = 1?>
+  <arg name="logging_mode" default="True" />
+  <arg name="logging_dir" default="/home/joel/catkin_ws/logs/wayv_api_logs" />
 
   <arg name="use_camera" default="true" />
   
@@ -20,6 +22,8 @@
     <param name="serial_baud" value="$(arg serial_baud)" />
     <param name="server_ip" value="$(arg server_ip)" />
     <param name="comm_mode" value="$(arg comm_mode)" />
+    <param name="logging_mode" value="$(arg logging_mode)" />
+    <param name="logging_dir" value="$(arg logging_dir)" />
   </node>
 
 <!-- USB camera nodes -->

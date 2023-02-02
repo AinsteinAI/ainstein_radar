@@ -9,6 +9,8 @@ import signal
 import sys
 import threading
 import smokesignal
+from datetime import datetime
+import os
 
 from ainstein_radar_msgs.msg import RadarTrackedObjectArray
 from ainstein_radar_msgs.msg import RadarTrackedObject
@@ -51,6 +53,11 @@ comm_config = []
 param_config = []
 firmware_up = []
 radars_seen = []
+logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
+logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
+logging_format = "%y-%m-%d %H-%M-%S"
+logging_files_name = {}
+logging_files = {}
 
 def sigint_handler(*args):
     sys.stderr.write('/r')
@@ -60,6 +67,9 @@ def sigint_handler(*args):
         radar_list.append(r)
     for r in radar_list:
         wayv_intf.wayv_air.radar_disconnect(r) # disconnect the radar before quitting
+    if logging_mode:
+        for file in logging_files.values():
+            file.close()
     sys.exit()
 
 def cart2sph(x, y, z):
@@ -192,7 +202,7 @@ class WayvROSInterface( object ):
 
         
     def radar_con_callback(self, id):
-        global new_firmware, query_config, comm_config, param_config, firmware_up
+        global new_firmware, query_config, comm_config, param_config, firmware_up, logging_mode, logging_files, logging_files_name, logging_format, logging_dir
         if id not in radars_seen:
             radars_seen.append(id)
             if new_comm_config:
@@ -201,6 +211,11 @@ class WayvROSInterface( object ):
                 param_config.append(id)  # tell the supervisor to update this radar's radar parameters
             if new_firmware:
                 firmware_up.append(id)  # tell the supervisor to update this radar's firmware
+            if logging_mode:
+                logging_files_name[id] = logging_dir + id + " - " +  datetime.now().strftime(logging_format) + ".log"
+                if not os.path.exists(logging_dir):
+                    os.makedirs(logging_dir)
+                logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
         query_config.append(id)  # tell the supervisor to query the config for this radar
 
         
@@ -382,6 +397,11 @@ class WayvROSInterface( object ):
         for v in self.wayv_air.radars.values():
             if v.targets_recvd:  # Only print targets from devices that have new targets; could also tell this from id passed to the callback
                 v.targets_recvd = False
+                if logging_mode:
+                    time_str = "%Y-%m-%d %H:%M:%S.%f"
+                    ts_count = len(v.targets)
+                    sample_time = datetime.now().strftime(time_str)
+                    logging_files[v.id].write(f"targets: {v.id}\t{sample_time}\t{ts_count}\n")
 
                 if target_detail == 1:            ## call debug mode format for Wayv Air
                     if velocity_enable == 1:
@@ -391,48 +411,61 @@ class WayvROSInterface( object ):
                                     self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                                 self.tracked_obj_msg.objects.append(
                                     self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                                if logging_mode:
+                                    logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\n' %
+                                                            (tar.tid, tar.x, tar.y, tar.z, tar.vel_x,
+                                                            tar.vel_y, tar.vel_z, tar.a_x, tar.a_y, tar.a_z,
+                                                            tar.cp_count))
                         else:  # velocity only, not point number
                             for tar in v.targets:
                                 self.tracked_pose_msg.poses.append(
                                     self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                                 self.tracked_obj_msg.objects.append(
                                     self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                                if logging_mode:
+                                    logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                     elif point_num_enable == 1:  # point number, not velocity
                         for tar in v.targets:
                             self.tracked_pose_msg.poses.append(
                                 self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
                             self.tracked_obj_msg.objects.append(
                                 self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                            if logging_mode:
+                                logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.cp_count))
                 elif target_detail == 0:          ## call normal mode format for Wayv Air
                     for tar in v.targets:
                         self.tracked_pose_msg.poses.append(
                             self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
                         self.tracked_obj_msg.objects.append(
                             self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+                        if logging_mode:
+                            logging_files[v.id].write('%d\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z))
                 else:                               ## default in  debug mode format for Wayv Air
                     for tar in v.targets:
                         self.tracked_pose_msg.poses.append(
                             self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
                         self.tracked_obj_msg.objects.append(
                             self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
+                        if logging_mode:
+                            logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
 
-        # Timestamp and publish tracked object poses
-        self.tracked_pose_msg.header.stamp = rospy.Time.now()
-        self.pub_tracked_pose.publish( self.tracked_pose_msg )
-        self.pub_tracked_obj.publish( self.tracked_obj_msg )
+            # Timestamp and publish tracked object poses
+            self.tracked_pose_msg.header.stamp = rospy.Time.now()
+            self.pub_tracked_pose.publish( self.tracked_pose_msg )
+            self.pub_tracked_obj.publish( self.tracked_obj_msg )
 
-        # May also publish the board status, to be added with new message
-        if v_level >= 2:
-            self.status_msg.board_temp = v.board_temp
-            self.status_msg.tx_temps = []
-            for temp in v.tx_temps:
-                self.status_msg.tx_temps.append(temp)
-            self.status_msg.pm_temp = v.pm_temp
-            self.status_msg.voltage = v.voltage
-            self.status_msg.power = v.power
-            self.status_msg.header.stamp = rospy.Time.now()
-            
-            self.pub_status.publish( self.status_msg )
+            # May also publish the board status, to be added with new message
+            if v_level >= 2:
+                self.status_msg.board_temp = v.board_temp
+                self.status_msg.tx_temps = []
+                for temp in v.tx_temps:
+                    self.status_msg.tx_temps.append(temp)
+                self.status_msg.pm_temp = v.pm_temp
+                self.status_msg.voltage = v.voltage
+                self.status_msg.power = v.power
+                self.status_msg.header.stamp = rospy.Time.now()
+                
+                self.pub_status.publish( self.status_msg )
 
         
     def pcl_callback(self, id):
@@ -468,6 +501,11 @@ class WayvROSInterface( object ):
                 elev_tilt = float(args[3])
 
         # Receive and pack Wayv point cloud detections into ROS message
+        num_points = len(self.wayv_air.radars[id].points)
+        if logging_mode:
+            time_str = "%Y-%m-%d %H:%M:%S.%f"
+            sample_time = datetime.now().strftime(time_str)
+            logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
         i = 0
         for p in self.wayv_air.radars[id].points:
             target = RadarTarget()
@@ -477,6 +515,13 @@ class WayvROSInterface( object ):
             target.elevation = p.elevation
             target.speed = p.doppler
             target.snr = p.snr
+
+            if logging_mode:
+                logging_files[id].write(f"{target.range}\t"
+                                        f"{target.azimuth}\t"
+                                        f"{target.elevation}\t"
+                                        f"{target.speed}\t"
+                                        f"{target.snr}\n")
 
             # Translate point orientation to be relative to the mounting position.
             sensor_x, sensor_y, sensor_z = sph2cart(target.azimuth, target.elevation, target.range)
@@ -498,27 +543,49 @@ class WayvROSInterface( object ):
 
         # num_tlv_targets = len(self.wayv_air.radars[id].tlv_targets)
         # print(f"Tracked Target Packet: {num_tlv_targets} targets")
-        for tar in self.wayv_air.radars[id].tlv_targets:
-            tar.x, tar.y, tar.z = eulerRot (tar.x, tar.y, tar.z, 90, 0)
-            tar.z += sensor_height
-            self.tlv_tracked_pose_msg.poses.append(
-                self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
-            self.tlv_tracked_obj_msg.objects.append(
-                self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
+        num_targets = len(self.wayv_air.radars[id].tlv_targets)
+        if logging_mode:
+            time_str = "%Y-%m-%d %H:%M:%S.%f"
+            sample_time = datetime.now().strftime(time_str)
+            logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
 
-            print(f"tar id: {tar.tid}, "\
-                    f"x: {tar.x:.2f}, "\
-                    f"y: {tar.y:.2f}, "\
-                    f"z: {tar.z:.2f}, "\
-                    f"vel_x: {tar.vel_x:.2f}, "\
-                    f"vel_y: {tar.vel_y:.2f}, "\
-                    f"vel_z: {tar.vel_z:.2f}, "\
-                    f"acc_x: {tar.acc_x:.2f}, "\
-                    f"acc_y: {tar.acc_y:.2f}, "\
-                    f"acc_z: {tar.acc_z:.2f}, "\
-                #   f"ec_matrix: {tar.ec_matrix:.2f}, "\
-                    f"gating_gain: {tar.gating_gain:.2f}, "\
-                    f"confidence_level: {tar.confidence_level:.2f}")
+        for target in self.wayv_air.radars[id].tlv_targets:
+            if logging_mode:
+                logging_files[id].write(f"{target.tid}\t"
+                                    f"{target.x}\t"
+                                    f"{target.y:}\t"
+                                    f"{target.z:}\t"
+                                    f"{target.vel_x}\t"
+                                    f"{target.vel_y}\t"
+                                    f"{target.vel_z}\t"
+                                    f"{target.acc_x}\t"
+                                    f"{target.acc_y}\t"
+                                    f"{target.acc_z}\t"
+                                    # "{target.ec_matrix}\t"
+                                    f"{target.gating_gain}\t"
+                                    f"{target.confidence_level}\n")
+
+            # Translate targets orientation to be relative to the mounting position.
+            target.x, target.y, target.z = eulerRot (target.x, target.y, target.z, 90, 0)
+            target.z += sensor_height
+            self.tlv_tracked_pose_msg.poses.append(
+                self.target_to_pose(target.x, target.y, target.z, 0.0, 0.0, 0.0))
+            self.tlv_tracked_obj_msg.objects.append(
+                self.target_to_obj(target.x, target.y, target.z, 0.0, 0.0, 0.0))
+
+            print(f"tar id: {target.tid}, "\
+                    f"x: {target.x:.2f}, "\
+                    f"y: {target.y:.2f}, "\
+                    f"z: {target.z:.2f}, "\
+                    f"vel_x: {target.vel_x:.2f}, "\
+                    f"vel_y: {target.vel_y:.2f}, "\
+                    f"vel_z: {target.vel_z:.2f}, "\
+                    f"acc_x: {target.acc_x:.2f}, "\
+                    f"acc_y: {target.acc_y:.2f}, "\
+                    f"acc_z: {target.acc_z:.2f}, "\
+                #   f"ec_matrix: {target.ec_matrix:.2f}, "\
+                    f"gating_gain: {target.gating_gain:.2f}, "\
+                    f"confidence_level: {target.confidence_level:.2f}")
 
         # Timestamp and publish radar point cloud
         self.radar_data_msg.header.stamp = rospy.Time.now()
