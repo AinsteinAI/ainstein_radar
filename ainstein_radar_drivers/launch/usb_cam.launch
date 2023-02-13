@@ -1,6 +1,6 @@
 <launch>
   <!-- declare args to be passed in -->
-  <arg name="cam_device" default="/dev/video1"/>
+  <arg name="video_device" default="/dev/video2"/>
   <arg name="img_width" default="320"/>
   <arg name="img_height" default="240"/>
 
@@ -9,7 +9,7 @@
   <arg name="machine" default="localhost" />
 
   <node machine="$(arg machine)" name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" required="false" >
-    <param name="video_device" value="$(arg cam_device)" />
+    <param name="video_device" value="$(arg video_device)" />
     <param name="image_width" value="$(arg img_width)" />
     <param name="image_height" value="$(arg img_height)" />
     <param name="framerate" value="10" />
