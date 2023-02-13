@@ -73,6 +73,17 @@ def sigint_handler(*args):
     sys.exit()
 
 def cart2sph(x, y, z):
+    """Converts a cartesian object to a spherical object.
+    Based on GTRACK library function: gtrack_cartesian2spherical.
+
+    Args:
+        x (float): target x position
+        y (float): target y position
+        z (float): target z position
+
+    Returns:
+        (float,float,float): tuple containing (Azimuth Angle in radians, Elevation Angle in radians, Range).
+    """
     r = np.sqrt((x * x) + (y * y) + (z * z))
     if y == 0:
         az = np.pi / 2
@@ -86,15 +97,37 @@ def cart2sph(x, y, z):
     return az, el, r
 
 def sph2cart(az, el, r):
+    """Converts a spherical object to a cartesian object.
+    Based on GTRACK library function: gtrack_spherical2cartesian.
+
+    Args:
+        az (float): Azimuth Angle in radians
+        el (float): Elevation Angle in radians
+        r (float): Range
+
+    Returns:
+        (float,float,float): tuple containing (Position X, Position Y, Position Z).
+    """
     rcos_theta = r * np.cos(el)
     x = rcos_theta * np.sin(az)
     y = rcos_theta * np.cos(az)
     z = r * np.sin(el)
     return x, y, z
 
-# Function to rotate a set of coordinates [x,y,z] about the various axis via the tilt angles
-# Tilt angles are in degrees
 def eulerRot(x, y, z, elevTilt, aziTilt):
+    """Function to rotate a set of coordinates [x,y,z] about the various axis via the tilt angles.
+    Function is sourced from the TI 3D People Counting GUI.
+
+    Args:
+        x (float): x position
+        y (float): y position
+        z (float): z position
+        elevTilt (integer): Elevation Angle Tilt in Degrees
+        aziTilt (integer): Azimuth Angle Tilt in Degrees
+
+    Returns:
+        (float,float,float) : tuple containing the rotated (x, y, z) position.
+    """
     # Convert to radians
     elevTilt = np.deg2rad(elevTilt)
     aziTilt = np.deg2rad(aziTilt)
@@ -118,7 +151,7 @@ class WayvROSInterface( object ):
     and tracked detections in Cartesian space as PoseArray.
 
     """
-    
+
     def __init__( self, frame_id ):
         """ Initialize the ROS interface.
 
@@ -146,7 +179,6 @@ class WayvROSInterface( object ):
             print("WAYV Air API version:", self.wayv_air.version)
         self.wayv_air.radar_connect()
  
-        
         self.pub_point_cloud = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
         self.radar_data_msg = RadarTargetArray()
         self.radar_data_msg.header.frame_id = frame_id
@@ -162,7 +194,6 @@ class WayvROSInterface( object ):
         self.pub_tlv_tracked_pose = rospy.Publisher( '~objects/tlv_poses', PoseArray, queue_size=10 )
         self.tlv_tracked_pose_msg = PoseArray()
         self.tlv_tracked_pose_msg.header.frame_id = frame_id
-
 
         self.pub_tlv_tracked_obj = rospy.Publisher( '~objects/tlv_tracked', RadarTrackedObjectArray, queue_size=10 )
         self.tlv_tracked_obj_msg = RadarTrackedObjectArray()
@@ -200,7 +231,6 @@ class WayvROSInterface( object ):
         self.wave_marker_msg.color.a = 1
         self.wave_marker_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/wayv_air.stl"
 
-        
     def radar_con_callback(self, id):
         global new_firmware, query_config, comm_config, param_config, firmware_up, logging_mode, logging_files, logging_files_name, logging_format, logging_dir
         if id not in radars_seen:
@@ -218,7 +248,6 @@ class WayvROSInterface( object ):
                 logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
         query_config.append(id)  # tell the supervisor to query the config for this radar
 
-        
     def target_to_pose(self, px, py, pz, vx, vy, vz):
         """
         Converts a tracked object to Pose representation.
@@ -263,7 +292,6 @@ class WayvROSInterface( object ):
         pose.orientation.z = quat.z
 
         return pose
-    
 
     def target_to_obj(self, px, py, pz, vx, vy, vz):
         """
@@ -323,51 +351,6 @@ class WayvROSInterface( object ):
         obj_msg.box.pose.orientation.z = quat.z
 
         return obj_msg
-
-
-
-    # def target_to_world_orientation(self, target: RadarTarget, radar_cfg: list) -> RadarTarget:
-    #     """Takes a radar target type in spherical format relative to the sensor and returns
-    #        spherical format using world coordinates.
-
-    #     Args:
-    #         target (RadarTarget): Target in spherical coordinates relative to sensor
-    #         radar_cfg (list): Radar Config cmds list as provided by the WAYV API
-
-    #     Returns:
-    #         RadarTarget: Updated RadarTarget
-    #     """
-    #     new_target = RadarTarget()
-    #     new_target.snr = target.snr
-    #     new_target.speed = target.speed
-
-    #     # Convert to cartesian
-    #     sensor_x = target.range * math.cos(target.elevation) * math.sin(target.azimuth)
-    #     sensor_y = target.range * math.cos(target.elevation) * math.cos(target.azimuth)
-    #     sensor_z = target.range * math.sin(target.elevation)
-        
-
-    #     # Read Tilt values from Radar configuration
-    #     for item in radar_cfg:
-    #         args = item.split()
-    #         if args[0] == 'sensorPosition':
-    #             sensor_height = float(args[1])
-    #             azi_tilt = float(args[2])
-    #             elev_tilt = float(args[3])
-    #             cos_elev_tilt = math.cos(math.radians(elev_tilt))
-    #             sin_elev_tilt = math.sin(math.radians(elev_tilt))
-
-    #     # Convert cartesian from sensor to world cartesian
-    #     world_x = sensor_x
-    #     world_y = (sensor_y * cos_elev_tilt) + (sensor_z * sin_elev_tilt)
-    #     world_z = -(sensor_y * sin_elev_tilt) + (sensor_z * cos_elev_tilt) + sensor_height
-
-    #     new_target.range = math.sqrt( (world_x ** 2) + (world_y ** 2) + (world_z ** 2) )
-    #     new_target.azimuth = math.atan( world_x / world_y )
-    #     new_target.elevation = math.atan( world_z / math.sqrt( (world_x ** 2) + (world_y ** 2) ))
-
-    #     return new_target
-
 
     def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -467,7 +450,6 @@ class WayvROSInterface( object ):
                 
                 self.pub_status.publish( self.status_msg )
 
-        
     def pcl_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
 
@@ -487,7 +469,6 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        
         # Clear the output ROS message arrays
         self.radar_data_msg.targets = []
         self.tlv_tracked_pose_msg.poses = []
@@ -530,7 +511,6 @@ class WayvROSInterface( object ):
             target.azimuth, target.elevation, target.range = cart2sph(world_x, world_y, world_z)
 
             target.azimuth = -1.0 * math.degrees( target.azimuth )
-            # target.azimuth = math.degrees( target.azimuth )
             target.elevation = math.degrees( target.elevation )
             self.radar_data_msg.targets.append( target )
             i = i + 1
@@ -541,8 +521,6 @@ class WayvROSInterface( object ):
                   f"speed: {target.speed:.2f}, "\
                   f"snr: {target.snr:.2f}, ")
 
-        # num_tlv_targets = len(self.wayv_air.radars[id].tlv_targets)
-        # print(f"Tracked Target Packet: {num_tlv_targets} targets")
         num_targets = len(self.wayv_air.radars[id].tlv_targets)
         if logging_mode:
             time_str = "%Y-%m-%d %H:%M:%S.%f"
@@ -596,7 +574,6 @@ class WayvROSInterface( object ):
         self.pub_tlv_tracked_pose.publish( self.tlv_tracked_pose_msg )
         self.pub_tlv_tracked_obj.publish( self.tlv_tracked_obj_msg )
 
-        
     def supervisor(self):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
@@ -679,7 +656,7 @@ class WayvROSInterface( object ):
         y_max = float(boundaryBox[4])
         z_min = float(boundaryBox[5])
         z_max = float(boundaryBox[6])
-        
+
         # Set location, size and orientation of the boundary box
         self.boundary_box_msg.scale.y = (x_max - x_min)
         self.boundary_box_msg.scale.x = (y_max - y_min)
@@ -702,7 +679,6 @@ class WayvROSInterface( object ):
             self.boundary_box_msg.header.stamp = rospy.Time.now()
             self.pub_boundary_box.publish(self.boundary_box_msg)
             rate.sleep()
-    
 
     def pub_wayv_marker_msg(self, sensorPosition):
         """
@@ -732,8 +708,6 @@ class WayvROSInterface( object ):
             self.pub_wayv_marker.publish(self.wave_marker_msg)
             rate.sleep()
 
-
-    
 if __name__ == "__main__":
     try:
         rospy.init_node( 'wayv_node' )
