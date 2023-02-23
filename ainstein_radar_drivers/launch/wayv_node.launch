@@ -1,14 +1,12 @@
 <launch>
 
-  <arg name="serial_port" default="/dev/ttyUSB0" />
+  <arg name="serial_port" default="/dev/ttyUSB1" />
   <arg name="enable_pcl" default="True" /> <?ignore Note: Must switch to normal when changing between wifi and usb pcl mode ?>
   <arg name="serial_baud" default="115200" /> <?ignore 115200 or 921600 ?>
   <arg name="server_ip" default="192.168.2.234" />
-  <arg name="comm_mode" default="0" /> <?ignore MODE_485(USB) = 0 or MODE_WIFI = 1?>
+  <arg name="comm_mode" default="1" /> <?ignore MODE_485(USB) = 0 or MODE_WIFI = 1?>
   <arg name="logging_mode" default="True" />
   <arg name="logging_dir" default="/home/joel/catkin_ws/logs/wayv_api_logs" />
-
-  <arg name="use_camera" default="true" />
   
   <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" output="screen" >
     <param name="frame_id" value="map" />
@@ -25,17 +23,5 @@
     <param name="logging_mode" value="$(arg logging_mode)" />
     <param name="logging_dir" value="$(arg logging_dir)" />
   </node>
-
-<!-- USB camera nodes -->
-  <group if="$(arg use_camera)">
-
-    <!-- USB camera in room -->
-      <include file="$(find ainstein_radar_drivers)/launch/usb_cam.launch" >
-        <arg name="machine" value="localhost" />
-        <arg name="video_device" value="/dev/video6" />
-      </include>
-
-  </group>
-
 
 </launch>

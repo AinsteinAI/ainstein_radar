@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-
-from wayv_air_api.wayv_air_device_api import Wayv_Air_API
-
 import math
 import numpy as np
 import time
@@ -12,11 +9,6 @@ import smokesignal
 from datetime import datetime
 import os
 
-from ainstein_radar_msgs.msg import RadarTrackedObjectArray
-from ainstein_radar_msgs.msg import RadarTrackedObject
-from ainstein_radar_msgs.msg import RadarTargetArray
-from ainstein_radar_msgs.msg import RadarTarget
-from ainstein_radar_drivers.msg import WayvAirStatus
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
 from visualization_msgs.msg import Marker
@@ -24,12 +16,26 @@ from tf.transformations import quaternion_from_euler
 import quaternion
 import rospy
 
+from ainstein_radar_msgs.msg import RadarTrackedObjectArray
+from ainstein_radar_msgs.msg import RadarTrackedObject
+from ainstein_radar_msgs.msg import RadarTargetArray
+from ainstein_radar_msgs.msg import RadarTarget
+from ainstein_radar_drivers.msg import WayvAirStatus
+from ainstein_radar_drivers.msg import WayvAirConfiguration
+
+from wayv_air_api.wayv_air_device_api import Wayv_Air_API
+from wayv_air_api.wayv_air_device_api import Wayv_Air_Radar
+from wayv_air_api.worker.msg.msg_detail import MsgConfig
+from wayv_air_api.worker.msg.msg_detail import MsgParam
+from wayv_air_api.model.target import Target, DebugTarget, DetailTarget, TLVCloudPoint, TLVTrackedTarget
+
+
 # Wayv device communication parameters
 MODE_485 = 0
 MODE_WIFI = 1
 delay_init = 50 # number of target callbacks to pass before sending or reading configurations
 delay = delay_init
-v_level = 3
+v_level = 0
 if 'linux' in sys.platform:
     SER_PORT_DEFAULT = "/dev/ttyUSB0"
 else:
@@ -39,7 +45,7 @@ serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
 comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
 wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
 wifi_port = 8877
-target_detail = 0
+target_detail = 1
 velocity_enable = 1
 point_num_enable = 0
 rs485_id = 1
@@ -47,102 +53,415 @@ new_comm_config = False
 new_param_config = False
 new_firmware = False
 enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
-query_config_requested = False
+query_config_requested = []
 query_config = []
 comm_config = []
 param_config = []
 firmware_up = []
-radars_seen = []
+radars_seen = {}
 logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
 logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
 logging_format = "%y-%m-%d %H-%M-%S"
 logging_files_name = {}
 logging_files = {}
+run_supervisor = True
 
 def sigint_handler(*args):
+    global run_supervisor
+    run_supervisor = False
     sys.stderr.write('/r')
     # make a list of the radars because the dictionary will change when disconnecting radars
-    radar_list = []
-    for r in list(wayv_intf.wayv_air.radars.keys()):
-        radar_list.append(r)
-    for r in radar_list:
-        wayv_intf.wayv_air.radar_disconnect(r) # disconnect the radar before quitting
+    wayv_intf.wayv_air.shutdown()
     if logging_mode:
         for file in logging_files.values():
             file.close()
     sys.exit()
 
-def cart2sph(x, y, z):
-    """Converts a cartesian object to a spherical object.
-    Based on GTRACK library function: gtrack_cartesian2spherical.
+def determine_radar_label( new_radar: Wayv_Air_Radar) -> str:
+    global radars_seen
+    label = new_radar.comm_config.dev_id
+    suffix = 1
+    if len(radars_seen) > 0:
+        for radar in radars_seen.items():
+            if label == radar[1].radar_label:
+                label = label + "_" + str(suffix)
+                suffix += 1
 
-    Args:
-        x (float): target x position
-        y (float): target y position
-        z (float): target z position
+    return label
 
-    Returns:
-        (float,float,float): tuple containing (Azimuth Angle in radians, Elevation Angle in radians, Range).
-    """
-    r = np.sqrt((x * x) + (y * y) + (z * z))
-    if y == 0:
-        az = np.pi / 2
-    elif y > 0:
-        az = np.arctan(x/y)
-    else:
-        az = np.arctan(x/y) + np.pi
-
-    el = np.arctan(z / np.sqrt( (x * x) + (y * y) ))
-
-    return az, el, r
-
-def sph2cart(az, el, r):
-    """Converts a spherical object to a cartesian object.
-    Based on GTRACK library function: gtrack_spherical2cartesian.
-
-    Args:
-        az (float): Azimuth Angle in radians
-        el (float): Elevation Angle in radians
-        r (float): Range
+class WayvRadar( object ):
+    """Object containing the ROS contents for a single WAYV Radar
 
     Returns:
-        (float,float,float): tuple containing (Position X, Position Y, Position Z).
+        WayvRadar: Returns a WayvRadar Object
     """
-    rcos_theta = r * np.cos(el)
-    x = rcos_theta * np.sin(az)
-    y = rcos_theta * np.cos(az)
-    z = r * np.sin(el)
-    return x, y, z
+    
+    def __init__( self, radar : Wayv_Air_Radar, label: str, frame_id: str ):
+        """Initializes the Radar Object
 
-def eulerRot(x, y, z, elevTilt, aziTilt):
-    """Function to rotate a set of coordinates [x,y,z] about the various axis via the tilt angles.
-    Function is sourced from the TI 3D People Counting GUI.
+        Args:
+            radar (_type_): Radar object provided by the WAYV Air API
+        """
+        self.frame_id = frame_id
+        self.time_str = "%Y-%m-%d %H:%M:%S.%f"
+        self.radar = radar
+        self.sensor_config = WayvAirConfiguration()
+        self.sensor_config.fw_ver = radar.fw_version
+        self.sensor_config.sbl_ver = radar.sbl_version
+        self.radar_label = label
+        self._populate_comm_config(radar.comm_config)
+        self._populate_radar_config(radar.radar_config)
 
-    Args:
-        x (float): x position
-        y (float): y position
-        z (float): z position
-        elevTilt (integer): Elevation Angle Tilt in Degrees
-        aziTilt (integer): Azimuth Angle Tilt in Degrees
+        self.boundary_box_msg = Marker()
+        self.boundary_box_msg.header.frame_id = self.frame_id
+        self._populate_boundary_box()
 
-    Returns:
-        (float,float,float) : tuple containing the rotated (x, y, z) position.
-    """
-    # Convert to radians
-    elevTilt = np.deg2rad(elevTilt)
-    aziTilt = np.deg2rad(aziTilt)
+        self.pub_tracked_targets = rospy.Publisher( f'~{self.radar_label}/tracked/targets', RadarTrackedObjectArray, queue_size=10 )
+        self.pub_tracked_poses = rospy.Publisher( f'~{self.radar_label}/tracked/poses', PoseArray, queue_size=10 )
 
-    elevAziRotMatrix = np.matrix([  [  math.cos(aziTilt),  math.cos(elevTilt)*math.sin(aziTilt), math.sin(elevTilt)*math.sin(aziTilt)],
-                                    [ -math.sin(aziTilt),  math.cos(elevTilt)*math.cos(aziTilt), math.sin(elevTilt)*math.cos(aziTilt)],
-                                    [                  0,                   -math.sin(elevTilt),                   math.cos(elevTilt)],
-                                ])
+        self.pub_point_cloud = rospy.Publisher( f'~{self.radar_label}/tlv/points', RadarTargetArray, queue_size=10 )
+        self.pub_tlv_tracked_targets = rospy.Publisher( f'~{self.radar_label}/tlv/tracked_targets', RadarTrackedObjectArray, queue_size=10 )
+        self.pub_tlv_tracked_poses = rospy.Publisher( f'~{self.radar_label}/tlv/tracked_poses', PoseArray, queue_size=10 )
 
-    target =  np.array([[x],[y],[z]])
-    rotTarget = elevAziRotMatrix*target
-    rotX = rotTarget[0,0]
-    rotY = rotTarget[1,0]
-    rotZ = rotTarget[2,0]
-    return rotX, rotY, rotZ
+        self.pub_status = rospy.Publisher( f'~{self.radar_label}/status', WayvAirStatus, queue_size=10 )
+        self.pub_boundary_box = rospy.Publisher( f'~{self.radar_label}/boundary_box', Marker, queue_size=10 )
+        self.pub_sensor_config = rospy.Publisher(f'~{self.radar_label}/wayv_config', WayvAirConfiguration, queue_size=10 )
+
+    def _populate_comm_config(self, config: MsgConfig):
+        self.sensor_config.id_485 = config.id_485
+        self.sensor_config.baud_485 = config.baud_485
+        self.sensor_config.server_ip = config.server_ip
+        self.sensor_config.server_port = config.server_port
+        self.sensor_config.wifi_name = config.wifi_name
+        self.sensor_config.wifi_pwd = config.wifi_pwd
+        self.sensor_config.con_wifi_name = config.con_wifi_name
+        self.sensor_config.con_wifi_pwd = config.con_wifi_pwd
+        self.sensor_config.dev_id = config.dev_id
+        self.sensor_config.wifi_mode = config.wifi_mode
+        self.sensor_config.sys_mode = config.sys_mode
+        self.sensor_config.radio_switch = config.radio_switch
+        self.sensor_config.radio_time = config.radio_time
+
+    def _populate_radar_config(self, radar_conf: MsgParam):
+        for cmd in radar_conf.cmds:
+            self.sensor_config.radar_conf.append(cmd)
+        self.sensor_config.radar_config_len = radar_conf.cmd_count
+
+    def _populate_boundary_box(self):
+        self.boundary_box_msg.type = 10
+        self.boundary_box_msg.action = 0
+        self.boundary_box_msg.color.r = 0
+        self.boundary_box_msg.color.g = 0
+        self.boundary_box_msg.color.b = .5
+        self.boundary_box_msg.color.a = 1
+        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.stl"
+
+        boundary_box = self.find_config_param('boundaryBox')
+        # Get boundary box values from config
+        x_min = float(boundary_box[1])
+        x_max = float(boundary_box[2])
+        y_min = float(boundary_box[3])
+        y_max = float(boundary_box[4])
+        z_min = float(boundary_box[5])
+        z_max = float(boundary_box[6])
+
+        # Set location, size and orientation of the boundary box
+        self.boundary_box_msg.scale.x = (x_max - x_min)
+        self.boundary_box_msg.scale.y = (y_max - y_min)
+        self.boundary_box_msg.scale.z = (z_max - z_min)
+
+        self.boundary_box_msg.pose.position.x = (x_max + x_min)/2
+        self.boundary_box_msg.pose.position.y = (y_max + y_min)/2
+        self.boundary_box_msg.pose.position.z = (z_max + z_min)/2
+
+        quaternion_list = quaternion_from_euler(0, 0, 0)
+        self.boundary_box_msg.pose.orientation.x = quaternion_list[0]
+        self.boundary_box_msg.pose.orientation.y = quaternion_list[1]
+        self.boundary_box_msg.pose.orientation.z = quaternion_list[2]
+        self.boundary_box_msg.pose.orientation.w = quaternion_list[3]
+
+    def publish_targets(self, targets: list):
+        """Publishes the Ainstein formatted detected targets list.
+        Reports detailed targets assuming ROS users will be looking for the extra data in all cases.
+
+        Args:
+            targets (list[DetailTarget]): list of radar targets
+        """
+        tracked_targets = RadarTrackedObjectArray()
+        tracked_poses = PoseArray()
+
+        num_targets = len(targets)
+        if num_targets > 0:
+            sample_time = datetime.now().strftime(self.time_str)
+            print(f"{sample_time}: Detailed Targets Reported: {num_targets} points")
+
+        for tar in targets:
+            target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+            pose = self._target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+            tracked_targets.objects.append(target)
+            tracked_poses.poses.append(pose)
+
+            print(f"x: {tar.x:.2f}, "
+                  f"y: {tar.y:.2f}, "
+                  f"z: {tar.z:.2f}, "
+                  f"vel_x: {tar.vel_x:.2f}, "
+                  f"vel_y: {tar.vel_y:.2f}, "
+                  f"vel_z: {tar.vel_z:.2f}, ")
+        
+        # Timestamp and publish tracked object poses
+        tracked_targets.header.frame_id = self.frame_id
+        tracked_targets.header.stamp = rospy.Time.now()
+        tracked_poses.header.frame_id = self.frame_id
+        tracked_poses.header.stamp = rospy.Time.now()
+        self.pub_tracked_targets.publish( tracked_targets )
+        self.pub_tracked_poses.publish( tracked_poses )
+
+    def publish_tlv_points(self, points: list):
+        """Publishes TLV detected points for the radar object.
+
+        Args:
+            points (list[TLVCloudPoint]): List of TLV Points
+        """
+        point_cloud = RadarTargetArray()
+
+        num_tlv_points = len(points)
+        if num_tlv_points > 0:
+            sample_time = datetime.now().strftime(self.time_str)
+            print(f"{sample_time}: TLV Point Cloud Packet: {num_tlv_points} points")
+            i = 0
+
+            point: TLVCloudPoint
+            for point in points:
+                target = RadarTarget()
+                target.target_id = i
+                i += 1
+                target.range = point.range
+                target.azimuth = math.degrees(point.azimuth)
+                target.elevation = math.degrees(point.elevation)
+                target.speed = point.doppler
+                target.snr = point.snr
+                point_cloud.targets.append(target)
+
+                print(f"range: {target.range:.2f}, "
+                    f"azimuth: {target.azimuth:.2f}, "
+                    f"elevation: {target.elevation:.2f}, "
+                    f"speed: {target.speed:.2f}, "
+                    f"snr: {target.snr:.2f}, ")
+
+        # Timestamp and publish radar point cloud
+        point_cloud.header.frame_id = self.frame_id
+        point_cloud.header.stamp = rospy.Time.now()
+        self.pub_point_cloud.publish( point_cloud )
+
+    def publish_tlv_targets(self, targets: list):
+        """Publishes TLV targets as a RadarTrackedObjectArray message type.
+
+        Args:
+            targets (list[TLVTrackedTarget]): TLV targets to be published
+        """
+        tlv_tracked_targets = RadarTrackedObjectArray()
+        tlv_tracked_poses = PoseArray()
+
+        num_tlv_targets = len(targets)
+        if num_tlv_targets > 0:
+            sample_time = datetime.now().strftime(self.time_str)
+            print(f"{sample_time}: Tracked Target Packet: {num_tlv_targets} targets")
+
+            for tar in targets:
+                target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+                pose = self._target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+                tlv_tracked_targets.objects.append(target)
+                tlv_tracked_poses.poses.append(pose)
+
+                print(f"tar id: {tar.tid}, "
+                    f"x: {tar.x:.2f}, "
+                    f"y: {tar.y:.2f}, "
+                    f"z: {tar.z:.2f}, "
+                    f"vel_x: {tar.vel_x:.2f}, "
+                    f"vel_y: {tar.vel_y:.2f}, "
+                    f"vel_z: {tar.vel_z:.2f}, "
+                    f"acc_x: {tar.acc_x:.2f}, "
+                    f"acc_y: {tar.acc_y:.2f}, "
+                    f"acc_z: {tar.acc_z:.2f}, ]")
+
+        # Timestamp and publish tlv tracked object poses
+        tlv_tracked_targets.header.frame_id = self.frame_id
+        tlv_tracked_targets.header.stamp = rospy.Time.now()
+        tlv_tracked_poses.header.frame_id = self.frame_id
+        tlv_tracked_poses.header.stamp = rospy.Time.now()
+        self.pub_tracked_targets.publish( tlv_tracked_targets )
+        self.pub_tracked_poses.publish( tlv_tracked_poses )
+
+    def publish_wayv_status(self, radar: Wayv_Air_Radar ):
+        """Publishes the WAYV Device Status message
+
+        Args:
+            radar (Wayv_Air_Radar): Wayv Air Radar object from the Wayv API.
+        """
+        status_msg = WayvAirStatus()
+        status_msg.board_temp = radar.board_temp
+        status_msg.tx_temps = []
+        for temp in radar.tx_temps:
+            status_msg.tx_temps.append(temp)
+        status_msg.pm_temp = radar.pm_temp
+        status_msg.voltage = radar.voltage
+        status_msg.power = radar.power
+
+        status_msg.header.frame_id = self.frame_id
+        status_msg.header.stamp = rospy.Time.now()
+        self.pub_status.publish( status_msg )
+
+    def find_config_param(self, param:str) -> list:
+        """Returns the config string based on the requested parameter name.
+
+        Args:
+            param (str): Name of parameter requested
+
+        Returns:
+            list: list containing the parameter & arguments.
+        """
+        for item in self.sensor_config.radar_conf:
+            args = item.split()
+            if args[0] == param:
+                return args
+        return None
+
+    def publish_boundary_box(self):
+        """
+        This function handles publishing a Marker topic 
+        to visually represent the boundaryBox config value
+        """
+        self.boundary_box_msg.header.frame_id = self.frame_id
+        self.boundary_box_msg.header.stamp = rospy.Time.now()
+        self.pub_boundary_box.publish(self.boundary_box_msg)
+
+    def publish_wayv_config(self):
+        """
+        Publishes the wayv air configuration
+        """
+        self.pub_sensor_config.publish(self.sensor_config)
+
+    def _target_to_pose(self, px, py, pz, vx, vy, vz):
+        """
+        Converts a tracked object to Pose representation.
+
+        Utility function for converting a tracked object received from the radar 
+        having position and velocity information to a Pose message. The velocity
+        is used to define the orientation.
+
+        Args:
+            px (Float): Target x position.
+            py (Float): Target y position.
+            pz (Float): Target z position.
+            vx (Float): Target x velocity.
+            vy (Float): Target y velocity.
+            vz (Float): Target z velocity.
+
+        Returns:
+            (Pose): Pose representing the target.
+
+        """
+        pose = Pose()
+        # pose.position.x = py
+        # pose.position.y = -px
+        # pose.position.z = pz
+
+        pose.position.x = px
+        pose.position.y = py
+        pose.position.z = pz
+
+        # Compute target pose, assuming velocity is in +x direction
+        vel = np.array( [vy, -vx, vz] ).transpose()
+
+        # If velocity is near zero, keep identity orientation
+        rot_mat = np.identity( 3 )
+        if( np.linalg.norm( vel ) > 0.001 ):
+            rot_mat[:,0] = vel / np.linalg.norm( vel )
+            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
+                                     rot_mat[:,0] )
+            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
+
+        # Convert from rotation matrix to quaternion to fill ROS pose
+        quat = quaternion.from_rotation_matrix( rot_mat )
+        pose.orientation.w = quat.w
+        pose.orientation.x = quat.x
+        pose.orientation.y = quat.y
+        pose.orientation.z = quat.z
+
+        return pose
+
+    def _target_to_obj(self, px, py, pz, vx, vy, vz):
+        """
+        Converts a tracked object to RadarTrackedObject representation.
+
+        Utility function for converting a tracked object received from the radar 
+        having position and velocity information to a Tracked Object message.
+
+        Args:
+            px (Float): Target x position.
+            py (Float): Target y position.
+            pz (Float): Target z position.
+            vx (Float): Target x velocity.
+            vy (Float): Target y velocity.
+            vz (Float): Target z velocity.
+
+        Returns:
+            (obj_msg): Message containing tracked object information.
+
+        """
+        obj_msg = RadarTrackedObject()
+
+        # obj_msg.pose.position.x = py
+        # obj_msg.pose.position.y = -px
+        # obj_msg.pose.position.z = pz
+
+        # obj_msg.velocity.linear.x = vy
+        # obj_msg.velocity.linear.y = -vx
+        # obj_msg.velocity.linear.z = vz
+
+        # obj_msg.box.pose.position.x = py
+        # obj_msg.box.pose.position.y = -px
+        # obj_msg.box.pose.position.z = pz
+
+        obj_msg.pose.position.x = px
+        obj_msg.pose.position.y = py
+        obj_msg.pose.position.z = pz
+
+        obj_msg.velocity.linear.x = vx
+        obj_msg.velocity.linear.y = vy
+        obj_msg.velocity.linear.z = vz
+
+        obj_msg.box.pose.position.x = px
+        obj_msg.box.pose.position.y = py
+        obj_msg.box.pose.position.z = pz
+
+        # Compute target pose, assuming velocity is in +x direction
+        # vel = np.array( [vy, -vx, vz] ).transpose()
+        vel = np.array( [vx, vy, vz] ).transpose()
+
+        # If velocity is near zero, keep identity orientation
+        rot_mat = np.identity( 3 )
+        if( np.linalg.norm( vel ) > 0.001 ):
+            rot_mat[:,0] = vel / np.linalg.norm( vel )
+            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
+                                     rot_mat[:,0] )
+            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
+
+        # Convert from rotation matrix to quaternion to fill ROS pose
+        quat = quaternion.from_rotation_matrix( rot_mat )
+        
+        obj_msg.pose.orientation.w = quat.w
+        obj_msg.pose.orientation.x = quat.x
+        obj_msg.pose.orientation.y = quat.y
+        obj_msg.pose.orientation.z = quat.z
+
+        obj_msg.box.pose.orientation.w = quat.w
+        obj_msg.box.pose.orientation.x = quat.x
+        obj_msg.box.pose.orientation.y = quat.y
+        obj_msg.box.pose.orientation.z = quat.z
+
+        return obj_msg
+
 
 class WayvROSInterface( object ):
     """
@@ -178,63 +497,13 @@ class WayvROSInterface( object ):
         if v_level >= 1:
             print("WAYV Air API version:", self.wayv_air.version)
         self.wayv_air.radar_connect()
- 
-        self.pub_point_cloud = rospy.Publisher( '~targets/raw', RadarTargetArray, queue_size=10 )
-        self.radar_data_msg = RadarTargetArray()
-        self.radar_data_msg.header.frame_id = frame_id
-
-        self.pub_tracked_pose = rospy.Publisher( '~objects/poses', PoseArray, queue_size=10 )
-        self.tracked_pose_msg = PoseArray()
-        self.tracked_pose_msg.header.frame_id = frame_id
-
-        self.pub_tracked_obj = rospy.Publisher( '~objects/tracked', RadarTrackedObjectArray, queue_size=10 )
-        self.tracked_obj_msg = RadarTrackedObjectArray()
-        self.tracked_obj_msg.header.frame_id = frame_id
-
-        self.pub_tlv_tracked_pose = rospy.Publisher( '~objects/tlv_poses', PoseArray, queue_size=10 )
-        self.tlv_tracked_pose_msg = PoseArray()
-        self.tlv_tracked_pose_msg.header.frame_id = frame_id
-
-        self.pub_tlv_tracked_obj = rospy.Publisher( '~objects/tlv_tracked', RadarTrackedObjectArray, queue_size=10 )
-        self.tlv_tracked_obj_msg = RadarTrackedObjectArray()
-        self.tlv_tracked_obj_msg.header.frame_id = frame_id
-
-        self.pub_status = rospy.Publisher( '~status', WayvAirStatus, queue_size=10 )
-        self.status_msg = WayvAirStatus()
-        self.status_msg.header.frame_id = frame_id
-
-        self.pub_boundary_box = rospy.Publisher( '~boundary_box', Marker, queue_size=10 )
-        self.boundary_box_msg = Marker()
-        self.boundary_box_msg.header.frame_id = frame_id
-        self.boundary_box_msg.type = 10
-        self.boundary_box_msg.action = 0
-        self.boundary_box_msg.color.r = 0
-        self.boundary_box_msg.color.g = 0
-        self.boundary_box_msg.color.b = .5
-        self.boundary_box_msg.color.a = 1
-        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.stl"
-
-        self.pub_wayv_marker = rospy.Publisher( '~model', Marker, queue_size=10 )
-        self.wave_marker_msg = Marker()
-        self.wave_marker_msg.header.frame_id = frame_id
-        self.wave_marker_msg.type = 10
-        self.wave_marker_msg.action = 0
-        self.wave_marker_msg.pose.position.x = 0
-        self.wave_marker_msg.pose.position.y = 0
-        self.wayv_model_scale = 3  # Modify this value to change scale of WA model, 1 = Actual size. Set to 3x for better visibility
-        self.wave_marker_msg.scale.x = (1/1000)*self.wayv_model_scale
-        self.wave_marker_msg.scale.y = (1/1000)*self.wayv_model_scale
-        self.wave_marker_msg.scale.z = (1/1000)*self.wayv_model_scale
-        self.wave_marker_msg.color.r = 1
-        self.wave_marker_msg.color.g = 1
-        self.wave_marker_msg.color.b = 1
-        self.wave_marker_msg.color.a = 1
-        self.wave_marker_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/wayv_air.stl"
 
     def radar_con_callback(self, id):
         global new_firmware, query_config, comm_config, param_config, firmware_up, logging_mode, logging_files, logging_files_name, logging_format, logging_dir
         if id not in radars_seen:
-            radars_seen.append(id)
+            # radars_seen.append(id)
+            label = determine_radar_label(self.wayv_air.radars[id])
+            radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
             if new_comm_config:
                 comm_config.append(id)  # tell the supervisor to update this radar's comm. config
             if new_param_config:
@@ -246,111 +515,12 @@ class WayvROSInterface( object ):
                 if not os.path.exists(logging_dir):
                     os.makedirs(logging_dir)
                 logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
-        query_config.append(id)  # tell the supervisor to query the config for this radar
-
-    def target_to_pose(self, px, py, pz, vx, vy, vz):
-        """
-        Converts a tracked object to Pose representation.
-
-        Utility function for converting a tracked object received from the radar 
-        having position and velocity information to a Pose message. The velocity
-        is used to define the orientation.
-
-        Args:
-            px (Float): Target x position.
-            py (Float): Target y position.
-            pz (Float): Target z position.
-            vx (Float): Target x velocity.
-            vy (Float): Target y velocity.
-            vz (Float): Target z velocity.
-
-        Returns:
-            (Pose): Pose representing the target.
-
-        """
-        pose = Pose()
-        pose.position.x = py
-        pose.position.y = -px
-        pose.position.z = pz
-
-        # Compute target pose, assuming velocity is in +x direction
-        vel = np.array( [vy, -vx, vz] ).transpose()
-
-        # If velocity is near zero, keep identity orientation
-        rot_mat = np.identity( 3 )
-        if( np.linalg.norm( vel ) > 0.001 ):
-            rot_mat[:,0] = vel / np.linalg.norm( vel )
-            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
-                                     rot_mat[:,0] )
-            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
-
-        # Convert from rotation matrix to quaternion to fill ROS pose
-        quat = quaternion.from_rotation_matrix( rot_mat )
-        pose.orientation.w = quat.w
-        pose.orientation.x = quat.x
-        pose.orientation.y = quat.y
-        pose.orientation.z = quat.z
-
-        return pose
-
-    def target_to_obj(self, px, py, pz, vx, vy, vz):
-        """
-        Converts a tracked object to RadarTrackedObject representation.
-
-        Utility function for converting a tracked object received from the radar 
-        having position and velocity information to a Tracked Object message.
-
-        Args:
-            px (Float): Target x position.
-            py (Float): Target y position.
-            pz (Float): Target z position.
-            vx (Float): Target x velocity.
-            vy (Float): Target y velocity.
-            vz (Float): Target z velocity.
-
-        Returns:
-            (obj_msg): Message containing tracked object information.
-
-        """
-        obj_msg = RadarTrackedObject()
-
-        obj_msg.pose.position.x = py
-        obj_msg.pose.position.y = -px
-        obj_msg.pose.position.z = pz
-
-        obj_msg.velocity.linear.x = vy
-        obj_msg.velocity.linear.x = -vx
-        obj_msg.velocity.linear.x = vz
-
-        obj_msg.box.pose.position.x = py
-        obj_msg.box.pose.position.x = -px
-        obj_msg.box.pose.position.x = pz
-
-        # Compute target pose, assuming velocity is in +x direction
-        vel = np.array( [vy, -vx, vz] ).transpose()
-
-        # If velocity is near zero, keep identity orientation
-        rot_mat = np.identity( 3 )
-        if( np.linalg.norm( vel ) > 0.001 ):
-            rot_mat[:,0] = vel / np.linalg.norm( vel )
-            rot_mat[:,1] = np.cross( np.array( [0.0, 0.0, 1.0] ),
-                                     rot_mat[:,0] )
-            rot_mat[:,2] = np.cross( rot_mat[:,0], rot_mat[:,1] )
-
-        # Convert from rotation matrix to quaternion to fill ROS pose
-        quat = quaternion.from_rotation_matrix( rot_mat )
-        
-        obj_msg.pose.orientation.w = quat.w
-        obj_msg.pose.orientation.x = quat.x
-        obj_msg.pose.orientation.y = quat.y
-        obj_msg.pose.orientation.z = quat.z
-
-        obj_msg.box.pose.orientation.w = quat.w
-        obj_msg.box.pose.orientation.x = quat.x
-        obj_msg.box.pose.orientation.y = quat.y
-        obj_msg.box.pose.orientation.z = quat.z
-
-        return obj_msg
+        # Every time the radar connects send point cloud mode request.
+        if enbl_pcl:
+            self.wayv_air.enable_pcl(id, True) # Enable Point Cloud mode on this radar
+        elif self.wayv_air.radars[id].comm_config.sys_mode != 0:
+            self.wayv_air.enable_pcl(id, False) # Disable Point Cloud mode on this radar if it's already in PCL mode
+        # query_config.append(id)  # tell the supervisor to query the config for this radar
 
     def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -372,83 +542,26 @@ class WayvROSInterface( object ):
 
         """
 
-        # Clear the output ROS message array
-        self.tracked_pose_msg.poses = []
-        self.tracked_obj_msg.objects = []
+        radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
+        radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
 
-        # Receive and pack Wayv tracked object info into ROS message
-        for v in self.wayv_air.radars.values():
-            if v.targets_recvd:  # Only print targets from devices that have new targets; could also tell this from id passed to the callback
-                v.targets_recvd = False
-                if logging_mode:
-                    time_str = "%Y-%m-%d %H:%M:%S.%f"
-                    ts_count = len(v.targets)
-                    sample_time = datetime.now().strftime(time_str)
-                    logging_files[v.id].write(f"targets: {v.id}\t{sample_time}\t{ts_count}\n")
-
-                if target_detail == 1:            ## call debug mode format for Wayv Air
-                    if velocity_enable == 1:
-                        if point_num_enable == 1:
-                            for tar in v.targets:
-                                self.tracked_pose_msg.poses.append(
-                                    self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                                self.tracked_obj_msg.objects.append(
-                                    self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                                if logging_mode:
-                                    logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\n' %
-                                                            (tar.tid, tar.x, tar.y, tar.z, tar.vel_x,
-                                                            tar.vel_y, tar.vel_z, tar.a_x, tar.a_y, tar.a_z,
-                                                            tar.cp_count))
-                        else:  # velocity only, not point number
-                            for tar in v.targets:
-                                self.tracked_pose_msg.poses.append(
-                                    self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                                self.tracked_obj_msg.objects.append(
-                                    self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                                if logging_mode:
-                                    logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                    elif point_num_enable == 1:  # point number, not velocity
-                        for tar in v.targets:
-                            self.tracked_pose_msg.poses.append(
-                                self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
-                            self.tracked_obj_msg.objects.append(
-                                self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
-                            if logging_mode:
-                                logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.cp_count))
-                elif target_detail == 0:          ## call normal mode format for Wayv Air
-                    for tar in v.targets:
-                        self.tracked_pose_msg.poses.append(
-                            self.target_to_pose(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
-                        self.tracked_obj_msg.objects.append(
-                            self.target_to_obj(tar.x, tar.y, tar.z, 0.0, 0.0, 0.0))
-                        if logging_mode:
-                            logging_files[v.id].write('%d\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z))
-                else:                               ## default in  debug mode format for Wayv Air
-                    for tar in v.targets:
-                        self.tracked_pose_msg.poses.append(
-                            self.target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                        self.tracked_obj_msg.objects.append(
-                            self.target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-                        if logging_mode:
-                            logging_files[v.id].write('%d\t%f\t%f\t%f\t%f\t%f\t%f\n' % (tar.tid, tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z))
-
-            # Timestamp and publish tracked object poses
-            self.tracked_pose_msg.header.stamp = rospy.Time.now()
-            self.pub_tracked_pose.publish( self.tracked_pose_msg )
-            self.pub_tracked_obj.publish( self.tracked_obj_msg )
-
-            # May also publish the board status, to be added with new message
-            if v_level >= 2:
-                self.status_msg.board_temp = v.board_temp
-                self.status_msg.tx_temps = []
-                for temp in v.tx_temps:
-                    self.status_msg.tx_temps.append(temp)
-                self.status_msg.pm_temp = v.pm_temp
-                self.status_msg.voltage = v.voltage
-                self.status_msg.power = v.power
-                self.status_msg.header.stamp = rospy.Time.now()
-                
-                self.pub_status.publish( self.status_msg )
+        if logging_mode:
+            time_str = "%Y-%m-%d %H:%M:%S.%f"
+            num_targets = len(self.wayv_air.radars[id].targets)
+            sample_time = datetime.now().strftime(time_str)
+            logging_files[id].write(f"targets: {id}\t{sample_time}\t{num_targets}\n")
+            for target in self.wayv_air.radars[id].targets:
+                logging_files[id].write(f"{target.tid}\t"
+                                f"{target.x}\t"
+                                f"{target.y:}\t"
+                                f"{target.z:}\t"
+                                f"{target.vel_x}\t"
+                                f"{target.vel_y}\t"
+                                f"{target.vel_z}\t"
+                                f"{target.a_x}\t"
+                                f"{target.a_y}\t"
+                                f"{target.a_z}\t"
+                                f"{target.cp_count}\t")
 
     def pcl_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -469,66 +582,29 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        # Clear the output ROS message arrays
-        self.radar_data_msg.targets = []
-        self.tlv_tracked_pose_msg.poses = []
-        self.tlv_tracked_obj_msg.objects = []
-
-        for item in self.wayv_air.radars[id].radar_config.cmds:
-            args = item.split()
-            if args[0] == 'sensorPosition':
-                sensor_height = float(args[1])
-                azi_tilt = float(args[2])
-                elev_tilt = float(args[3])
 
         # Receive and pack Wayv point cloud detections into ROS message
-        num_points = len(self.wayv_air.radars[id].points)
+        radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].points)
+        radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
+
         if logging_mode:
+            num_points = len(self.wayv_air.radars[id].points)
+            num_targets = len(self.wayv_air.radars[id].tlv_targets)
             time_str = "%Y-%m-%d %H:%M:%S.%f"
             sample_time = datetime.now().strftime(time_str)
             logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
-        i = 0
-        for p in self.wayv_air.radars[id].points:
-            target = RadarTarget()
-            target.target_id = i
-            target.range = p.range
-            target.azimuth = p.azimuth
-            target.elevation = p.elevation
-            target.speed = p.doppler
-            target.snr = p.snr
-
-            if logging_mode:
+            
+            for target in self.wayv_air.radars[id].point_cloud:
                 logging_files[id].write(f"{target.range}\t"
                                         f"{target.azimuth}\t"
                                         f"{target.elevation}\t"
                                         f"{target.speed}\t"
                                         f"{target.snr}\n")
 
-            # Translate point orientation to be relative to the mounting position.
-            sensor_x, sensor_y, sensor_z = sph2cart(target.azimuth, target.elevation, target.range)
-            world_x, world_y, world_z = eulerRot (sensor_x, sensor_y, sensor_z, elev_tilt, azi_tilt)
-            world_z += sensor_height
-            target.azimuth, target.elevation, target.range = cart2sph(world_x, world_y, world_z)
-
-            target.azimuth = -1.0 * math.degrees( target.azimuth )
-            target.elevation = math.degrees( target.elevation )
-            self.radar_data_msg.targets.append( target )
-            i = i + 1
-
-            print(f"range: {target.range:.2f}, "\
-                  f"azimuth: {target.azimuth:.2f}, "\
-                  f"elevation: {target.elevation:.2f}, "\
-                  f"speed: {target.speed:.2f}, "\
-                  f"snr: {target.snr:.2f}, ")
-
-        num_targets = len(self.wayv_air.radars[id].tlv_targets)
-        if logging_mode:
-            time_str = "%Y-%m-%d %H:%M:%S.%f"
             sample_time = datetime.now().strftime(time_str)
             logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
 
-        for target in self.wayv_air.radars[id].tlv_targets:
-            if logging_mode:
+            for target in self.wayv_air.radars[id].tlv_targets:
                 logging_files[id].write(f"{target.tid}\t"
                                     f"{target.x}\t"
                                     f"{target.y:}\t"
@@ -543,170 +619,95 @@ class WayvROSInterface( object ):
                                     f"{target.gating_gain}\t"
                                     f"{target.confidence_level}\n")
 
+
+            #Todo: Move this to new node
+            # sensor_position = radars_seen[id].find_config_param('sensorPosition')
+            # sensor_height = float(sensor_position[1])
+            # azi_tilt = float(sensor_position[2])
+            # elev_tilt = float(sensor_position[3])
+
+            # Translate point orientation to be relative to the mounting position.
+            # sensor_x, sensor_y, sensor_z = sph2cart(target.azimuth, target.elevation, target.range)
+            # world_x, world_y, world_z = eulerRot (sensor_x, sensor_y, sensor_z, elev_tilt, azi_tilt)
+            # world_z += sensor_height
+            # target.azimuth, target.elevation, target.range = cart2sph(world_x, world_y, world_z)
+
+            # target.azimuth = -1.0 * math.degrees( target.azimuth )
+            # target.elevation = math.degrees( target.elevation )
+            # self.radar_data_msg.targets.append( target )
+
             # Translate targets orientation to be relative to the mounting position.
-            target.x, target.y, target.z = eulerRot (target.x, target.y, target.z, 90, 0)
-            target.z += sensor_height
-            self.tlv_tracked_pose_msg.poses.append(
-                self.target_to_pose(target.x, target.y, target.z, 0.0, 0.0, 0.0))
-            self.tlv_tracked_obj_msg.objects.append(
-                self.target_to_obj(target.x, target.y, target.z, 0.0, 0.0, 0.0))
-
-            print(f"tar id: {target.tid}, "\
-                    f"x: {target.x:.2f}, "\
-                    f"y: {target.y:.2f}, "\
-                    f"z: {target.z:.2f}, "\
-                    f"vel_x: {target.vel_x:.2f}, "\
-                    f"vel_y: {target.vel_y:.2f}, "\
-                    f"vel_z: {target.vel_z:.2f}, "\
-                    f"acc_x: {target.acc_x:.2f}, "\
-                    f"acc_y: {target.acc_y:.2f}, "\
-                    f"acc_z: {target.acc_z:.2f}, "\
-                #   f"ec_matrix: {target.ec_matrix:.2f}, "\
-                    f"gating_gain: {target.gating_gain:.2f}, "\
-                    f"confidence_level: {target.confidence_level:.2f}")
-
-        # Timestamp and publish radar point cloud
-        self.radar_data_msg.header.stamp = rospy.Time.now()
-        self.pub_point_cloud.publish( self.radar_data_msg )
-
-        # Timestamp and publish tracked object poses
-        self.tlv_tracked_pose_msg.header.stamp = rospy.Time.now()
-        self.pub_tlv_tracked_pose.publish( self.tlv_tracked_pose_msg )
-        self.pub_tlv_tracked_obj.publish( self.tlv_tracked_obj_msg )
+            # target.x, target.y, target.z = eulerRot (target.x, target.y, target.z, 90, 0)
+            # target.z += sensor_height
+            # self.tlv_tracked_pose_msg.poses.append(
+            #     self.target_to_pose(target.x, target.y, target.z, 0.0, 0.0, 0.0))
+            # self.tlv_tracked_obj_msg.objects.append(
+            #     self.target_to_obj(target.x, target.y, target.z, 0.0, 0.0, 0.0))
 
     def supervisor(self):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
         # signint handler can exit the program properly
-        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl
+        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl, run_supervisor
 
-        for v in self.wayv_air.radars.values():
-            # print progress updates
-            if v.progress > 0:
-                print(v.ser_no, "update progress:", v.progress, "%")
-            if v.progress >= 100:
-                v.progress = -1  # use negative numbers to indicate acknowledged completion
+        while run_supervisor is True:
+            try:
+                for v in self.wayv_air.radars.values():
+                    # print progress updates
+                    if v.progress > 0:
+                        print(v.ser_no, "update progress:", v.progress, "%")
+                    if v.progress >= 100:
+                        v.progress = -1  # use negative numbers to indicate acknowledged completion
 
-            # check for new config messages and acknowledge them
-            if v.comm_config_recvd and v.radar_config_recvd:
-                # Wait for query to be received
-                if query_config_requested:
-                    query_config_requested = False
-                    if v_level >= 1:
-                        # print firmware version
-                        print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
-                        print("Device: ", v.ser_no, "SBL Version: ", v.sbl_version)
-                        print("Present Comm. Config:")
-                        for item in v.comm_config.__dict__.items():
-                            print(item)
-                        print("")
-                        print("Present Radar Config: (",v.radar_config.cmd_count,"lines )")
-                        for item in v.radar_config.cmds:
-                            print(item)
-                            args = item.split()
-                            if args[0] == 'boundaryBox':
-                                bbox = threading.Thread(target=wayv_intf.pub_boundary_box_msg, args=[args])
-                                bbox.start()
-                            if args[0] == 'sensorPosition':
-                                wayv_model = threading.Thread(target=wayv_intf.pub_wayv_marker_msg, args=[args])
-                                wayv_model.start()
-                        print("")
+                    # check for new config messages and acknowledge them
+                    if v.comm_config_recvd and v.radar_config_recvd:
+                        # Wait for query to be received
+                        if v.id in query_config_requested:
+                            query_config_requested.remove(v.id)
+                            if v_level >= 1:
+                                # print firmware version
+                                print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
+                                print("Device: ", v.ser_no, "SBL Version: ", v.sbl_version)
+                                print("Present Comm. Config:")
+                                for item in v.comm_config.__dict__.items():
+                                    print(item)
+                                print("")
+                                print("Present Radar Config: (",v.radar_config.cmd_count,"lines )\r\n")
+                                print("")
 
-                    # Disable PCL mode if already in PCL mode
-                    if v.comm_config.sys_mode != 0 and enbl_pcl is False:
-                        self.wayv_air.enable_pcl(v.id, False)
+                    radars_seen[v.id].publish_boundary_box()
+                    radars_seen[v.id].publish_wayv_config()
+            #Skip if a radar connecting causes a thread error with the dictionary
+            except RuntimeError:
+                pass
+            except KeyError:
+                pass
 
-                    # Enable PCL mode if requested
-                    if enbl_pcl:
-                        self.wayv_air.enable_pcl(v.id, True) # Enable Point Cloud mode on this radar
+            if len(query_config) > 0:
+                id = query_config.pop(0)
+                self.wayv_air.query_config(id)  # the API only support querying one radar at a time
+                query_config_requested.append(id)
 
-        if len(query_config) > 0:
-            id = query_config.pop(0)
-            self.wayv_air.query_config(id)  # the API only support querying one radar at a time
-            query_config_requested = True
+            elif len(comm_config) > 0:
+                id = comm_config.pop(0)
+                self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
+                if id not in query_config:
+                    query_config.append(id)
 
-        elif len(comm_config) > 0:
-            id = comm_config.pop(0)
-            self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
-            if id not in query_config:
-                query_config.append(id)
+            elif len(param_config) > 0:
+                id = param_config.pop(0)
+                self.wayv_air.modify_param_config(id, param_file)  # only the first radar in this example
+                if id not in query_config:
+                    query_config.append(id)
+                    
+            elif len(firmware_up) > 0:
+                id = firmware_up.pop(0)
+                if id not in query_config:
+                    query_config.append(id)
+                self.wayv_air.update_firmware(id, fw_path)
 
-        elif len(param_config) > 0:
-            id = param_config.pop(0)
-            self.wayv_air.modify_param_config(id, param_file)  # only the first radar in this example
-            if id not in query_config:
-                query_config.append(id)
-                
-        elif len(firmware_up) > 0:
-            id = firmware_up.pop(0)
-            if id not in query_config:
-                query_config.append(id)
-            self.wayv_air.update_firmware(id, fw_path)
-
-
-    def pub_boundary_box_msg(self, boundaryBox):
-        """
-        This function handles publishing a Marker topic 
-        to visually represent the boundaryBox config value
-        """
-        # Get boundary box values from config
-        x_min = float(boundaryBox[1])
-        x_max = float(boundaryBox[2])
-        y_min = float(boundaryBox[3])
-        y_max = float(boundaryBox[4])
-        z_min = float(boundaryBox[5])
-        z_max = float(boundaryBox[6])
-
-        # Set location, size and orientation of the boundary box
-        self.boundary_box_msg.scale.y = (x_max - x_min)
-        self.boundary_box_msg.scale.x = (y_max - y_min)
-        self.boundary_box_msg.scale.z = (z_max - z_min)
-
-        self.boundary_box_msg.pose.position.y = -(x_max + x_min)/2
-        self.boundary_box_msg.pose.position.x = (y_max + y_min)/2
-        self.boundary_box_msg.pose.position.z = (z_max + z_min)/2
-
-        quaternion_list = quaternion_from_euler(0, 0, 0)
-        self.boundary_box_msg.pose.orientation.x = quaternion_list[0]
-        self.boundary_box_msg.pose.orientation.y = quaternion_list[1]
-        self.boundary_box_msg.pose.orientation.z = quaternion_list[2]
-        self.boundary_box_msg.pose.orientation.w = quaternion_list[3]
-
-        # Publish at a specified rate
-        rate = rospy.Rate(1)  # 1 Hz
-        while not rospy.is_shutdown():     
-            # Timestamp and publish marker message
-            self.boundary_box_msg.header.stamp = rospy.Time.now()
-            self.pub_boundary_box.publish(self.boundary_box_msg)
-            rate.sleep()
-
-    def pub_wayv_marker_msg(self, sensorPosition):
-        """
-        This function handles publishing a Marker topic 
-        to visually represent the wayv air sensor location
-        """
-        # Parse sensorPosition args
-        sensor_height = float(sensorPosition[1])
-        azi_tilt = float(sensorPosition[2])
-        elev_tilt = float(sensorPosition[3])
-
-        # Set position and orientation of wayv air model
-        self.wave_marker_msg.pose.position.z = sensor_height
-
-        # Couldn't remember how to properly use quaternion.from_rotation_matrix() so used a different function that I am more comfortable with
-        quaternion_list = quaternion_from_euler(math.radians(90+elev_tilt), 0, math.radians(90)+azi_tilt)  # Did not verify if azimuth tilt was implemented correctly
-        self.wave_marker_msg.pose.orientation.x = quaternion_list[0]
-        self.wave_marker_msg.pose.orientation.y = quaternion_list[1]
-        self.wave_marker_msg.pose.orientation.z = quaternion_list[2]
-        self.wave_marker_msg.pose.orientation.w = quaternion_list[3]
-
-        # Publish at a specified rate
-        rate = rospy.Rate(1)  # 1 Hz
-        while not rospy.is_shutdown():
-            # Timestamp and publish marker message
-            self.wave_marker_msg.header.stamp = rospy.Time.now()
-            self.pub_wayv_marker.publish(self.wave_marker_msg)
-            rate.sleep()
+            # Wait 2s to run supervisor task again
+            time.sleep(2)
 
 if __name__ == "__main__":
     try:
@@ -728,7 +729,8 @@ if __name__ == "__main__":
         time.sleep(2)  # delay long enough for the radar to connect over WiFi
 
         #Initialize signal watcher for config 
-        smokesignal.on('config_ready', wayv_intf.supervisor)
+        supervisor_thread = threading.Thread(target=wayv_intf.supervisor)
+        supervisor_thread.start()
 
         rospy.spin()
         
