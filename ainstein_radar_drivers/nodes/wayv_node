@@ -289,8 +289,8 @@ class WayvRadar( object ):
         tlv_tracked_targets.header.stamp = rospy.Time.now()
         tlv_tracked_poses.header.frame_id = self.frame_id
         tlv_tracked_poses.header.stamp = rospy.Time.now()
-        self.pub_tracked_targets.publish( tlv_tracked_targets )
-        self.pub_tracked_poses.publish( tlv_tracked_poses )
+        self.pub_tlv_tracked_targets.publish( tlv_tracked_targets )
+        self.pub_tlv_tracked_poses.publish( tlv_tracked_poses )
 
     def publish_wayv_status(self, radar: Wayv_Air_Radar ):
         """Publishes the WAYV Device Status message
