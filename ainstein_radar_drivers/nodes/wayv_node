@@ -201,12 +201,12 @@ class WayvRadar( object ):
             tracked_targets.objects.append(target)
             tracked_poses.poses.append(pose)
 
-            print(f"x: {tar.x:.2f}, "
-                  f"y: {tar.y:.2f}, "
-                  f"z: {tar.z:.2f}, "
-                  f"vel_x: {tar.vel_x:.2f}, "
-                  f"vel_y: {tar.vel_y:.2f}, "
-                  f"vel_z: {tar.vel_z:.2f}, ")
+            # print(f"x: {tar.x:.2f}, "
+            #       f"y: {tar.y:.2f}, "
+            #       f"z: {tar.z:.2f}, "
+            #       f"vel_x: {tar.vel_x:.2f}, "
+            #       f"vel_y: {tar.vel_y:.2f}, "
+            #       f"vel_z: {tar.vel_z:.2f}, ")
         
         # Timestamp and publish tracked object poses
         tracked_targets.header.frame_id = self.frame_id
@@ -242,11 +242,11 @@ class WayvRadar( object ):
                 target.snr = point.snr
                 point_cloud.targets.append(target)
 
-                print(f"range: {target.range:.2f}, "
-                    f"azimuth: {target.azimuth:.2f}, "
-                    f"elevation: {target.elevation:.2f}, "
-                    f"speed: {target.speed:.2f}, "
-                    f"snr: {target.snr:.2f}, ")
+                # print(f"range: {target.range:.2f}, "
+                #     f"azimuth: {target.azimuth:.2f}, "
+                #     f"elevation: {target.elevation:.2f}, "
+                #     f"speed: {target.speed:.2f}, "
+                #     f"snr: {target.snr:.2f}, ")
 
         # Timestamp and publish radar point cloud
         point_cloud.header.frame_id = self.frame_id
@@ -273,16 +273,16 @@ class WayvRadar( object ):
                 tlv_tracked_targets.objects.append(target)
                 tlv_tracked_poses.poses.append(pose)
 
-                print(f"tar id: {tar.tid}, "
-                    f"x: {tar.x:.2f}, "
-                    f"y: {tar.y:.2f}, "
-                    f"z: {tar.z:.2f}, "
-                    f"vel_x: {tar.vel_x:.2f}, "
-                    f"vel_y: {tar.vel_y:.2f}, "
-                    f"vel_z: {tar.vel_z:.2f}, "
-                    f"acc_x: {tar.acc_x:.2f}, "
-                    f"acc_y: {tar.acc_y:.2f}, "
-                    f"acc_z: {tar.acc_z:.2f}, ]")
+                # print(f"tar id: {tar.tid}, "
+                #     f"x: {tar.x:.2f}, "
+                #     f"y: {tar.y:.2f}, "
+                #     f"z: {tar.z:.2f}, "
+                #     f"vel_x: {tar.vel_x:.2f}, "
+                #     f"vel_y: {tar.vel_y:.2f}, "
+                #     f"vel_z: {tar.vel_z:.2f}, "
+                #     f"acc_x: {tar.acc_x:.2f}, "
+                #     f"acc_y: {tar.acc_y:.2f}, "
+                #     f"acc_z: {tar.acc_z:.2f}, ]")
 
         # Timestamp and publish tlv tracked object poses
         tlv_tracked_targets.header.frame_id = self.frame_id
@@ -504,6 +504,13 @@ class WayvROSInterface( object ):
             # radars_seen.append(id)
             label = determine_radar_label(self.wayv_air.radars[id])
             radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
+
+            # Every time the radar connects send point cloud mode request.
+            if enbl_pcl:
+                self.wayv_air.enable_pcl(id, True) # Enable Point Cloud mode on this radar
+            elif self.wayv_air.radars[id].comm_config.sys_mode != 0:
+                self.wayv_air.enable_pcl(id, False) # Disable Point Cloud mode on this radar if it's already in PCL mode
+
             if new_comm_config:
                 comm_config.append(id)  # tell the supervisor to update this radar's comm. config
             if new_param_config:
@@ -515,11 +522,6 @@ class WayvROSInterface( object ):
                 if not os.path.exists(logging_dir):
                     os.makedirs(logging_dir)
                 logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
-        # Every time the radar connects send point cloud mode request.
-        if enbl_pcl:
-            self.wayv_air.enable_pcl(id, True) # Enable Point Cloud mode on this radar
-        elif self.wayv_air.radars[id].comm_config.sys_mode != 0:
-            self.wayv_air.enable_pcl(id, False) # Disable Point Cloud mode on this radar if it's already in PCL mode
         # query_config.append(id)  # tell the supervisor to query the config for this radar
 
     def target_callback(self, id):
