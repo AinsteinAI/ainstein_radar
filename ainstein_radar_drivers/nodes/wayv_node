@@ -193,7 +193,7 @@ class WayvRadar( object ):
         num_targets = len(targets)
         if num_targets > 0:
             sample_time = datetime.now().strftime(self.time_str)
-            print(f"{sample_time}: Detailed Targets Reported: {num_targets} points")
+            # print(f"{sample_time}: Detailed Targets Reported: {num_targets} points")
 
         for tar in targets:
             target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
@@ -227,7 +227,7 @@ class WayvRadar( object ):
         num_tlv_points = len(points)
         if num_tlv_points > 0:
             sample_time = datetime.now().strftime(self.time_str)
-            print(f"{sample_time}: TLV Point Cloud Packet: {num_tlv_points} points")
+            # print(f"{sample_time}: TLV Point Cloud Packet: {num_tlv_points} points")
             i = 0
 
             point: TLVCloudPoint
@@ -265,7 +265,7 @@ class WayvRadar( object ):
         num_tlv_targets = len(targets)
         if num_tlv_targets > 0:
             sample_time = datetime.now().strftime(self.time_str)
-            print(f"{sample_time}: Tracked Target Packet: {num_tlv_targets} targets")
+            # print(f"{sample_time}: Tracked Target Packet: {num_tlv_targets} targets")
 
             for tar in targets:
                 target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
