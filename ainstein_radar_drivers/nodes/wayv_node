@@ -54,6 +54,7 @@ new_param_config = False
 new_firmware = False
 enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
 query_config_requested = []
+pcl_config = []
 query_config = []
 comm_config = []
 param_config = []
@@ -504,13 +505,8 @@ class WayvROSInterface( object ):
             # radars_seen.append(id)
             label = determine_radar_label(self.wayv_air.radars[id])
             radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
-
-            # Every time the radar connects send point cloud mode request.
             if enbl_pcl:
-                self.wayv_air.enable_pcl(id, True) # Enable Point Cloud mode on this radar
-            elif self.wayv_air.radars[id].comm_config.sys_mode != 0:
-                self.wayv_air.enable_pcl(id, False) # Disable Point Cloud mode on this radar if it's already in PCL mode
-
+                pcl_config.append(id)
             if new_comm_config:
                 comm_config.append(id)  # tell the supervisor to update this radar's comm. config
             if new_param_config:
@@ -650,10 +646,11 @@ class WayvROSInterface( object ):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
         # signint handler can exit the program properly
-        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl, run_supervisor
+        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl, run_supervisor, pcl_config
 
         while run_supervisor is True:
             try:
+                v: Wayv_Air_Radar
                 for v in self.wayv_air.radars.values():
                     # print progress updates
                     if v.progress > 0:
@@ -690,6 +687,12 @@ class WayvROSInterface( object ):
                 self.wayv_air.query_config(id)  # the API only support querying one radar at a time
                 query_config_requested.append(id)
 
+            elif len(pcl_config) > 0:
+                id = pcl_config.pop(0)
+                self.wayv_air.enable_pcl(id, enbl_pcl)
+                if id not in query_config:
+                    query_config.append(id)
+            
             elif len(comm_config) > 0:
                 id = comm_config.pop(0)
                 self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
