@@ -444,18 +444,12 @@ class WayvROSInterface( object ):
         self.wayv_air.radar_connect()
 
     def radar_con_callback(self, id):
-        global new_firmware, query_config, comm_config, param_config, firmware_up, logging_mode, logging_files, logging_files_name, logging_format, logging_dir
+        global logging_mode, logging_files, logging_files_name, logging_format, logging_dir
         if id not in radars_seen:
             # radars_seen.append(id)
             label = determine_radar_label(self.wayv_air.radars[id])
             radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
             pcl_config.append(id)
-            if new_comm_config:
-                comm_config.append(id)  # tell the supervisor to update this radar's comm. config
-            if new_param_config:
-                param_config.append(id)  # tell the supervisor to update this radar's radar parameters
-            if new_firmware:
-                firmware_up.append(id)  # tell the supervisor to update this radar's firmware
             if logging_mode:
                 logging_files_name[id] = logging_dir + id + " - " +  datetime.now().strftime(logging_format) + ".log"
                 if not os.path.exists(logging_dir):
@@ -564,15 +558,15 @@ class WayvROSInterface( object ):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
         # signint handler can exit the program properly
-        global query_config, comm_config, param_config, new_firmware, query_config_requested, enbl_pcl, run_supervisor, pcl_config
+        global query_config, query_config_requested, enbl_pcl, run_supervisor, pcl_config, radars_seen
 
         while run_supervisor is True:
             try:
                 v: Wayv_Air_Radar
                 for v in self.wayv_air.radars.values():
                     # print progress updates
-                    if v.progress > 0:
-                        print(v.ser_no, "update progress:", v.progress, "%")
+                    # if v.progress > 0:
+                    #     print(v.ser_no, "update progress:", v.progress, "%")
                     if v.progress >= 100:
                         v.progress = -1  # use negative numbers to indicate acknowledged completion
 
@@ -610,27 +604,9 @@ class WayvROSInterface( object ):
                 self.wayv_air.enable_pcl(id, enbl_pcl)
                 if id not in query_config:
                     query_config.append(id)
-            
-            elif len(comm_config) > 0:
-                id = comm_config.pop(0)
-                self.wayv_air.modify_comm_config(id, comm_file)  # only the first radar in this example
-                if id not in query_config:
-                    query_config.append(id)
-
-            elif len(param_config) > 0:
-                id = param_config.pop(0)
-                self.wayv_air.modify_param_config(id, param_file)  # only the first radar in this example
-                if id not in query_config:
-                    query_config.append(id)
-                    
-            elif len(firmware_up) > 0:
-                id = firmware_up.pop(0)
-                if id not in query_config:
-                    query_config.append(id)
-                self.wayv_air.update_firmware(id, fw_path)
 
             # Wait 2s to run supervisor task again
-            time.sleep(0.5)
+            time.sleep(.2)
 
 if __name__ == "__main__":
     try:
