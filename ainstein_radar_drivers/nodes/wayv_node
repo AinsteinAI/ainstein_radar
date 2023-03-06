@@ -482,7 +482,6 @@ class WayvROSInterface( object ):
 
         """
         global radars_seen
-        radars_seen : WayvRadar
         radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
         radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
 
