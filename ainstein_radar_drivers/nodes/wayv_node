@@ -33,8 +33,6 @@ from wayv_air_api.model.target import Target, DebugTarget, DetailTarget, TLVClou
 # Wayv device communication parameters
 MODE_485 = 0
 MODE_WIFI = 1
-delay_init = 50 # number of target callbacks to pass before sending or reading configurations
-delay = delay_init
 v_level = 0
 if 'linux' in sys.platform:
     SER_PORT_DEFAULT = "/dev/ttyUSB0"
@@ -45,20 +43,11 @@ serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
 comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
 wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
 wifi_port = 8877
-target_detail = 1
-velocity_enable = 1
-point_num_enable = 0
 rs485_id = 1
-new_comm_config = False
-new_param_config = False
-new_firmware = False
 enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
 query_config_requested = []
 pcl_config = []
 query_config = []
-comm_config = []
-param_config = []
-firmware_up = []
 radars_seen = {}
 logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
 logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
@@ -516,7 +505,6 @@ class WayvROSInterface( object ):
             (None)
 
         """
-
         # Receive and pack Wayv point cloud detections into ROS message
         global radars_seen
         radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].points)
@@ -564,9 +552,6 @@ class WayvROSInterface( object ):
             try:
                 v: Wayv_Air_Radar
                 for v in self.wayv_air.radars.values():
-                    # print progress updates
-                    # if v.progress > 0:
-                    #     print(v.ser_no, "update progress:", v.progress, "%")
                     if v.progress >= 100:
                         v.progress = -1  # use negative numbers to indicate acknowledged completion
 
@@ -606,7 +591,7 @@ class WayvROSInterface( object ):
                     query_config.append(id)
 
             # Wait 2s to run supervisor task again
-            time.sleep(.2)
+            time.sleep(2)
 
 if __name__ == "__main__":
     try:
