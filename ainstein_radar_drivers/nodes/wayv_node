@@ -424,7 +424,7 @@ class WayvROSInterface( object ):
         # Register the ROS interface data callbacks with the sensor
         self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback,
                                      (v_level >= 3), comm_mode, serial_port, serial_baud,
-                                     rs485_id, wifi_ip, target_detail, wifi_port)
+                                     rs485_id, wifi_ip, 1, wifi_port)
     
         print( "Waiting to start communication" )
 

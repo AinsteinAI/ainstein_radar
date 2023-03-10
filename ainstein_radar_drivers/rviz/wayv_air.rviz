@@ -3,7 +3,8 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /0300AK32183000871
       Splitter Ratio: 0.5
     Tree Height: 293
   - Class: rviz/Selection
@@ -23,7 +24,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -70,138 +71,98 @@ Visualization Manager:
       Transport Hint: compressed
       Unreliable: false
       Value: true
-    - Alpha: 1
-      Class: ainstein_radar_rviz_plugins/RadarTargetArray
-      Color: 255; 255; 255
-      Color Method: Flat
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTargetArray
+          Color: 255; 0; 0
+          Color Method: Flat
+          Enabled: true
+          Info Text Height: 0.05000000074505806
+          Max Range: 100
+          Min Range: 0
+          Name: TLV Points
+          Number of Scans: 1
+          Queue Size: 10
+          Scale: 0.10000000149011612
+          Shape: Sphere
+          Show Info: false
+          Show Speed: false
+          Topic: /wayv/0300AK321B100084/tlv/points
+          Unreliable: false
+          Value: true
+        - Alert Options:
+            Alert Scale: 1
+            Max Range: 2
+          Alert Scale: 1
+          Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTrackedObjectArray
+          Color: 255; 0; 0
+          Color Method: Flat
+          Display Alert: false
+          Enabled: true
+          Max Range: 2
+          Name: TLV Tracked Targets
+          Queue Size: 10
+          Scale: 0.30000001192092896
+          Shape: Sphere
+          Topic: /wayv/0300AK321B100084/tlv/tracked_targets
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Arrow Length: 0.30000001192092896
+          Axes Length: 0.30000001192092896
+          Axes Radius: 0.009999999776482582
+          Class: rviz/PoseArray
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.07000000029802322
+          Head Radius: 0.029999999329447746
+          Name: TLV Tracked Poses
+          Queue Size: 10
+          Shaft Length: 0.23000000417232513
+          Shaft Radius: 0.009999999776482582
+          Shape: Arrow (Flat)
+          Topic: /wayv/0300AK321B100084/tlv/tracked_poses
+          Unreliable: false
+          Value: true
+        - Alert Options:
+            Alert Scale: 1
+            Max Range: 2
+          Alert Scale: 1
+          Alpha: 1
+          Class: ainstein_radar_rviz_plugins/RadarTrackedObjectArray
+          Color: 255; 0; 0
+          Color Method: Flat
+          Display Alert: false
+          Enabled: true
+          Max Range: 2
+          Name: WAYV Tracked Targets
+          Queue Size: 10
+          Scale: 0.20000000298023224
+          Shape: Sphere
+          Topic: /wayv/0300AK321B100084/tracked/targets
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Arrow Length: 0.30000001192092896
+          Axes Length: 0.30000001192092896
+          Axes Radius: 0.009999999776482582
+          Class: rviz/PoseArray
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.07000000029802322
+          Head Radius: 0.029999999329447746
+          Name: WAYV Tracked Poses
+          Queue Size: 10
+          Shaft Length: 0.23000000417232513
+          Shaft Radius: 0.009999999776482582
+          Shape: Arrow (Flat)
+          Topic: /wayv/0300AK321B100084/tracked/poses
+          Unreliable: false
+          Value: true
       Enabled: true
-      Info Text Height: 0.05000000074505806
-      Max Range: 100
-      Min Range: 0
-      Name: Raw Targets
-      Number of Scans: 4
-      Queue Size: 10
-      Scale: 0.07000000029802322
-      Shape: Sphere
-      Show Info: false
-      Show Speed: false
-      Topic: /wayv/targets/raw
-      Unreliable: false
-      Value: true
-    - Alert Options:
-        Alert Scale: 1
-        Max Range: 2
-      Alert Scale: 1
-      Alpha: 1
-      Class: ainstein_radar_rviz_plugins/RadarTrackedObjectArray
-      Color: 255; 0; 0
-      Color Method: Flat
-      Display Alert: false
-      Enabled: true
-      Max Range: 2
-      Name: Tracked Objects
-      Queue Size: 10
-      Scale: 0.4000000059604645
-      Shape: Sphere
-      Topic: /wayv/objects/tracked
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic: /wayv_pcl/cloud_out
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: false
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Queue Size: 10
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Arrow (Flat)
-      Topic: /wayv/objects/poses
-      Unreliable: false
-      Value: false
-    - Alert Options:
-        Alert Scale: 1
-        Max Range: 2
-      Alert Scale: 1
-      Alpha: 1
-      Class: ainstein_radar_rviz_plugins/RadarTrackedObjectArray
-      Color: 255; 0; 0
-      Color Method: Flat
-      Display Alert: false
-      Enabled: true
-      Max Range: 2
-      Name: RadarTrackedObjectArray
-      Queue Size: 10
-      Scale: 0.4000000059604645
-      Shape: Sphere
-      Topic: /wayv/objects/tlv_tracked
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Queue Size: 10
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Arrow (Flat)
-      Topic: /wayv/objects/tlv_poses
-      Unreliable: false
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /wayv/boundary_box
-      Name: Boundary Box
-      Namespaces:
-        "": true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /wayv/model
-      Name: Wayv Air Model
-      Namespaces:
-        "": true
-      Queue Size: 100
-      Value: true
+      Name: 0300AK3218300087
   Enabled: true
   Global Options:
     Background Color: 46; 52; 54
@@ -230,7 +191,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.5257649421691895
+      Distance: 11.86917495727539
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -246,9 +207,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9497967958450317
+      Pitch: 0.05479753017425537
       Target Frame: <Fixed Frame>
-      Yaw: 3.142235517501831
+      Yaw: 0.037235409021377563
     Saved: ~
 Window Geometry:
   Displays:
@@ -269,4 +230,4 @@ Window Geometry:
     collapsed: true
   Width: 1858
   X: 642
-  Y: 174
+  Y: 114
