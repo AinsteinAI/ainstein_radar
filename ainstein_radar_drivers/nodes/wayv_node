@@ -179,9 +179,11 @@ class WayvRadar( object ):
         tracked_targets = RadarTrackedObjectArray()
         tracked_poses = PoseArray()
 
+        tar : DetailTarget
         for tar in targets:
             target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
             pose = self._target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+            target.id = tar.tid
             tracked_targets.objects.append(target)
             tracked_poses.poses.append(pose)
 
@@ -229,9 +231,11 @@ class WayvRadar( object ):
         tlv_tracked_targets = RadarTrackedObjectArray()
         tlv_tracked_poses = PoseArray()
 
+        tar : TLVTrackedTarget
         for tar in targets:
             target = self._target_to_obj(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
             pose = self._target_to_pose(tar.x, tar.y, tar.z, tar.vel_x, tar.vel_y, tar.vel_z)
+            target.id = tar.tid
             tlv_tracked_targets.objects.append(target)
             tlv_tracked_poses.poses.append(pose)
 
