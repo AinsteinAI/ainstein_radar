@@ -10,8 +10,6 @@ import os
 
 from geometry_msgs.msg import PoseArray
 from geometry_msgs.msg import Pose
-from visualization_msgs.msg import Marker
-from tf.transformations import quaternion_from_euler
 import quaternion
 import rospy
 
@@ -26,7 +24,7 @@ from wayv_air_api.wayv_air_device_api import Wayv_Air_API
 from wayv_air_api.wayv_air_device_api import Wayv_Air_Radar
 from wayv_air_api.worker.msg.msg_detail import MsgConfig
 from wayv_air_api.worker.msg.msg_detail import MsgParam
-from wayv_air_api.model.target import Target, DebugTarget, DetailTarget, TLVCloudPoint, TLVTrackedTarget
+from wayv_air_api.model.target import DetailTarget, TLVCloudPoint, TLVTrackedTarget
 
 MODE_485 = 0
 MODE_WIFI = 1
@@ -556,7 +554,6 @@ if __name__ == "__main__":
     try:
         rospy.init_node( 'wayv_node' )
         frame_id = rospy.get_param( '~frame_id', 'map' )
-        data_port = rospy.get_param( '~data_port', '/dev/ttyUSB0' )
 
         # Set up an event loop to make the python interpreter run periodically
         # so that ctrl+c will disconnect the radar and kill the program
