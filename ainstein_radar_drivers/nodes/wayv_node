@@ -5,7 +5,6 @@ import time
 import signal
 import sys
 import threading
-import smokesignal
 from datetime import datetime
 import os
 
@@ -29,55 +28,12 @@ from wayv_air_api.worker.msg.msg_detail import MsgConfig
 from wayv_air_api.worker.msg.msg_detail import MsgParam
 from wayv_air_api.model.target import Target, DebugTarget, DetailTarget, TLVCloudPoint, TLVTrackedTarget
 
-
-# Wayv device communication parameters
 MODE_485 = 0
 MODE_WIFI = 1
-v_level = 1
 if 'linux' in sys.platform:
     SER_PORT_DEFAULT = "/dev/ttyUSB0"
 else:
     SER_PORT_DEFAULT = "COM5"
-serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
-serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
-comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
-wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
-wifi_port = 8877
-rs485_id = 1
-enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
-query_config_requested = []
-pcl_config = []
-query_config = []
-radars_seen = {}
-logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
-logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
-logging_format = "%y-%m-%d %H-%M-%S"
-logging_files_name = {}
-logging_files = {}
-run_supervisor = True
-
-def sigint_handler(*args):
-    global run_supervisor
-    run_supervisor = False
-    sys.stderr.write('/r')
-    # make a list of the radars because the dictionary will change when disconnecting radars
-    wayv_intf.wayv_air.shutdown()
-    if logging_mode:
-        for file in logging_files.values():
-            file.close()
-    sys.exit()
-
-def determine_radar_label( new_radar: Wayv_Air_Radar) -> str:
-    global radars_seen
-    label = new_radar.comm_config.dev_id
-    suffix = 1
-    if len(radars_seen) > 0:
-        for radar in radars_seen.items():
-            if label == radar[1].radar_label:
-                label = label + "_" + str(suffix)
-                suffix += 1
-    return label
-
 class WayvRadar( object ):
     """Object containing the ROS contents for a single WAYV Radar
 
@@ -100,10 +56,6 @@ class WayvRadar( object ):
         self._populate_comm_config(radar.comm_config)
         self._populate_radar_config(radar.radar_config)
 
-        self.boundary_box_msg = Marker()
-        self.boundary_box_msg.header.frame_id = self.frame_id
-        self._populate_boundary_box()
-
         # Initialize Publishers
         self.pub_tracked_targets = rospy.Publisher( f'~{self.radar_label}/tracked/targets', RadarTrackedObjectArray, queue_size=10 )
         self.pub_tracked_poses = rospy.Publisher( f'~{self.radar_label}/tracked/poses', PoseArray, queue_size=10 )
@@ -113,7 +65,6 @@ class WayvRadar( object ):
         self.pub_tlv_tracked_poses = rospy.Publisher( f'~{self.radar_label}/tlv/tracked_poses', PoseArray, queue_size=10 )
 
         self.pub_status = rospy.Publisher( f'~{self.radar_label}/status', WayvAirStatus, queue_size=10 )
-        self.pub_boundary_box = rospy.Publisher( f'~{self.radar_label}/boundary_box', Marker, queue_size=10 )
         self.pub_sensor_config = rospy.Publisher(f'~{self.radar_label}/wayv_config', WayvAirConfiguration, queue_size=10 )
 
     def _populate_comm_config(self, config: MsgConfig):
@@ -135,39 +86,6 @@ class WayvRadar( object ):
         for cmd in radar_conf.cmds:
             self.sensor_config.radar_conf.append(cmd)
         self.sensor_config.radar_config_len = radar_conf.cmd_count
-
-    def _populate_boundary_box(self):
-        self.boundary_box_msg.type = 10
-        self.boundary_box_msg.action = 0
-        self.boundary_box_msg.color.r = 0
-        self.boundary_box_msg.color.g = 0
-        self.boundary_box_msg.color.b = .5
-        self.boundary_box_msg.color.a = 1
-        self.boundary_box_msg.mesh_resource = "package://ainstein_radar_drivers/meshes/boundaryBox.stl"
-
-        boundary_box = self.find_config_param('boundaryBox')
-        # Get boundary box values from config
-        x_min = float(boundary_box[1])
-        x_max = float(boundary_box[2])
-        y_min = float(boundary_box[3])
-        y_max = float(boundary_box[4])
-        z_min = float(boundary_box[5])
-        z_max = float(boundary_box[6])
-
-        # Set location, size and orientation of the boundary box
-        self.boundary_box_msg.scale.x = (x_max - x_min)
-        self.boundary_box_msg.scale.y = (y_max - y_min)
-        self.boundary_box_msg.scale.z = (z_max - z_min)
-
-        self.boundary_box_msg.pose.position.x = (x_max + x_min)/2
-        self.boundary_box_msg.pose.position.y = (y_max + y_min)/2
-        self.boundary_box_msg.pose.position.z = (z_max + z_min)/2
-
-        quaternion_list = quaternion_from_euler(0, 0, 0)
-        self.boundary_box_msg.pose.orientation.x = quaternion_list[0]
-        self.boundary_box_msg.pose.orientation.y = quaternion_list[1]
-        self.boundary_box_msg.pose.orientation.z = quaternion_list[2]
-        self.boundary_box_msg.pose.orientation.w = quaternion_list[3]
 
     def publish_targets(self, targets: list):
         """Publishes the Ainstein formatted detected targets list.
@@ -280,15 +198,6 @@ class WayvRadar( object ):
             if args[0] == param:
                 return args
         return None
-
-    def publish_boundary_box(self):
-        """
-        This function handles publishing a Marker topic 
-        to visually represent the boundaryBox config value
-        """
-        self.boundary_box_msg.header.frame_id = self.frame_id
-        self.boundary_box_msg.header.stamp = rospy.Time.now()
-        self.pub_boundary_box.publish(self.boundary_box_msg)
 
     def publish_wayv_config(self):
         """
@@ -425,30 +334,57 @@ class WayvROSInterface( object ):
             (None)
 
         """
+        # Wayv device communication parameters
+
+        self.v_level = 1
+        self.serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
+        self.serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
+        self.comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
+        self.wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
+        self.wifi_port = 8877
+        self.rs485_id = 1
+        self.enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
+        self.query_config_requested = []
+        self.pcl_config = []
+        self.query_config = []
+        self.radars_seen = {}
+        self.logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
+        self.logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
+        self.logging_format = "%y-%m-%d %H-%M-%S"
+        self.logging_files_name = {}
+        self.logging_files = {}
+        self.run_supervisor = True
+
+
         # Register the ROS interface data callbacks with the sensor
         self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback,
-                                     (v_level >= 3), comm_mode, serial_port, serial_baud,
-                                     rs485_id, wifi_ip, 1, wifi_port)
+                                     (self.v_level >= 3), self.comm_mode, self.serial_port, self.serial_baud,
+                                     self.rs485_id, self.wifi_ip, 1, self.wifi_port)
     
         print( "Waiting to start communication" )
 
-        if v_level >= 1:
+        if self.v_level >= 1:
             print("WAYV Air API version:", self.wayv_air.version)
         self.wayv_air.radar_connect()
 
+        #Initialize signal watcher for config 
+        supervisor_thread = threading.Thread(target=self.supervisor)
+        supervisor_thread.start()
+        
+        time.sleep(2)  # delay long enough for the radar to connect over WiFi
+
     def radar_con_callback(self, id):
-        global logging_mode, logging_files, logging_files_name, logging_format, logging_dir
-        if id not in radars_seen:
+        if id not in self.radars_seen:
             # radars_seen.append(id)
-            label = determine_radar_label(self.wayv_air.radars[id])
+            label = self.determine_radar_label(self.wayv_air.radars[id])
             if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
-                radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
-                pcl_config.append(id)
-                if logging_mode:
-                    logging_files_name[id] = logging_dir + id + " - " +  datetime.now().strftime(logging_format) + ".log"
-                    if not os.path.exists(logging_dir):
-                        os.makedirs(logging_dir)
-                    logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
+                self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
+                self.pcl_config.append(id)
+                if self.logging_mode:
+                    self.logging_files_name[id] = self.logging_dir + id + " - " +  datetime.now().strftime(self.logging_format) + ".log"
+                    if not os.path.exists(self.logging_dir):
+                        os.makedirs(self.logging_dir)
+                    self.logging_files[id] = open(self.logging_files_name[id], 'wt', encoding="utf-8")
 
     def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -469,17 +405,16 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        global radars_seen
-        radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
-        radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
+        self.radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
+        self.radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
 
-        if logging_mode:
+        if self.logging_mode:
             time_str = "%Y-%m-%d %H:%M:%S.%f"
             num_targets = len(self.wayv_air.radars[id].targets)
             sample_time = datetime.now().strftime(time_str)
-            logging_files[id].write(f"targets: {id}\t{sample_time}\t{num_targets}\n")
+            self.logging_files[id].write(f"targets: {id}\t{sample_time}\t{num_targets}\n")
             for target in self.wayv_air.radars[id].targets:
-                logging_files[id].write(f"{target.tid}\t"
+                self.logging_files[id].write(f"{target.tid}\t"
                                 f"{target.x}\t"
                                 f"{target.y:}\t"
                                 f"{target.z:}\t"
@@ -511,29 +446,28 @@ class WayvROSInterface( object ):
 
         """
         # Receive and pack Wayv point cloud detections into ROS message
-        global radars_seen
-        radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].points)
-        radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
+        self.radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].points)
+        self.radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
 
-        if logging_mode:
+        if self.logging_mode:
             num_points = len(self.wayv_air.radars[id].points)
             num_targets = len(self.wayv_air.radars[id].tlv_targets)
             time_str = "%Y-%m-%d %H:%M:%S.%f"
             sample_time = datetime.now().strftime(time_str)
-            logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
+            self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
             
             for target in self.wayv_air.radars[id].point_cloud:
-                logging_files[id].write(f"{target.range}\t"
+                self.logging_files[id].write(f"{target.range}\t"
                                         f"{target.azimuth}\t"
                                         f"{target.elevation}\t"
                                         f"{target.speed}\t"
                                         f"{target.snr}\n")
 
             sample_time = datetime.now().strftime(time_str)
-            logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
+            self.logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
 
             for target in self.wayv_air.radars[id].tlv_targets:
-                logging_files[id].write(f"{target.tid}\t"
+                self.logging_files[id].write(f"{target.tid}\t"
                                     f"{target.x}\t"
                                     f"{target.y:}\t"
                                     f"{target.z:}\t"
@@ -551,9 +485,7 @@ class WayvROSInterface( object ):
         # This function handles less time-sensitive operations like updating configurations
         # and firmware. It also provides a mechanism for the Python interpreter to run so the
         # signint handler can exit the program properly
-        global query_config, query_config_requested, enbl_pcl, run_supervisor, pcl_config, radars_seen
-
-        while run_supervisor is True:
+        while self.run_supervisor is True:
             try:
                 v: Wayv_Air_Radar
                 for v in self.wayv_air.radars.values():
@@ -563,9 +495,9 @@ class WayvROSInterface( object ):
                     # check for new config messages and acknowledge them
                     if v.comm_config_recvd and v.radar_config_recvd:
                         # Wait for query to be received
-                        if v.id in query_config_requested:
-                            query_config_requested.remove(v.id)
-                            if v_level >= 1:
+                        if v.id in self.query_config_requested:
+                            self.query_config_requested.remove(v.id)
+                            if self.v_level >= 1:
                                 # print firmware version
                                 print("Device: ", v.ser_no, "Firmware Version:", v.fw_version)
                                 print("Device: ", v.ser_no, "SBL Version: ", v.sbl_version)
@@ -576,27 +508,49 @@ class WayvROSInterface( object ):
                                 print("Present Radar Config: (",v.radar_config.cmd_count,"lines )\r\n")
                                 print("")
 
-                    radars_seen[v.id].publish_boundary_box()
-                    radars_seen[v.id].publish_wayv_config()
+                    self.radars_seen[v.id].publish_wayv_config()
             #Skip if a radar connecting causes a thread error with the dictionary
             except RuntimeError:
                 pass
             except KeyError:
                 pass
 
-            if len(query_config) > 0:
-                id = query_config.pop(0)
+            if len(self.query_config) > 0:
+                id = self.query_config.pop(0)
                 self.wayv_air.query_config(id)  # the API only support querying one radar at a time
-                query_config_requested.append(id)
+                self.query_config_requested.append(id)
 
-            elif len(pcl_config) > 0:
-                id = pcl_config.pop(0)
-                self.wayv_air.enable_pcl(id, enbl_pcl)
-                if id not in query_config:
-                    query_config.append(id)
+            elif len(self.pcl_config) > 0:
+                id = self.pcl_config.pop(0)
+                self.wayv_air.enable_pcl(id, self.enbl_pcl)
+                if id not in self.query_config:
+                    self.query_config.append(id)
 
             # Wait 2s to run supervisor task again
             time.sleep(2)
+
+    def determine_radar_label(self, new_radar: Wayv_Air_Radar) -> str:
+        label = new_radar.comm_config.dev_id
+        suffix = 1
+        if len(self.radars_seen) > 0:
+            for radar in self.radars_seen.items():
+                if label == radar[1].radar_label:
+                    label = label + "_" + str(suffix)
+                    suffix += 1
+        return label
+    
+    def shutdown(self):
+        self.run_supervisor = False
+        self.wayv_air.shutdown()
+        if self.logging_mode:
+            for file in self.logging_files.values():
+                file.close()
+
+
+def sigint_handler(*args):
+    wayv_intf.shutdown()
+    sys.stderr.write('/r')
+    sys.exit()
 
 if __name__ == "__main__":
     try:
@@ -611,17 +565,6 @@ if __name__ == "__main__":
         # Create the ROS interface 
         wayv_intf = WayvROSInterface( frame_id )
 
-        # The QApplication must be started before anything can be sent to, or received from, the Wayv Air
-        timer = threading.Timer(2, wayv_intf.supervisor)
-        timer.start()
-
-        time.sleep(2)  # delay long enough for the radar to connect over WiFi
-
-        #Initialize signal watcher for config 
-        supervisor_thread = threading.Thread(target=wayv_intf.supervisor)
-        supervisor_thread.start()
-
         rospy.spin()
-        
     except rospy.ROSInterruptException:
         pass

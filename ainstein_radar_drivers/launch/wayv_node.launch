@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="serial_port" default="/dev/ttyUSB1" />
+  <arg name="serial_port" default="/dev/ttyUSB0" />
   <arg name="enable_pcl" default="True" />
   <arg name="serial_baud" default="115200" /> <!-- 115200 or 921600 -->
   <arg name="server_ip" default="192.168.2.234" />
