@@ -33,7 +33,7 @@ from wayv_air_api.model.target import Target, DebugTarget, DetailTarget, TLVClou
 # Wayv device communication parameters
 MODE_485 = 0
 MODE_WIFI = 1
-v_level = 0
+v_level = 1
 if 'linux' in sys.platform:
     SER_PORT_DEFAULT = "/dev/ttyUSB0"
 else:
@@ -441,13 +441,14 @@ class WayvROSInterface( object ):
         if id not in radars_seen:
             # radars_seen.append(id)
             label = determine_radar_label(self.wayv_air.radars[id])
-            radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
-            pcl_config.append(id)
-            if logging_mode:
-                logging_files_name[id] = logging_dir + id + " - " +  datetime.now().strftime(logging_format) + ".log"
-                if not os.path.exists(logging_dir):
-                    os.makedirs(logging_dir)
-                logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
+            if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
+                radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
+                pcl_config.append(id)
+                if logging_mode:
+                    logging_files_name[id] = logging_dir + id + " - " +  datetime.now().strftime(logging_format) + ".log"
+                    if not os.path.exists(logging_dir):
+                        os.makedirs(logging_dir)
+                    logging_files[id] = open(logging_files_name[id], 'wt', encoding="utf-8")
 
     def target_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
