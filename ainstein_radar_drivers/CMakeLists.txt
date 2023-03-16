@@ -25,6 +25,7 @@ add_message_files(
   O79NetworkParams.msg
   O79DeviceParams.msg
   O79TrackingParams.msg
+  WayvAirConfiguration.msg
   WayvAirStatus.msg
   )
 
