@@ -373,7 +373,7 @@ class WayvROSInterface( object ):
             self.enbl_pcl = 1
         else:
             self.enbl_pcl = 0
-        self.enbl_tlv = rospy.get_param('~enable_tlv', False)
+        self.tlv_mode = rospy.get_param('~enable_tlv', False)
         self.message_frequency = rospy.get_param('~message_frequency', 0.05)
         self.query_config_requested = []
         self.tlv_config = []
@@ -385,6 +385,7 @@ class WayvROSInterface( object ):
         self.logging_files_name = {}
         self.logging_files = {}
         self.run_supervisor = True
+        self.frame_id = frame_id
 
 
         # Register the ROS interface data callbacks with the sensor
@@ -406,10 +407,9 @@ class WayvROSInterface( object ):
 
     def radar_con_callback(self, id):
         if id not in self.radars_seen:
-            # radars_seen.append(id)
-            label = self.determine_radar_label(self.wayv_air.radars[id])
             if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
-                self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
+                label = self.determine_radar_label(self.wayv_air.radars[id])
+                self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, self.frame_id )
                 self.tlv_config.append(id)
                 if self.logging_mode:
                     self.logging_files_name[id] = self.logging_dir + id + " - " +  datetime.now().strftime(self.logging_format) + ".log"
@@ -581,7 +581,7 @@ class WayvROSInterface( object ):
 
             elif len(self.tlv_config) > 0:
                 id = self.tlv_config.pop(0)
-                self.wayv_air.enable_tlv(id, self.enbl_tlv)
+                self.wayv_air.enable_tlv(id, self.tlv_mode)
                 if id not in self.query_config:
                     self.query_config.append(id)
 
@@ -614,14 +614,14 @@ def sigint_handler(*args):
 if __name__ == "__main__":
     try:
         rospy.init_node( 'wayv_node' )
-        frame_id = rospy.get_param( '~frame_id', 'map' )
+        ros_frame_id = rospy.get_param( '~frame_id', 'map' )
 
         # Set up an event loop to make the python interpreter run periodically
         # so that ctrl+c will disconnect the radar and kill the program
         signal.signal(signal.SIGINT, sigint_handler)
 
         # Create the ROS interface 
-        wayv_intf = WayvROSInterface( frame_id )
+        wayv_intf = WayvROSInterface( ros_frame_id )
 
         rospy.spin()
     except rospy.ROSInterruptException:
