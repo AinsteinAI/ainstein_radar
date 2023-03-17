@@ -258,7 +258,7 @@ class WayvRadar( object ):
         pose.position.z = pz
 
         # Compute target pose, assuming velocity is in +x direction
-        vel = np.array( [vy, -vx, vz] ).transpose()
+        vel = np.array( [vx, vy, vz] ).transpose()
 
         # If velocity is near zero, keep identity orientation
         rot_mat = np.identity( 3 )
