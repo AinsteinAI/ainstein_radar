@@ -24,7 +24,7 @@ from wayv_air_api.wayv_air_device_api import Wayv_Air_API
 from wayv_air_api.wayv_air_device_api import Wayv_Air_Radar
 from wayv_air_api.worker.msg.msg_detail import MsgConfig
 from wayv_air_api.worker.msg.msg_detail import MsgParam
-from wayv_air_api.model.target import DetailTarget, TLVCloudPoint, TLVTrackedTarget
+from wayv_air_api.model.target import DetailTarget, TLVCloudPoint, TLVTrackedTarget, Point
 
 MODE_485 = 0
 MODE_WIFI = 1
@@ -57,6 +57,7 @@ class WayvRadar( object ):
         # Initialize Publishers
         self.pub_tracked_targets = rospy.Publisher( f'~{self.radar_label}/tracked/targets', RadarTrackedObjectArray, queue_size=10 )
         self.pub_tracked_poses = rospy.Publisher( f'~{self.radar_label}/tracked/poses', PoseArray, queue_size=10 )
+        self.pub_points = rospy.Publisher( f'~{self.radar_label}/points', RadarTargetArray, queue_size=10 )
 
         self.pub_point_cloud = rospy.Publisher( f'~{self.radar_label}/tlv/points', RadarTargetArray, queue_size=10 )
         self.pub_tlv_tracked_targets = rospy.Publisher( f'~{self.radar_label}/tlv/tracked_targets', RadarTrackedObjectArray, queue_size=10 )
@@ -110,6 +111,33 @@ class WayvRadar( object ):
         tracked_poses.header.stamp = rospy.Time.now()
         self.pub_tracked_targets.publish( tracked_targets )
         self.pub_tracked_poses.publish( tracked_poses )
+
+    def publish_points(self, points: list):
+        """Publishes detected points for the radar object.
+
+        Args:
+            points (list[Point]): List of TLV Points
+        """
+        point_cloud = RadarTargetArray()
+
+        i = 0
+
+        point: Point
+        for point in points:
+            target = RadarTarget()
+            target.target_id = i
+            i += 1
+            target.range = point.range
+            target.azimuth = math.degrees(point.azimuth)
+            target.elevation = math.degrees(point.elevation)
+            target.speed = point.doppler
+            target.snr = point.snr
+            point_cloud.targets.append(target)
+
+        # Timestamp and publish radar point cloud
+        point_cloud.header.frame_id = self.frame_id
+        point_cloud.header.stamp = rospy.Time.now()
+        self.pub_points.publish( point_cloud )
 
     def publish_tlv_points(self, points: list):
         """Publishes TLV detected points for the radar object.
@@ -335,19 +363,24 @@ class WayvROSInterface( object ):
         # Wayv device communication parameters
 
         self.v_level = 1
-        self.serial_port = rospy.get_param('/wayv_pcl/serial_port', SER_PORT_DEFAULT)
-        self.serial_baud = rospy.get_param('/wayv_pcl/serial_baud', 115200)
-        self.comm_mode = rospy.get_param('/wayv_pcl/comm_mode', MODE_485)
-        self.wifi_ip = rospy.get_param('/wayv_pcl/server_ip', '192.168.4.65')
+        self.serial_port = rospy.get_param('~serial_port', SER_PORT_DEFAULT)
+        self.serial_baud = rospy.get_param('~serial_baud', 115200)
+        self.comm_mode = rospy.get_param('~comm_mode', MODE_485)
+        self.wifi_ip = rospy.get_param('~server_ip', '192.168.4.65')
         self.wifi_port = 8877
         self.rs485_id = 1
-        self.enbl_pcl = rospy.get_param('/wayv_pcl/enable_pcl', True)
+        if rospy.get_param('~enable_pcl', False):
+            self.enbl_pcl = 1
+        else:
+            self.enbl_pcl = 0
+        self.enbl_tlv = rospy.get_param('~enable_tlv', False)
+        self.message_frequency = rospy.get_param('~message_frequency', 0.05)
         self.query_config_requested = []
-        self.pcl_config = []
+        self.tlv_config = []
         self.query_config = []
         self.radars_seen = {}
-        self.logging_mode = rospy.get_param('/wayv_pcl/logging_mode', False)
-        self.logging_dir = rospy.get_param('/wayv_pcl/logging_dir', "./Logs/")
+        self.logging_mode = rospy.get_param('~logging_mode', False)
+        self.logging_dir = rospy.get_param('~logging_dir', "./Logs/")
         self.logging_format = "%y-%m-%d %H-%M-%S"
         self.logging_files_name = {}
         self.logging_files = {}
@@ -355,9 +388,9 @@ class WayvROSInterface( object ):
 
 
         # Register the ROS interface data callbacks with the sensor
-        self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback,
+        self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback, self.tlv_callback,
                                      (self.v_level >= 3), self.comm_mode, self.serial_port, self.serial_baud,
-                                     self.rs485_id, self.wifi_ip, 1, self.wifi_port)
+                                     self.rs485_id, self.wifi_ip, 1, self.enbl_pcl, self.wifi_port, self.message_frequency)
     
         print( "Waiting to start communication" )
 
@@ -377,7 +410,7 @@ class WayvROSInterface( object ):
             label = self.determine_radar_label(self.wayv_air.radars[id])
             if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
                 self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, frame_id )
-                self.pcl_config.append(id)
+                self.tlv_config.append(id)
                 if self.logging_mode:
                     self.logging_files_name[id] = self.logging_dir + id + " - " +  datetime.now().strftime(self.logging_format) + ".log"
                     if not os.path.exists(self.logging_dir):
@@ -427,6 +460,34 @@ class WayvROSInterface( object ):
     def pcl_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
 
+        Receives point cloud (raw detection) data from the firmware, packs the data 
+        into ROS messages and publishes.
+
+        Args:
+            data (array of dict arrays): Data from the Wayv.
+
+        Returns:
+            (None)
+
+        """
+        self.radars_seen[id].publish_points(self.wayv_air.radars[id].points)
+
+        if self.logging_mode:
+            num_points = len(self.wayv_air.radars[id].points)
+            time_str = "%Y-%m-%d %H:%M:%S.%f"
+            sample_time = datetime.now().strftime(time_str)
+            self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
+            
+            for target in self.wayv_air.radars[id].point_cloud:
+                self.logging_files[id].write(f"{target.range}\t"
+                                        f"{target.azimuth}\t"
+                                        f"{target.elevation}\t"
+                                        f"{target.speed}\t"
+                                        f"{target.snr}\n")
+
+    def tlv_callback(self, id):
+        """ Callback to process data from the Wayv and publish ROS messages.
+
         Receives point cloud (raw detection) and tracked object data from the
         firmware, packs the data into ROS messages and publishes. Note that the 
         orientation of the tracked object pose is derived from its velocity,
@@ -444,11 +505,11 @@ class WayvROSInterface( object ):
 
         """
         # Receive and pack Wayv point cloud detections into ROS message
-        self.radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].points)
+        self.radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].tlv_points)
         self.radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
 
         if self.logging_mode:
-            num_points = len(self.wayv_air.radars[id].points)
+            num_points = len(self.wayv_air.radars[id].tlv_points)
             num_targets = len(self.wayv_air.radars[id].tlv_targets)
             time_str = "%Y-%m-%d %H:%M:%S.%f"
             sample_time = datetime.now().strftime(time_str)
@@ -518,9 +579,9 @@ class WayvROSInterface( object ):
                 self.wayv_air.query_config(id)  # the API only support querying one radar at a time
                 self.query_config_requested.append(id)
 
-            elif len(self.pcl_config) > 0:
-                id = self.pcl_config.pop(0)
-                self.wayv_air.enable_pcl(id, self.enbl_pcl)
+            elif len(self.tlv_config) > 0:
+                id = self.tlv_config.pop(0)
+                self.wayv_air.enable_tlv(id, self.enbl_tlv)
                 if id not in self.query_config:
                     self.query_config.append(id)
 
