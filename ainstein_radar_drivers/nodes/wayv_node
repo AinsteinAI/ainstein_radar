@@ -370,9 +370,9 @@ class WayvROSInterface( object ):
         self.wifi_port = 8877
         self.rs485_id = 1
         if rospy.get_param('~enable_pcl', False):
-            self.enbl_pcl = 1
-        else:
             self.enbl_pcl = 0
+        else:
+            self.enbl_pcl = 1
         self.tlv_mode = rospy.get_param('~enable_tlv', False)
         self.message_frequency = rospy.get_param('~message_frequency', 0.05)
         self.query_config_requested = []
@@ -394,9 +394,7 @@ class WayvROSInterface( object ):
                                      self.rs485_id, self.wifi_ip, 1, self.enbl_pcl, self.wifi_port, self.message_frequency)
     
         print( "Waiting to start communication" )
-
-        if self.v_level >= 1:
-            print("WAYV Air API version:", self.wayv_air.version)
+        print("WAYV Air API version:", self.wayv_air.version)
         self.wayv_air.radar_connect()
 
         #Initialize signal watcher for config 
@@ -436,26 +434,27 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        self.radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
-        self.radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
+        if id in self.radars_seen:
+            self.radars_seen[id].publish_targets(self.wayv_air.radars[id].targets)
+            self.radars_seen[id].publish_wayv_status(self.wayv_air.radars[id])
 
-        if self.logging_mode:
-            time_str = "%Y-%m-%d %H:%M:%S.%f"
-            num_targets = len(self.wayv_air.radars[id].targets)
-            sample_time = datetime.now().strftime(time_str)
-            self.logging_files[id].write(f"targets: {id}\t{sample_time}\t{num_targets}\n")
-            for target in self.wayv_air.radars[id].targets:
-                self.logging_files[id].write(f"{target.tid}\t"
-                                f"{target.x}\t"
-                                f"{target.y:}\t"
-                                f"{target.z:}\t"
-                                f"{target.vel_x}\t"
-                                f"{target.vel_y}\t"
-                                f"{target.vel_z}\t"
-                                f"{target.a_x}\t"
-                                f"{target.a_y}\t"
-                                f"{target.a_z}\t"
-                                f"{target.cp_count}\t")
+            if self.logging_mode:
+                time_str = "%Y-%m-%d %H:%M:%S.%f"
+                num_targets = len(self.wayv_air.radars[id].targets)
+                sample_time = datetime.now().strftime(time_str)
+                self.logging_files[id].write(f"targets: {id}\t{sample_time}\t{num_targets}\n")
+                for target in self.wayv_air.radars[id].targets:
+                    self.logging_files[id].write(f"{target.tid}\t"
+                                    f"{target.x}\t"
+                                    f"{target.y:}\t"
+                                    f"{target.z:}\t"
+                                    f"{target.vel_x}\t"
+                                    f"{target.vel_y}\t"
+                                    f"{target.vel_z}\t"
+                                    f"{target.a_x}\t"
+                                    f"{target.a_y}\t"
+                                    f"{target.a_z}\t"
+                                    f"{target.cp_count}\t")
 
     def pcl_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -470,20 +469,21 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        self.radars_seen[id].publish_points(self.wayv_air.radars[id].points)
+        if id in self.radars_seen:
+            self.radars_seen[id].publish_points(self.wayv_air.radars[id].points)
 
-        if self.logging_mode:
-            num_points = len(self.wayv_air.radars[id].points)
-            time_str = "%Y-%m-%d %H:%M:%S.%f"
-            sample_time = datetime.now().strftime(time_str)
-            self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
-            
-            for target in self.wayv_air.radars[id].point_cloud:
-                self.logging_files[id].write(f"{target.range}\t"
-                                        f"{target.azimuth}\t"
-                                        f"{target.elevation}\t"
-                                        f"{target.speed}\t"
-                                        f"{target.snr}\n")
+            if self.logging_mode:
+                num_points = len(self.wayv_air.radars[id].points)
+                time_str = "%Y-%m-%d %H:%M:%S.%f"
+                sample_time = datetime.now().strftime(time_str)
+                self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
+                
+                for target in self.wayv_air.radars[id].point_cloud:
+                    self.logging_files[id].write(f"{target.range}\t"
+                                            f"{target.azimuth}\t"
+                                            f"{target.elevation}\t"
+                                            f"{target.speed}\t"
+                                            f"{target.snr}\n")
 
     def tlv_callback(self, id):
         """ Callback to process data from the Wayv and publish ROS messages.
@@ -504,41 +504,42 @@ class WayvROSInterface( object ):
             (None)
 
         """
-        # Receive and pack Wayv point cloud detections into ROS message
-        self.radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].tlv_points)
-        self.radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
+        if id in self.radars_seen:
+            # Receive and pack Wayv point cloud detections into ROS message
+            self.radars_seen[id].publish_tlv_points(self.wayv_air.radars[id].tlv_points)
+            self.radars_seen[id].publish_tlv_targets(self.wayv_air.radars[id].tlv_targets)
 
-        if self.logging_mode:
-            num_points = len(self.wayv_air.radars[id].tlv_points)
-            num_targets = len(self.wayv_air.radars[id].tlv_targets)
-            time_str = "%Y-%m-%d %H:%M:%S.%f"
-            sample_time = datetime.now().strftime(time_str)
-            self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
-            
-            for target in self.wayv_air.radars[id].point_cloud:
-                self.logging_files[id].write(f"{target.range}\t"
-                                        f"{target.azimuth}\t"
-                                        f"{target.elevation}\t"
-                                        f"{target.speed}\t"
-                                        f"{target.snr}\n")
+            if self.logging_mode:
+                num_points = len(self.wayv_air.radars[id].tlv_points)
+                num_targets = len(self.wayv_air.radars[id].tlv_targets)
+                time_str = "%Y-%m-%d %H:%M:%S.%f"
+                sample_time = datetime.now().strftime(time_str)
+                self.logging_files[id].write(f"pcl: {sample_time}\t{num_points}\n")
+                
+                for target in self.wayv_air.radars[id].point_cloud:
+                    self.logging_files[id].write(f"{target.range}\t"
+                                            f"{target.azimuth}\t"
+                                            f"{target.elevation}\t"
+                                            f"{target.speed}\t"
+                                            f"{target.snr}\n")
 
-            sample_time = datetime.now().strftime(time_str)
-            self.logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
+                sample_time = datetime.now().strftime(time_str)
+                self.logging_files[id].write(f"pcl: {sample_time}\t{num_targets}\n")
 
-            for target in self.wayv_air.radars[id].tlv_targets:
-                self.logging_files[id].write(f"{target.tid}\t"
-                                    f"{target.x}\t"
-                                    f"{target.y:}\t"
-                                    f"{target.z:}\t"
-                                    f"{target.vel_x}\t"
-                                    f"{target.vel_y}\t"
-                                    f"{target.vel_z}\t"
-                                    f"{target.acc_x}\t"
-                                    f"{target.acc_y}\t"
-                                    f"{target.acc_z}\t"
-                                    # "{target.ec_matrix}\t"
-                                    f"{target.gating_gain}\t"
-                                    f"{target.confidence_level}\n")
+                for target in self.wayv_air.radars[id].tlv_targets:
+                    self.logging_files[id].write(f"{target.tid}\t"
+                                        f"{target.x}\t"
+                                        f"{target.y:}\t"
+                                        f"{target.z:}\t"
+                                        f"{target.vel_x}\t"
+                                        f"{target.vel_y}\t"
+                                        f"{target.vel_z}\t"
+                                        f"{target.acc_x}\t"
+                                        f"{target.acc_y}\t"
+                                        f"{target.acc_z}\t"
+                                        # "{target.ec_matrix}\t"
+                                        f"{target.gating_gain}\t"
+                                        f"{target.confidence_level}\n")
 
     def supervisor(self):
         # This function handles less time-sensitive operations like updating configurations
@@ -566,8 +567,12 @@ class WayvROSInterface( object ):
                                 print("")
                                 print("Present Radar Config: (",v.radar_config.cmd_count,"lines )\r\n")
                                 print("")
+                                for item in v.radar_config.cmds:
+                                    print(item)
+                                print("")
 
-                    self.radars_seen[v.id].publish_wayv_config()
+                    if v.id in self.radars_seen:
+                        self.radars_seen[v.id].publish_wayv_config()
             #Skip if a radar connecting causes a thread error with the dictionary
             except RuntimeError:
                 pass
@@ -581,6 +586,7 @@ class WayvROSInterface( object ):
 
             elif len(self.tlv_config) > 0:
                 id = self.tlv_config.pop(0)
+                print(f"{id} - Configuring TLV Mode")
                 self.wayv_air.enable_tlv(id, self.tlv_mode)
                 if id not in self.query_config:
                     self.query_config.append(id)
