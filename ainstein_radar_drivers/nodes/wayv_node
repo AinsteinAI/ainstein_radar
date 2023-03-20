@@ -362,17 +362,18 @@ class WayvROSInterface( object ):
         """
         # Wayv device communication parameters
 
-        self.v_level = 1
+        self.v_level = 0
         self.serial_port = rospy.get_param('~serial_port', SER_PORT_DEFAULT)
         self.serial_baud = rospy.get_param('~serial_baud', 115200)
         self.comm_mode = rospy.get_param('~comm_mode', MODE_485)
         self.wifi_ip = rospy.get_param('~server_ip', '192.168.4.65')
         self.wifi_port = 8877
         self.rs485_id = 1
-        if rospy.get_param('~enable_pcl', False):
-            self.enbl_pcl = 0
-        else:
+        enable_pcl = rospy.get_param('~enable_pcl', False)
+        if enable_pcl:
             self.enbl_pcl = 1
+        else:
+            self.enbl_pcl = 0
         self.tlv_mode = rospy.get_param('~enable_tlv', False)
         self.message_frequency = rospy.get_param('~message_frequency', 0.05)
         self.query_config_requested = []
