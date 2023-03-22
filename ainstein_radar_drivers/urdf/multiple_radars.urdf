@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="bobcat">
+
+  <!-- MATERIALS
+       Note: these are created using macros due to "multiple inclusion"
+       errors in xacro, which can be avoided in other ways if desired.
+  -->
+  <xacro:macro name="material_grey">
+    <material name="grey">
+      <color rgba="0.5 0.5 0.5 1.0"/>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="material_dark_grey">
+    <material name="dark_grey">
+      <color rgba="0.15 0.15 0.15 1.0"/>
+    </material>
+  </xacro:macro>
+  
+
+  <!-- Need argument to get from launch file -->
+  <xacro:arg name="params_path" default="../params/2_radars.yaml"/> 
+
+  <!-- Need seperate property for xacro inorder processing -->
+  <xacro:property name="params_path" value="$(arg params_path)"/> 
+
+  <!-- Read in the yaml dict as mp (short for model parameters) -->
+  <xacro:property name="mp" value="${xacro.load_yaml(params_path)}"/> 
+
+
+  <!-- Macro to create radar link -->
+  <xacro:macro name="create_radar_link" params="name link_mp">
+    <link name="${name}_link">
+      <xacro:if value="${link_mp['mesh']['fname'] != ''}">
+        <visual>
+          <origin xyz="0 0 0" rpy="${0.0*pi} ${0.0*pi} ${0.0*pi}"/>
+          <geometry>
+            <mesh filename="${link_mp['mesh']['fname']}" scale="${link_mp['mesh']['scale']}"/>
+          </geometry>
+          <xacro:material_dark_grey />
+        </visual>
+      </xacro:if>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}_link"/>
+      <origin xyz="${link_mp['position']['x']} ${link_mp['position']['y']} ${link_mp['position']['z']}" 
+              rpy="${link_mp['orientation']['r']*(pi/180.0)} ${link_mp['orientation']['p']*(pi/180.0)} ${link_mp['orientation']['y']*(pi/180.0)}" />
+    </joint>
+  </xacro:macro>
+
+  <!-- Macro to create multiple radar links -->
+  <xacro:macro name="radar_link_loop" params="links_qty">
+      <xacro:if value="${links_qty}">
+          <xacro:property name="link_name" value="radar${links_qty}"/> 
+          <xacro:create_radar_link name="${link_name}" link_mp="${mp[link_name]}"/>
+          <xacro:radar_link_loop links_qty="${links_qty-1}" />
+      </xacro:if>
+  </xacro:macro>
+  
+  <!--- BASE LINK -->
+  <link name="base_link">
+    <xacro:if value="${mp['base_link']['mesh_fname'] != ''}">
+      <visual>
+        <origin xyz="0 0 0" rpy="${0.5*pi} ${0.0*pi} ${0.0*pi}"/>
+        <geometry>
+          <mesh filename="${mp['base_link']['mesh_fname']}" 
+                scale="${mp['base_link']['mesh_scale']}"/>
+        </geometry>
+        <xacro:material_grey />
+      </visual>
+    </xacro:if>
+  </link>
+
+  <!-- RADAR LINKS -->
+  <xacro:radar_link_loop links_qty="${mp['radar_qty']}" />
+
+</robot>

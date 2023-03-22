@@ -1,0 +1,64 @@
+<launch>
+
+  <!-- Enable/Disable Sensors -->
+  <arg name="use_can" default="true" />
+  <arg name="use_udp" default="true" />
+  <arg name="use_camera" default="true" />
+
+  <!-- Radar model loading -->
+  <include file="$(find ainstein_radar_drivers)/launch/multi_radar_model.launch" />
+
+  <!-- Add additional radars to this file as needed. Make sure to update multiple_radars.yaml as well -->
+
+  <!-- O-79 CAN nodes -->
+  <group if="$(arg use_can)">
+
+    <!-- Run the 1st radar CAN node -->
+    <node name="radar1_o79_can" pkg="ainstein_radar_drivers" type="o79_can_node" output="screen" >
+      <param name="frame_id" value="radar1_link" />
+      <param name="can_id" value="0x18FFB24C" />
+    </node>
+    
+    <!-- Run the 2nd radar CAN node -->
+    <node name="radar2_o79_can" pkg="ainstein_radar_drivers" type="o79_can_node" output="screen" >
+      <param name="frame_id" value="radar2_link" />
+      <param name="can_id" value="0x18FFB24D" />
+    </node>
+
+  </group>
+
+  <!-- O-79 UDP nodes -->
+  <group if="$(arg use_udp)">
+
+    <!-- Run the 1st radar UDP node -->
+    <node name="radar1_o79_udp" pkg="ainstein_radar_drivers" type="o79_udp_node" output="screen" >
+      <param name="frame_id" value="radar1_link" />
+      <param name="host_ip" value="10.0.0.75" />
+      <param name="host_port" value="1024" />
+      <param name="radar_ip" value="10.0.0.10" />
+      <param name="radar_port" value="7" />
+    </node>
+
+    <!-- Run the 2nd radar UDP node -->
+    <node name="radar2_o79_udp" pkg="ainstein_radar_drivers" type="o79_udp_node" output="screen" >
+      <param name="frame_id" value="radar2_link" />
+      <param name="host_ip" value="10.0.0.75" />
+      <param name="host_port" value="1025" />
+      <param name="radar_ip" value="10.0.0.11" />
+      <param name="radar_port" value="7" />
+     </node>
+    
+  </group>
+
+  <!-- USB camera node -->
+  <group if="$(arg use_camera)">
+
+    <include file="$(find ainstein_radar_drivers)/launch/usb_cam.launch" >
+      <arg name="video_device" value="/dev/video2" />
+      <arg name="img_width" value="320"/>
+      <arg name="img_height" value="240"/>
+    </include>
+    
+  </group>
+  
+</launch>
