@@ -1,0 +1,32 @@
+# Specify number of radars, add details for each radar accordingly
+radar_qty: 2
+
+base_link:
+  mesh_fname: ""
+  mesh_scale: "1.0 1.0 1.0"
+
+radar1:
+  position: # coordinates in meters relative to the origin of the ROS coordinate system
+    x: 0
+    y: 0.5
+    z: 0.56
+  orientation: # roll, pitch, yaw in degrees
+    r: 0
+    p: -8
+    y: 15
+  mesh:
+    fname: "package://ainstein_radar_drivers/meshes/o79_v2.stl"
+    scale: "1.0 1.0 1.0"
+
+radar2:
+  position:
+    x: 0
+    y: -0.5
+    z: 0.56
+  orientation:
+    r: 0
+    p: -8
+    y: -15
+  mesh:
+    fname: "package://ainstein_radar_drivers/meshes/o79_v2.stl"
+    scale: "1.0 1.0 1.0"

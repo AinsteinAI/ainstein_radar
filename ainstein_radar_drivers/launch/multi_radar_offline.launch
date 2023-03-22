@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- Rviz configuration. Change rviz file to support different visualization setups -->
+  <arg name="rvizconfig_multi_radar" default="$(find ainstein_radar_drivers)/rviz/o79_2_radars.rviz" />
+
+  <!-- Param required for playing back recorded data -->
+  <param name="use_sim_time" value="true" />
+
+  <!-- Machine model loading (needed for TF frames in visualization) -->
+  <include file="$(find ainstein_radar_drivers)/launch/multi_radar_model.launch" />
+
+  <!-- Run Rviz with specified configuration -->
+  <node name="rviz_multi_radar" pkg="rviz" type="rviz" args="-d $(arg rvizconfig_multi_radar)" />
+
+  <!-- Run the rqtbag GUI (make sure to right-click in bottom half and set to publish all) -->
+  <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
+
+</launch>
