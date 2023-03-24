@@ -6,7 +6,10 @@
   <arg name="use_camera" default="true" />
 
   <!-- Radar model loading -->
-  <include file="$(find ainstein_radar_drivers)/launch/multi_radar_model.launch" />
+  <include file="$(find ainstein_radar_drivers)/launch/multi_radar_model.launch">
+    <arg name="model_path" value="$(find ainstein_radar_drivers)/urdf/multiple_radars.urdf" />
+    <arg name="params_path" value="$(find ainstein_radar_drivers)/params/multiple_radars.yaml"/>
+  </include>
 
   <!-- Add additional radars to this file as needed. Make sure to update multiple_radars.yaml as well -->
 

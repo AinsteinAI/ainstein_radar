@@ -31,11 +31,11 @@
   <!-- Macro to create radar link -->
   <xacro:macro name="create_radar_link" params="name link_mp">
     <link name="${name}_link">
-      <xacro:if value="${link_mp['mesh']['fname'] != ''}">
+      <xacro:if value="${link_mp['mesh']['path'] != ''}">
         <visual>
           <origin xyz="0 0 0" rpy="${0.0*pi} ${0.0*pi} ${0.0*pi}"/>
           <geometry>
-            <mesh filename="${link_mp['mesh']['fname']}" scale="${link_mp['mesh']['scale']}"/>
+            <mesh filename="${link_mp['mesh']['path']}" scale="${link_mp['mesh']['scale']}"/>
           </geometry>
           <xacro:material_dark_grey />
         </visual>
@@ -60,12 +60,13 @@
   
   <!--- BASE LINK -->
   <link name="base_link">
-    <xacro:if value="${mp['base_link']['mesh_fname'] != ''}">
+    <xacro:if value="${mp['base_link']['mesh']['path'] != ''}">
       <visual>
-        <origin xyz="0 0 0" rpy="${0.5*pi} ${0.0*pi} ${0.0*pi}"/>
+        <origin xyz="${mp['base_link']['position']['x']} ${mp['base_link']['position']['y']} ${mp['base_link']['position']['z']}" 
+                rpy="${mp['base_link']['orientation']['r']*(pi/180.0)} ${mp['base_link']['orientation']['p']*(pi/180.0)} ${mp['base_link']['orientation']['y']*(pi/180.0)}"/>
         <geometry>
-          <mesh filename="${mp['base_link']['mesh_fname']}" 
-                scale="${mp['base_link']['mesh_scale']}"/>
+          <mesh filename="${mp['base_link']['mesh']['path']}" 
+                scale="${mp['base_link']['mesh']['scale']}"/>
         </geometry>
         <xacro:material_grey />
       </visual>
