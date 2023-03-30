@@ -1,7 +1,13 @@
 <launch>
+  
+  <!-- Set whether to play a specific ROS bag or use the rqtbag GUI -->
+  <arg name="use_rqtbag_gui" value="true" />
+  
+  <!-- Set whether to use trajectory server node -->
+  <arg name="use_trajectory" value="false" />
 
   <!-- Rviz configuration. Change rviz file to support different visualization setups -->
-  <arg name="rvizconfig_multi_radar" default="$(find ainstein_radar_drivers)/rviz/o79_2_radars.rviz" />
+  <arg name="rvizconfig_multi_radar" default="$(find ainstein_radar_drivers)/rviz/loader_gps_radar.rviz" />
 
   <!-- Param required for playing back recorded data -->
   <param name="use_sim_time" value="true" />
@@ -12,7 +18,24 @@
   <!-- Run Rviz with specified configuration -->
   <node name="rviz_multi_radar" pkg="rviz" type="rviz" args="-d $(arg rvizconfig_multi_radar)" />
 
-  <!-- Run the rqtbag GUI (make sure to right-click in bottom half and set to publish all) -->
-  <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
+  <group if="$(arg use_rqtbag_gui)">
+    <!-- Run the rqtbag GUI (make sure to right-click in bottom half and set to publish all) -->
+    <node name="rqt_bag" pkg="rqt_bag" type="rqt_bag" args="--clock" />
+  </group>
+
+  <group unless="$(arg use_rqtbag_gui)">
+    <!-- Play back data from rosbag node, eg, replace path (not needed if using the RQT Bag GUI) -->
+    <node name="player" pkg="rosbag" type="play" args="--clock --rate=1.0 /home/colten/Desktop/loader_vel_test/loader_gps_radar_2023-03-29-10-54-45_modified.bag" />
+  </group>
+
+  <group if="$(arg use_trajectory)">
+    <!-- Run trajectory node to visualize path of loader -->
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="hector_trajectory_server" output="screen">
+        <param name="target_frame_name" type="string" value="map" />
+        <param name="source_frame_name" type="string" value="imu_link" />
+        <param name="trajectory_update_rate" type="double" value="400" />
+        <param name="trajectory_publish_rate" type="double" value="400" />
+    </node>
+  </group>
 
 </launch>
