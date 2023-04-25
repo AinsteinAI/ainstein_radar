@@ -1,6 +1,6 @@
 <launch>
   <!-- declare args to be passed in -->
-  <arg name="can_id_arg" default="0x18FFB24D"/>
+  <arg name="can_id_arg" default="0x18FFB24C"/>
 
   <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
     <param name="can_device" value="can0" />

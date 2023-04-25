@@ -54,7 +54,7 @@ namespace ainstein_radar_drivers
     radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
   {
     // Store the radar data frame ID:
-    nh_private_.param( "can_id", can_id_str_, std::string( "0x18FFB24D" ) );
+    nh_private_.param( "can_id", can_id_str_, std::string( "0x18FFB24C" ) );
     nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
 
     // Convert the CAN ID string to an int:
