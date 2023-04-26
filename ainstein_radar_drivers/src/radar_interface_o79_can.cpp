@@ -75,6 +75,7 @@ namespace ainstein_radar_drivers
     can_frame_msg_.is_error = false;
     can_frame_msg_.dlc = 8;
   }
+  unsigned int raw_pt_can_id = std::stoul( std::string( "0x18FFA04C" ), nullptr, 16 );
 
   int targets_to_come = -1;
   unsigned int targets_received = 0;
@@ -97,6 +98,10 @@ namespace ainstein_radar_drivers
           starting_CAN_ID = true;
         }
         break;
+      }
+      else if( msg.id == (raw_pt_can_id))
+      {
+        valid_CAN_ID = true;
       }
     }
     if( valid_CAN_ID )
