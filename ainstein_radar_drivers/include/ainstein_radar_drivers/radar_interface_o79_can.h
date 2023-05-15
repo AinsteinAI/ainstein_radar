@@ -80,9 +80,8 @@ namespace ainstein_radar_drivers
 
     can_msgs::Frame can_frame_msg_;
 
-    unsigned int can_id_;
     std::string frame_id_;
-    std::string can_id_str_;
+    std::string can_sa_str_;
 
     ros::Publisher pub_radar_info_;
     boost::shared_ptr<ainstein_radar_msgs::RadarInfo> radar_info_msg_ptr_;
