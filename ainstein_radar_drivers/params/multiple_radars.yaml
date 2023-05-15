@@ -24,9 +24,9 @@ base_link:
 # value above (radar1, radar2, etc..) using the following format:
 radar1:
   position: # coordinates in meters relative to the base_link
-    x: 0
+    x: 0.127
     y: 0
-    z: 0.8
+    z: 0.635
   orientation: # roll, pitch, yaw in degrees
     r: 0
     p: 0

@@ -4,6 +4,7 @@
   <arg name="use_can" default="false" />
   <arg name="use_udp" default="true" />
   <arg name="use_camera" default="false" />
+  <arg name="use_lidar" default="true" />
 
   <!-- Ensure sim time set to false -->
   <param name="use_sim_time" value="false" />
@@ -64,6 +65,13 @@
       <arg name="img_width" value="320"/>
       <arg name="img_height" value="240"/>
     </include>
+    
+  </group>
+
+  <!-- VLP16 LIDAR -->
+  <group if="$(arg use_lidar)">
+
+    <include file="$(find bobcat_o79_testing)/launch/vlp16_lidar.launch" />
     
   </group>
   
