@@ -44,6 +44,11 @@ namespace ainstein_radar_drivers
   const double RadarInterfaceO79CAN::msg_vel_y_res = 0.025;
   const double RadarInterfaceO79CAN::msg_vel_z_res = 0.125;
 
+  std::string raw_pt_id_base_ = "0x18FFA0";
+  std::string tracked_obj_id_base_ = "0x18FFB2";
+  unsigned int raw_pt_can_id_ = 0;
+  unsigned int tracked_obj_can_id_ = 0;
+
   RadarInterfaceO79CAN::RadarInterfaceO79CAN( ros::NodeHandle node_handle,
         ros::NodeHandle node_handle_private ) :
     RadarInterface<can_msgs::Frame>( node_handle,
@@ -54,11 +59,12 @@ namespace ainstein_radar_drivers
     radar_info_msg_ptr_( new ainstein_radar_msgs::RadarInfo )
   {
     // Store the radar data frame ID:
-    nh_private_.param( "can_id", can_id_str_, std::string( "0x18FFB24C" ) );
+    nh_private_.param( "can_sa", can_sa_str_, std::string( "4C" )); // default CAN source address
     nh_private_.param( "frame_id", frame_id_, std::string( "map" ) );
 
-    // Convert the CAN ID string to an int:
-    can_id_ = std::stoul( can_id_str_, nullptr, 16 );
+    // Convert the CAN ID strings to numbers:
+    tracked_obj_can_id_ = std::stoul(tracked_obj_id_base_.append(can_sa_str_), nullptr, 16);
+    raw_pt_can_id_ = std::stoul(raw_pt_id_base_.append(can_sa_str_), nullptr, 16);
 
     // Set the frame ID:
     radar_data_msg_ptr_raw_->header.frame_id = frame_id_;
@@ -75,7 +81,6 @@ namespace ainstein_radar_drivers
     can_frame_msg_.is_error = false;
     can_frame_msg_.dlc = 8;
   }
-  unsigned int raw_pt_can_id = std::stoul( std::string( "0x18FFA04C" ), nullptr, 16 );
 
   int targets_to_come = -1;
   unsigned int targets_received = 0;
@@ -90,7 +95,7 @@ namespace ainstein_radar_drivers
     for(unsigned long i = 0; i < CAN_NUM_TRACK_CART_REV_C_PER_FRAME; i++)
     {
       /* For all valid CAN ID's for target_type check if current msg CAN ID matches*/
-      if( msg.id == (can_id_ + i*(1 << 8)))
+      if( msg.id == (tracked_obj_can_id_ + i*(1 << 8)))
       {
         valid_CAN_ID = true;
         if(i == 0)
@@ -99,7 +104,7 @@ namespace ainstein_radar_drivers
         }
         break;
       }
-      else if( msg.id == (raw_pt_can_id))
+      else if( msg.id == (raw_pt_can_id_))
       {
         valid_CAN_ID = true;
       }
