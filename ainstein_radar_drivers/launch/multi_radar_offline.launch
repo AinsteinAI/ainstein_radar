@@ -7,7 +7,7 @@
   <arg name="use_trajectory" value="false" />
 
   <!-- Rviz configuration. Change rviz file to support different visualization setups -->
-  <arg name="rvizconfig_multi_radar" default="$(find ainstein_radar_drivers)/rviz/loader_gps_radar.rviz" />
+  <arg name="rvizconfig_multi_radar" default="$(find ainstein_radar_drivers)/rviz/o79_2_radars.rviz" />
 
   <!-- Param required for playing back recorded data -->
   <param name="use_sim_time" value="true" />
