@@ -6,9 +6,11 @@
   <arg name="message_frequency" default="0.5" />
   <arg name="serial_baud" default="115200" /> <!-- 115200 or 921600 -->
   <arg name="server_ip" default="192.168.2.234" />
-  <arg name="comm_mode" default="1" /> <!-- MODE_485(USB) = 0 or MODE_WIFI = 1 -->
+  <arg name="comm_mode" default="2" /> <!-- MODE_485(USB) = 0 or MODE_WIFI = 1 or MODE_MQTT = 2 -->
   <arg name="logging_mode" default="False" />
   <arg name="logging_dir" default="logs/wayv_api_logs" /> <!-- This records into the ~/.ros folder. -->
+  <arg name="mqtt_host" default="localhost" />
+  <arg name="mqtt_port" default="1883" />
   
   <node name="wayv" pkg="ainstein_radar_drivers" type="wayv_node" output="screen" >
     <param name="frame_id" value="map" />
@@ -21,6 +23,8 @@
     <param name="comm_mode" value="$(arg comm_mode)" />
     <param name="logging_mode" value="$(arg logging_mode)" />
     <param name="logging_dir" value="$(arg logging_dir)" />
+    <param name="mqtt_host" value="$(arg mqtt_host)" />
+    <param name="mqtt_port" value="$(arg mqtt_port)" />
   </node>
 
   <!-- Convert Wayv raw detections (targets) to PointCloud2 -->

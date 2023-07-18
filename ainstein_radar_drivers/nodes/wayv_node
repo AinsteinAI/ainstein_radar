@@ -28,6 +28,7 @@ from wayv_air_api.model.target import DetailTarget, TLVCloudPoint, TLVTrackedTar
 
 MODE_485 = 0
 MODE_WIFI = 1
+MODE_MQTT = 2
 if 'linux' in sys.platform:
     SER_PORT_DEFAULT = "/dev/ttyUSB0"
 else:
@@ -387,12 +388,14 @@ class WayvROSInterface( object ):
         self.logging_files = {}
         self.run_supervisor = True
         self.frame_id = frame_id
+        self.mqtt_host = rospy.get_param('~mqtt_host', "localhost")
+        self.mqtt_port = rospy.get_param('~mqtt_port', 1883)
 
 
         # Register the ROS interface data callbacks with the sensor
         self.wayv_air = Wayv_Air_API(self.target_callback, self.radar_con_callback, self.pcl_callback, self.tlv_callback,
                                      (self.v_level >= 3), self.comm_mode, self.serial_port, self.serial_baud,
-                                     self.rs485_id, self.wifi_ip, 1, self.enbl_pcl, self.wifi_port, self.message_frequency)
+                                     self.rs485_id, self.wifi_ip, 1, self.enbl_pcl, self.wifi_port, self.message_frequency, mqtt_host=self.mqtt_host, mqtt_port=self.mqtt_port)
     
         print( "Waiting to start communication" )
         print("WAYV Air API version:", self.wayv_air.version)
@@ -409,7 +412,7 @@ class WayvROSInterface( object ):
             if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
                 label = self.determine_radar_label(self.wayv_air.radars[id])
                 self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, self.frame_id )
-                self.tlv_config.append(id)
+                # self.tlv_config.append(id)
                 if self.logging_mode:
                     self.logging_files_name[id] = self.logging_dir + id + " - " +  datetime.now().strftime(self.logging_format) + ".log"
                     if not os.path.exists(self.logging_dir):
