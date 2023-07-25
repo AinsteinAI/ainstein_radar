@@ -378,7 +378,6 @@ class WayvROSInterface( object ):
         self.tlv_mode = rospy.get_param('~enable_tlv', False)
         self.message_frequency = rospy.get_param('~message_frequency', 0.05)
         self.query_config_requested = []
-        self.tlv_config = []
         self.query_config = []
         self.radars_seen = {}
         self.logging_mode = rospy.get_param('~logging_mode', False)
@@ -412,7 +411,6 @@ class WayvROSInterface( object ):
             if self.wayv_air.radars[id].ready: # Don't add radars that didn't respond to version request.
                 label = self.determine_radar_label(self.wayv_air.radars[id])
                 self.radars_seen[id] = WayvRadar( self.wayv_air.radars[id], label, self.frame_id )
-                # self.tlv_config.append(id)
                 if self.logging_mode:
                     self.logging_files_name[id] = self.logging_dir + id + " - " +  datetime.now().strftime(self.logging_format) + ".log"
                     if not os.path.exists(self.logging_dir):
@@ -587,13 +585,6 @@ class WayvROSInterface( object ):
                 id = self.query_config.pop(0)
                 self.wayv_air.query_config(id)  # the API only support querying one radar at a time
                 self.query_config_requested.append(id)
-
-            elif len(self.tlv_config) > 0:
-                id = self.tlv_config.pop(0)
-                print(f"{id} - Configuring TLV Mode")
-                self.wayv_air.enable_tlv(id, self.tlv_mode)
-                if id not in self.query_config:
-                    self.query_config.append(id)
 
             # Wait 2s to run supervisor task again
             time.sleep(2)
