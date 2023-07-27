@@ -49,8 +49,8 @@ class WayvRadar( object ):
         self.time_str = "%Y-%m-%d %H:%M:%S.%f"
         self.radar = radar
         self.sensor_config = WayvAirConfiguration()
-        self.sensor_config.fw_ver = radar.fw_version
-        self.sensor_config.sbl_ver = radar.sbl_version
+        self.sensor_config.fw_ver = str(radar.fw_version)
+        self.sensor_config.sbl_ver = str(radar.sbl_version)
         self.radar_label = label
         self._populate_comm_config(radar.comm_config)
         self._populate_radar_config(radar.radar_config)
