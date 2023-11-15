@@ -24,15 +24,15 @@ base_link:
 # value above (radar1, radar2, etc..) using the following format:
 radar1:
   position: # coordinates in meters relative to the base_link
-    x: 0.127
+    x: 0.025
     y: 0
     z: 0.635
   orientation: # roll, pitch, yaw in degrees
     r: 0
-    p: 0
+    p: -8
     y: 0
   mesh:
-    path: "package://ainstein_radar_drivers/meshes/o79_v2.stl"  # path the the mesh file, leave blank to not use a mesh
+    path: "package://ainstein_radar_drivers/meshes/o79_v2.stl"  # path to the mesh file, leave blank to not use a mesh
     scale: "1.0 1.0 1.0"  # "x_scale y_scale z_scale"
 
 radar2:
