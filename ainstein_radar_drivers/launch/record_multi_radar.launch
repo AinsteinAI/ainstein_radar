@@ -1,0 +1,16 @@
+<launch>
+
+    <node name="rosbag_record" pkg="rosbag" type="record" args="/radar1_o79_udp/boxes 
+                                                                /radar1_o79_udp/ground 
+                                                                /radar1_o79_udp/objects 
+                                                                /radar1_o79_udp/radar_info 
+                                                                /radar1_o79_udp/targets/filtered 
+                                                                /radar1_o79_udp/targets/raw 
+                                                                /radar1_o79_can/objects 
+                                                                /radar1_o79_can/radar_info 
+                                                                /usb_cam/image_raw/compressed 
+                                                                /usb_cam/camera_info 
+                                                                /voxel_grid/output 
+                                                                -o o79_multi_radar_testing" output="screen"/>
+    
+</launch>
