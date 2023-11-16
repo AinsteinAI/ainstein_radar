@@ -74,7 +74,5 @@
     <include file="$(find bobcat_o79_testing)/launch/vlp16_lidar.launch" />
     
   </group>
-
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ainstein_radar_drivers)/rviz/o79_2_radars.rviz" />
   
 </launch>

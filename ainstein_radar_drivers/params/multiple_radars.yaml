@@ -26,7 +26,7 @@ radar1:
   position: # coordinates in meters relative to the base_link
     x: 0.025
     y: 0
-    z: 0.635
+    z: 0.610
   orientation: # roll, pitch, yaw in degrees
     r: 0
     p: -8
