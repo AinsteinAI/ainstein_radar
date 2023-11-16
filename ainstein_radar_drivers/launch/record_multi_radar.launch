@@ -1,6 +1,7 @@
 <launch>
 
-    <node name="rosbag_record" pkg="rosbag" type="record" args="/radar1_o79_udp/boxes 
+    <node name="rosbag_record" pkg="rosbag" type="record" args="/received_messages
+                                                                /radar1_o79_udp/boxes 
                                                                 /radar1_o79_udp/ground 
                                                                 /radar1_o79_udp/objects 
                                                                 /radar1_o79_udp/radar_info 
