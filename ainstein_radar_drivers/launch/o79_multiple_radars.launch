@@ -19,6 +19,9 @@
 
   <!-- O-79 CAN nodes -->
   <group if="$(arg use_can)">
+    <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
+      <param name="can_device" value="can0" />
+    </node>
 
     <!-- Run the 1st radar CAN node -->
     <node name="radar1_o79_can" pkg="ainstein_radar_drivers" type="o79_can_node" output="screen" >
