@@ -114,7 +114,7 @@ void RadarTrackedObjectArrayVisual::setMessage( const ainstein_radar_msgs::Radar
       double azimuth = std::atan2( obj.pose.position.y, obj.pose.position.x );
       double elevation = std::asin( obj.pose.position.z / range );
  
-      if( range <= alert_range_max_ )
+      if( range >= alert_range_min_ && range <= alert_range_max_ && elevation >= alert_elev_min_ && elevation <= alert_elev_max_ )
       {
         radar_tracked_object_visuals_.back().pos.setScale( Ogre::Vector3( alert_scale_, alert_scale_, alert_scale_ ) );
       }
@@ -254,9 +254,24 @@ void RadarTrackedObjectArrayVisual::setAlertScale( float alert_scale )
   }
 }
 
+void RadarTrackedObjectArrayVisual::setAlertRangeMin( float alert_range_min )
+{
+  alert_range_min_ = alert_range_min;
+}
+
 void RadarTrackedObjectArrayVisual::setAlertRangeMax( float alert_range_max )
 {
   alert_range_max_ = alert_range_max;
+}
+
+void RadarTrackedObjectArrayVisual::setAlertElevMax( float alert_elev_max )
+{
+  alert_elev_max_ = alert_elev_max;
+}
+
+void RadarTrackedObjectArrayVisual::setAlertElevMin( float alert_elev_min )
+{
+  alert_elev_min_ = alert_elev_min;
 }
 
 } // namespace ainstein_radar_rviz_plugins
