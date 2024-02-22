@@ -22,7 +22,7 @@
   <depend>ainstein_radar_filters</depend>
   <depend>nodelet</depend>
   <depend>python-numpy-quaternion-pip</depend>
-
+  <depend>usb_cam</depend>
   
   <build_depend>message_generation</build_depend>
   <depend>std_msgs</depend>
