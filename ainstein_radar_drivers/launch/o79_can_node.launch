@@ -2,6 +2,9 @@
   <!-- declare args to be passed in -->
   <arg name="can_sa_arg" default="4C"/>
 
+  <!-- explicitly set use_sime_time to false in case some other node, like playback, has set it to true -->
+  <param name="use_sim_time" value="false" />
+
   <node name="socketcan_bridge" pkg="socketcan_bridge" type="socketcan_bridge_node"  required="true" >
     <param name="can_device" value="can0" />
   </node>

@@ -9,6 +9,9 @@
 
   <arg name="machine" default="localhost" />
 
+    <!-- explicitly set use_sime_time to false in case some other node, like playback, has set it to true -->
+    <param name="use_sim_time" value="false" />
+
   <node machine="$(arg machine)" name="$(arg name)" pkg="usb_cam" type="usb_cam_node" output="screen" required="false" >
     <param name="video_device" value="$(arg video_device)" />
     <param name="image_width" value="$(arg img_width)" />
