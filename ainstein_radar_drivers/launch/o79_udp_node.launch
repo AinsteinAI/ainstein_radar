@@ -8,6 +8,9 @@
   <arg name="publish_tracked_cloud" default="false" />
   <arg name="export_raw_cloud" default="false" />
   <arg name="export_tracked_cloud" default="false" />
+
+  <!-- explicitly set use_sime_time to false in case some other node, like playback, has set it to true -->
+    <param name="use_sim_time" value="false" />
   
   <node name="o79_udp" pkg="ainstein_radar_drivers" type="o79_udp_node" output="screen" required="true" >
     <param name="frame_id" value="map" />
