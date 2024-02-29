@@ -65,6 +65,10 @@ add_executable(t79_bsd_node src/t79_bsd_node.cpp src/radar_interface_t79_bsd.cpp
 add_dependencies(t79_bsd_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(t79_bsd_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(k77_can_node src/k77_can_node.cpp src/radar_interface_k77_can.cpp src/utilities.cpp)
+add_dependencies(k77_can_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(k77_can_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 catkin_install_python(PROGRAMS
   nodes/wayv_node
   nodes/o79_config_node
