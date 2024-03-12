@@ -1,0 +1,49 @@
+# Specify the desired number of radars, add details for each radar accordingly
+radar_qty: 2
+
+# The base_link is located at the origin (x=0, y=0, z=0) by default
+# The location can be modified by editing static_transform_publisher args in the multi_radar_model.launch file
+# The position of each radar is relative to this base_link
+# The base_link can be visually represented with a mesh (3d model)
+# The position and orientation values for the base_link only modify the visual
+# representation of the mesh, and has no effect on the actual location of the link
+base_link:
+  position:  # coordinates in meters relative to the base_link
+    x: 0
+    y: 0
+    z: 0
+  orientation:  # roll, pitch, yaw in degrees
+    r: 0
+    p: 0
+    y: 0
+  mesh:
+    path: ""  # path the the mesh file, leave blank to not use a mesh
+    scale: "1.0 1.0 1.0"  # "x_scale y_scale z_scale"
+
+# Add entries for each radar based on the "radar_qty" 
+# value above (radar1, radar2, etc..) using the following format:
+radar1:
+  position: # coordinates in meters relative to the base_link
+    x: 0
+    y: 0.5
+    z: 0.56
+  orientation: # roll, pitch, yaw in degrees
+    r: 0
+    p: -8
+    y: 15
+  mesh:
+    path: "package://ainstein_radar_drivers/meshes/o79_v2.stl"  # path the the mesh file, leave blank to not use a mesh
+    scale: "1.0 1.0 1.0"  # "x_scale y_scale z_scale"
+
+radar2:
+  position:
+    x: 0
+    y: -0.5
+    z: 0.56
+  orientation:
+    r: 0
+    p: -8
+    y: -15
+  mesh:
+    path: "package://ainstein_radar_drivers/meshes/o79_v2.stl"
+    scale: "1.0 1.0 1.0"

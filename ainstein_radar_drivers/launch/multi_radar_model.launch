@@ -1,0 +1,17 @@
+<launch>
+
+  <!-- Args -->
+  <arg name="model_path" default="$(find ainstein_radar_drivers)/urdf/multiple_radars.urdf"/>
+  <arg name="params_path" default="$(find ainstein_radar_drivers)/params/multiple_radars.yaml"/> 
+
+  <!-- Load the URDF for visualization and publish robot states -->
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model_path) params_path:=$(arg params_path)" />
+  
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+    <param name="publish_frequency" value="100" />
+  </node>
+
+  <!-- Run the map to base link and constrained DOFs publishers -->
+  <node name="map_to_base_link_broadcaster" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 map base_link 100" />
+  
+</launch>
